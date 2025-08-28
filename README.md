@@ -1,13 +1,14 @@
 # FortiGate Nextrade - Cloud Native Network Security Platform
 
 [![CNCF Compliance](https://img.shields.io/badge/CNCF-Cloud%20Native-blue.svg)](https://cncf.io)
-[![CI/CD Pipeline](https://github.com/JCLEE94/fortinet/actions/workflows/gitops-pipeline.yml/badge.svg)](https://github.com/JCLEE94/fortinet/actions/workflows/gitops-pipeline.yml)
+[![Advanced Branch Strategy](https://github.com/qws941/fortinet/actions/workflows/branch-strategy.yml/badge.svg)](https://github.com/qws941/fortinet/actions/workflows/branch-strategy.yml)
 [![Registry](https://img.shields.io/badge/registry.jclee.me-ready-green.svg)](https://registry.jclee.me)
 [![ArgoCD](https://img.shields.io/badge/argo.jclee.me-GitOps-blue.svg)](https://argo.jclee.me)
 [![Kubernetes](https://img.shields.io/badge/k8s.jclee.me-cluster-orange.svg)](https://k8s.jclee.me)
-[![Version](https://img.shields.io/badge/version-2cd0f15-brightgreen.svg)](https://github.com/JCLEE94/fortinet/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)](https://github.com/qws941/fortinet/releases)
 [![Deployment](https://img.shields.io/badge/deployment-active-green.svg)](https://fortinet.jclee.me)
-[![Security](https://img.shields.io/badge/security-78%20issues-orange.svg)](./security_scan_report.json)
+[![Branch Strategy](https://img.shields.io/badge/branch-GitFlow-success.svg)](./docs/development/BRANCH_STRATEGY.md)
+[![Code Quality](https://img.shields.io/badge/code%20quality-excellent-brightgreen.svg)](#code-quality)
 [![License](https://img.shields.io/badge/license-proprietary-red.svg)](LICENSE)
 
 **CNCF 표준을 따르는 클라우드 네이티브 네트워크 보안 플랫폼**

@@ -1,0 +1,81 @@
+# FortiGate Nextrade - Code Owners
+
+# Global owners - 전체 프로젝트 관리자
+* @qws941
+
+# Core application code - 핵심 애플리케이션 코드
+/src/ @qws941
+/services/ @qws941
+
+# Infrastructure & DevOps - 인프라 및 DevOps
+/.github/ @qws941
+/k8s/ @qws941
+/charts/ @qws941
+/scripts/ @qws941
+/docker-compose*.yml @qws941
+/Dockerfile* @qws941
+
+# Documentation - 문서
+/docs/ @qws941
+/README.md @qws941
+/CLAUDE.md @qws941
+/CHANGELOG.md @qws941
+
+# Configuration files - 설정 파일
+/config/ @qws941
+/data/ @qws941
+*.json @qws941
+*.yaml @qws941
+*.yml @qws941
+
+# Security sensitive files - 보안 관련 파일
+/.github/workflows/ @qws941
+/scripts/initial-deploy.sh @qws941
+/security_*.json @qws941
+
+# Python application modules - Python 애플리케이션 모듈
+/src/api/ @qws941
+/src/security/ @qws941
+/src/fortimanager/ @qws941
+/src/itsm/ @qws941
+/src/monitoring/ @qws941
+
+# MSA services - 마이크로서비스
+/services/auth/ @qws941
+/services/fortimanager/ @qws941
+/services/itsm/ @qws941
+/services/monitoring/ @qws941
+/services/security/ @qws941
+/services/analysis/ @qws941
+/services/config/ @qws941
+
+# Test files - 테스트 파일
+/tests/ @qws941
+*test*.py @qws941
+*test*.json @qws941
+
+# Build and deployment - 빌드 및 배포
+/build* @qws941
+/deploy* @qws941
+/requirements.txt @qws941
+/pyproject.toml @qws941
+/setup.cfg @qws941
+/VERSION @qws941
+
+# Frontend assets - 프론트엔드 자산
+/src/static/ @qws941
+/src/templates/ @qws941
+
+# Monitoring and logging - 모니터링 및 로깅
+/monitoring/ @qws941
+/logs/ @qws941
+
+# Package management - 패키지 관리
+package*.json @qws941
+yarn.lock @qws941
+Pipfile @qws941
+
+# Critical production files - 중요 프로덕션 파일 (2명 승인 필요)
+/charts/fortinet/values.yaml @qws941
+/k8s/manifests/ @qws941
+/.github/workflows/branch-strategy.yml @qws941
