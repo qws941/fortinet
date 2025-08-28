@@ -1,0 +1,118 @@
+/*!
+ * Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com
+ * License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
+ * Copyright 2023 Fonticons, Inc.
+ */
+ 
+@font-face {
+  font-family: 'Font Awesome 6 Free';
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+  src: url('fa-solid-900.woff2') format('woff2');
+}
+
+.fas,
+.fa-solid {
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+}
+
+@font-face {
+  font-family: 'Font Awesome 6 Free';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('fa-regular-400.woff2') format('woff2');
+}
+
+.far,
+.fa-regular {
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Font Awesome 6 Brands';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('fa-brands-400.woff2') format('woff2');
+}
+
+.fab,
+.fa-brands {
+  font-family: 'Font Awesome 6 Brands';
+  font-weight: 400;
+}
+
+/* Font Awesome Base Class */
+.fa,
+.fas,
+.far,
+.fal,
+.fad,
+.fab {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  display: inline-block;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  line-height: 1;
+}
+
+/* Common Icons */
+.fa-home:before { content: "\f015"; }
+.fa-tachometer-alt:before { content: "\f3fd"; }
+.fa-tasks:before { content: "\f0ae"; }
+.fa-network-wired:before { content: "\f6ff"; }
+.fa-wave-square:before { content: "\f83e"; }
+.fa-clipboard-list:before { content: "\f46d"; }
+.fa-cog:before { content: "\f013"; }
+.fa-info-circle:before { content: "\f05a"; }
+.fa-question-circle:before { content: "\f059"; }
+.fa-search:before { content: "\f002"; }
+.fa-download:before { content: "\f019"; }
+.fa-upload:before { content: "\f093"; }
+.fa-pause:before { content: "\f04c"; }
+.fa-play:before { content: "\f04b"; }
+.fa-stop:before { content: "\f04d"; }
+.fa-sync:before { content: "\f021"; }
+.fa-sync-alt:before { content: "\f2f1"; }
+.fa-spinner:before { content: "\f110"; }
+.fa-check:before { content: "\f00c"; }
+.fa-times:before { content: "\f00d"; }
+.fa-exclamation-triangle:before { content: "\f071"; }
+.fa-exclamation-circle:before { content: "\f06a"; }
+.fa-filter:before { content: "\f0b0"; }
+.fa-table:before { content: "\f0ce"; }
+.fa-chart-bar:before { content: "\f080"; }
+.fa-chart-line:before { content: "\f201"; }
+.fa-file:before { content: "\f15b"; }
+.fa-file-alt:before { content: "\f15c"; }
+.fa-file-csv:before { content: "\f6dd"; }
+.fa-file-pdf:before { content: "\f1c1"; }
+.fa-users:before { content: "\f0c0"; }
+.fa-user:before { content: "\f007"; }
+.fa-server:before { content: "\f233"; }
+.fa-database:before { content: "\f1c0"; }
+.fa-wifi:before { content: "\f1eb"; }
+.fa-sitemap:before { content: "\f0e8"; }
+.fa-save:before { content: "\f0c7"; }
+.fa-edit:before { content: "\f044"; }
+.fa-trash:before { content: "\f1f8"; }
+.fa-plus:before { content: "\f067"; }
+.fa-minus:before { content: "\f068"; }
+.fa-code:before { content: "\f121"; }
+.fa-terminal:before { content: "\f120"; }
+.fa-circle:before { content: "\f111"; }
+.fa-shield-alt:before { content: "\f3ed"; }
+.fa-fire:before { content: "\f06d"; }
+.fa-lock:before { content: "\f023"; }
+.fa-unlock:before { content: "\f09c"; }
+.fa-key:before { content: "\f084"; }
+.fa-arrow-right:before { content: "\f061"; }
+.fa-arrow-left:before { content: "\f060"; }
+.fa-arrow-up:before { content: "\f062"; }
+.fa-arrow-down:before { content: "\f063"; }

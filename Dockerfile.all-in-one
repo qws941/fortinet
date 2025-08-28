@@ -1,0 +1,300 @@
+# =============================================================================
+# FortiGate All-in-One Self-Contained Dockerfile
+# =============================================================================
+
+FROM python:3.11-slim
+
+# Build arguments for enhanced versioning and platform support
+ARG BUILD_DATE=""
+ARG VCS_REF=""  
+ARG VERSION="v1.0.1"
+ARG BUILD_NUMBER=""
+ARG PLATFORM=""
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+
+# Multi-stage preparation for all services
+FROM python:3.11-slim as base
+
+# Install all system dependencies for all services
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+    gcc g++ curl netcat-openbsd \
+    redis-server \
+    postgresql postgresql-client postgresql-contrib \
+    supervisor \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create unified app user
+RUN groupadd -r fortinet && \
+    useradd -r -g fortinet -m -s /bin/bash fortinet
+
+# Create all necessary directories
+RUN mkdir -p /app/{src,data,logs,static,templates} \
+             /var/lib/postgresql/data \
+             /var/log/{redis,postgresql,supervisor} \
+             /etc/supervisor/conf.d && \
+    chown -R fortinet:fortinet /app && \
+    chown -R postgres:postgres /var/lib/postgresql && \
+    chmod 755 /var/log/{redis,postgresql,supervisor}
+
+WORKDIR /app
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir gunicorn gevent prometheus-client redis psycopg2-binary
+
+# Copy application
+COPY --chown=fortinet:fortinet . /app/
+
+# Compile Python bytecode
+RUN python -m compileall /app/src -b -qq || true
+
+# Create embedded Redis configuration
+RUN cat > /etc/redis/redis.conf <<EOF
+# Embedded Redis Configuration
+bind 127.0.0.1
+port 6379
+protected-mode no
+tcp-backlog 511
+timeout 0
+tcp-keepalive 300
+
+# Memory management
+maxmemory 128mb
+maxmemory-policy allkeys-lru
+
+# Persistence (minimal for embedded use)
+dir /app/data/redis
+dbfilename dump.rdb
+appendonly no
+save 900 1
+save 300 10
+save 60 10000
+
+# Logging
+loglevel notice
+logfile /var/log/redis/redis.log
+syslog-enabled no
+
+# Performance
+databases 16
+slowlog-log-slower-than 10000
+slowlog-max-len 128
+maxclients 1000
+EOF
+
+# Create embedded PostgreSQL configuration
+RUN cat > /etc/postgresql/postgresql.conf <<EOF
+# Embedded PostgreSQL Configuration
+listen_addresses = '127.0.0.1'
+port = 5432
+max_connections = 50
+shared_buffers = 128MB
+effective_cache_size = 256MB
+maintenance_work_mem = 32MB
+work_mem = 2MB
+
+# WAL settings (minimal)
+wal_level = minimal
+max_wal_size = 512MB
+min_wal_size = 40MB
+
+# Logging (minimal)
+logging_collector = off
+log_destination = 'stderr'
+log_min_messages = warning
+log_min_error_statement = error
+
+# Performance tuning for embedded use
+random_page_cost = 1.1
+effective_io_concurrency = 100
+fsync = off
+synchronous_commit = off
+full_page_writes = off
+EOF
+
+# Create database initialization script
+RUN cat > /app/init-db.sql <<EOF
+-- Embedded database initialization
+CREATE DATABASE fortinet_db;
+CREATE USER fortinet WITH PASSWORD 'fortinet123';
+GRANT ALL PRIVILEGES ON DATABASE fortinet_db TO fortinet;
+
+\c fortinet_db;
+
+-- Create schema
+CREATE SCHEMA IF NOT EXISTS fortinet;
+
+-- Create tables (simplified for embedded use)
+CREATE TABLE IF NOT EXISTS fortinet.devices (
+    id SERIAL PRIMARY KEY,
+    device_id VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    ip_address INET NOT NULL,
+    status VARCHAR(20) DEFAULT 'offline',
+    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS fortinet.policies (
+    id SERIAL PRIMARY KEY,
+    policy_id VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(200) NOT NULL,
+    action VARCHAR(20),
+    enabled BOOLEAN DEFAULT true,
+    device_id VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS fortinet.logs (
+    id SERIAL PRIMARY KEY,
+    log_type VARCHAR(50),
+    severity VARCHAR(20),
+    message TEXT,
+    source VARCHAR(100),
+    device_id VARCHAR(50),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert minimal sample data
+INSERT INTO fortinet.devices (device_id, name, ip_address, status) VALUES
+    ('FGT001', 'FortiGate-Embedded-01', '127.0.0.1', 'online')
+ON CONFLICT (device_id) DO NOTHING;
+
+-- Grant permissions
+GRANT ALL PRIVILEGES ON SCHEMA fortinet TO fortinet;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA fortinet TO fortinet;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA fortinet TO fortinet;
+EOF
+
+# Create supervisor configuration for all services
+RUN cat > /etc/supervisor/conf.d/fortinet-all.conf <<EOF
+[supervisord]
+nodaemon=true
+user=root
+logfile=/var/log/supervisor/supervisord.log
+pidfile=/var/run/supervisord.pid
+
+[program:redis]
+command=redis-server /etc/redis/redis.conf
+user=fortinet
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/redis/redis.log
+stderr_logfile=/var/log/redis/redis-error.log
+priority=100
+
+[program:postgresql]
+command=/usr/lib/postgresql/17/bin/postgres -D /var/lib/postgresql/data -c config_file=/etc/postgresql/postgresql.conf
+user=postgres
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/postgresql/postgresql.log
+stderr_logfile=/var/log/postgresql/postgresql-error.log
+priority=200
+
+[program:fortinet-app]
+command=gunicorn --bind 0.0.0.0:7777 --workers 2 --worker-class gevent --timeout 120 --chdir /app/src web_app:create_app()
+user=fortinet
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/supervisor/fortinet-app.log
+stderr_logfile=/var/log/supervisor/fortinet-app-error.log
+priority=300
+environment=PYTHONPATH="/app/src",APP_MODE="embedded",DATABASE_URL="postgresql://fortinet:fortinet123@localhost:5432/fortinet_db",REDIS_URL="redis://localhost:6379/0"
+EOF
+
+# Create embedded startup script
+RUN cat > /app/start-embedded.sh <<'EOF'
+#!/bin/bash
+set -e
+
+echo "Starting FortiGate All-in-One Container..."
+
+# Initialize PostgreSQL if needed
+if [ ! -f /var/lib/postgresql/data/PG_VERSION ]; then
+    echo "Initializing PostgreSQL database..."
+    su - postgres -c "/usr/lib/postgresql/17/bin/initdb -D /var/lib/postgresql/data --encoding=UTF8 --locale=C"
+    
+    # Start PostgreSQL temporarily for initialization
+    su - postgres -c "/usr/lib/postgresql/17/bin/pg_ctl -D /var/lib/postgresql/data -l /var/log/postgresql/postgresql.log start"
+    
+    # Wait for PostgreSQL to start
+    sleep 5
+    
+    # Run initialization script
+    su - postgres -c "psql -f /app/init-db.sql"
+    
+    # Stop PostgreSQL
+    su - postgres -c "/usr/lib/postgresql/17/bin/pg_ctl -D /var/lib/postgresql/data stop"
+fi
+
+# Create Redis data directory
+mkdir -p /app/data/redis
+chown fortinet:fortinet /app/data/redis
+
+# Set permissions
+chmod -R 755 /app/src
+chmod 777 /app/data /app/logs
+
+echo "Starting all services with supervisor..."
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/fortinet-all.conf
+EOF
+
+RUN chmod +x /app/start-embedded.sh
+
+# Create health check script
+RUN cat > /app/health-check.sh <<'EOF'
+#!/bin/bash
+
+# Check Redis
+redis-cli ping > /dev/null 2>&1 || exit 1
+
+# Check PostgreSQL
+pg_isready -h localhost -p 5432 -U fortinet > /dev/null 2>&1 || exit 1
+
+# Check Application
+curl -f http://localhost:7777/api/health > /dev/null 2>&1 || exit 1
+
+echo "All services healthy"
+EOF
+
+RUN chmod +x /app/health-check.sh
+
+# Set final permissions
+RUN chown -R fortinet:fortinet /app
+
+# Enhanced OCI Image Specification labels with multi-platform support
+LABEL org.opencontainers.image.title="FortiGate All-in-One Platform" \
+      org.opencontainers.image.description="Self-contained FortiGate platform with embedded Redis and PostgreSQL" \
+      org.opencontainers.image.authors="admin@jclee.me" \
+      org.opencontainers.image.vendor="JC Lee" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.url="https://fortinet.jclee.me" \
+      org.opencontainers.image.documentation="https://github.com/jclee/fortinet" \
+      org.opencontainers.image.source="https://github.com/jclee/fortinet" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.build.number="${BUILD_NUMBER}" \
+      org.opencontainers.image.platform="${PLATFORM}" \
+      build.platform="${TARGETPLATFORM}" \
+      build.arch="${TARGETARCH}" \
+      build.os="${TARGETOS}" \
+      build.optimized="true" \
+      build.selfhosted="true"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD /app/health-check.sh
+
+EXPOSE 7777
+
+# Use embedded startup script
+CMD ["/app/start-embedded.sh"]

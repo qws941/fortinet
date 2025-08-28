@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}ITSM - IT Service Management{% endblock %}
+
+{% block head_extra %}
+<!-- Font Awesome는 vendor에 포함됨 -->
+<style>
+.itsm-dashboard {
+    padding: 1.5rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.ticket-section {
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark, #c8002e);
+}
+
+.tickets-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.tickets-table th,
+.tickets-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+.tickets-table th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.priority-high { color: #dc3545; }
+.priority-medium { color: #fd7e14; }
+.priority-low { color: #198754; }
+
+.status-open { 
+    background: #e7f3ff; 
+    color: #0066cc; 
+    padding: 0.25rem 0.5rem; 
+    border-radius: 12px; 
+    font-size: 0.8rem;
+}
+
+.status-progress { 
+    background: #fff3cd; 
+    color: #856404; 
+    padding: 0.25rem 0.5rem; 
+    border-radius: 12px; 
+    font-size: 0.8rem;
+}
+
+.status-resolved { 
+    background: #d1edff; 
+    color: #0f5132; 
+    padding: 0.25rem 0.5rem; 
+    border-radius: 12px; 
+    font-size: 0.8rem;
+}
+
+.status-closed { 
+    background: #f8f9fa; 
+    color: #6c757d; 
+    padding: 0.25rem 0.5rem; 
+    border-radius: 12px; 
+    font-size: 0.8rem;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: var(--text-primary);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--card-bg);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="itsm-dashboard content-container">
+    <div class="page-header">
+        <h1><i class="fas fa-clipboard-list"></i> ITSM - IT Service Management <span class="badge" style="background-color: #6c757d; color: white; font-size: 0.6em;">미구현</span></h1>
+        <p>IT 서비스 요청 및 인시던트 관리 시스템</p>
+    </div>
+    
+    <!-- 통계 대시보드 -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number" id="total-tickets">0</div>
+            <div class="stat-label">총 티켓</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="open-tickets">0</div>
+            <div class="stat-label">열린 티켓</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="progress-tickets">0</div>
+            <div class="stat-label">진행 중</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="resolved-tickets">0</div>
+            <div class="stat-label">해결됨</div>
+        </div>
+    </div>
+    
+    <!-- 티켓 관리 섹션 -->
+    <div class="ticket-section">
+        <div class="section-header">
+            <h2>서비스 티켓 관리</h2>
+            <div>
+                <button class="btn-primary" onclick="openNewTicketModal()">
+                    <i class="fas fa-plus"></i> 새 티켓 생성
+                </button>
+                <a href="/itsm/firewall-policy-request" class="btn-primary" style="margin-left: 0.5rem; text-decoration: none; display: inline-block;">
+                    <i class="fas fa-shield-alt"></i> 방화벽 정책 요청
+                </a>
+            </div>
+        </div>
+        
+        <!-- 필터 -->
+        <div class="filters">
+            <select class="filter-select" id="status-filter" onchange="filterTickets()">
+                <option value="">모든 상태</option>
+                <option value="open">열림</option>
+                <option value="progress">진행 중</option>
+                <option value="resolved">해결됨</option>
+                <option value="closed">닫힘</option>
+            </select>
+            
+            <select class="filter-select" id="priority-filter" onchange="filterTickets()">
+                <option value="">모든 우선순위</option>
+                <option value="high">높음</option>
+                <option value="medium">보통</option>
+                <option value="low">낮음</option>
+            </select>
+            
+            <select class="filter-select" id="type-filter" onchange="filterTickets()">
+                <option value="">모든 유형</option>
+                <option value="incident">인시던트</option>
+                <option value="request">서비스 요청</option>
+                <option value="change">변경 요청</option>
+                <option value="problem">문제</option>
+            </select>
+        </div>
+        
+        <!-- 티켓 테이블 -->
+        <table class="tickets-table">
+            <thead>
+                <tr>
+                    <th>티켓 ID</th>
+                    <th>제목</th>
+                    <th>유형</th>
+                    <th>우선순위</th>
+                    <th>상태</th>
+                    <th>요청자</th>
+                    <th>담당자</th>
+                    <th>SR 번호</th>
+                    <th>생성일</th>
+                    <th>작업</th>
+                </tr>
+            </thead>
+            <tbody id="tickets-body">
+                <!-- 동적으로 로드됨 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 새 티켓 생성 모달 -->
+<div id="new-ticket-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeNewTicketModal()">&times;</span>
+        <h2>새 서비스 티켓 생성</h2>
+        
+        <form id="new-ticket-form" onsubmit="createTicket(event)">
+            <div class="form-group">
+                <label for="ticket-title">제목</label>
+                <input type="text" id="ticket-title" name="title" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="ticket-type">티켓 유형</label>
+                <select id="ticket-type" name="type" required>
+                    <option value="">선택하세요</option>
+                    <option value="incident">인시던트</option>
+                    <option value="request">서비스 요청</option>
+                    <option value="change">변경 요청</option>
+                    <option value="problem">문제</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="ticket-priority">우선순위</label>
+                <select id="ticket-priority" name="priority" required>
+                    <option value="">선택하세요</option>
+                    <option value="high">높음</option>
+                    <option value="medium">보통</option>
+                    <option value="low">낮음</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="ticket-requester">요청자</label>
+                <input type="text" id="ticket-requester" name="requester" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="ticket-assignee">담당자</label>
+                <input type="text" id="ticket-assignee" name="assignee">
+            </div>
+            
+            <div class="form-group">
+                <label for="ticket-sr-number">SR 번호</label>
+                <input type="text" id="ticket-sr-number" name="sr_number" placeholder="예: SR-2025-001234">
+            </div>
+            
+            <div class="form-group">
+                <label for="ticket-description">상세 설명</label>
+                <textarea id="ticket-description" name="description" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn-primary">티켓 생성</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/itsm.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,108 @@
+# =============================================================================
+# FortiGate Nextrade - Optimized Multi-Stage Dockerfile
+# Build time and size optimizations with security hardening
+# =============================================================================
+
+# Stage 1: Dependencies
+FROM python:3.11-slim as dependencies
+
+WORKDIR /tmp
+COPY requirements.txt .
+
+# Install dependencies with caching
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --no-warn-script-location -r requirements.txt
+
+# Stage 2: Builder
+FROM python:3.11-slim as builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY requirements.txt .
+
+# Compile Python files for faster startup
+RUN pip install --no-cache-dir -r requirements.txt && \
+    python -m compileall -b /usr/local/lib/python3.11
+
+# Stage 3: Final Production Image
+FROM python:3.11-slim
+
+# GitOps metadata
+ARG BUILD_DATE
+ARG BUILD_TIMESTAMP
+ARG GIT_COMMIT
+ARG GIT_SHA
+ARG GIT_BRANCH
+ARG VERSION
+ARG IMMUTABLE_TAG
+ARG REGISTRY_URL="registry.jclee.me"
+
+# Security: Create non-root user
+RUN groupadd -r fortinet && useradd -r -g fortinet -u 1000 fortinet && \
+    mkdir -p /app /app/logs /app/data && \
+    chown -R fortinet:fortinet /app
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    netcat-openbsd \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependencies from builder
+COPY --from=dependencies /root/.local /home/fortinet/.local
+COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+
+# Copy application
+WORKDIR /app
+COPY --chown=fortinet:fortinet . .
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app/src \
+    PATH=/home/fortinet/.local/bin:$PATH \
+    APP_MODE=production \
+    WEB_APP_HOST=0.0.0.0 \
+    WEB_APP_PORT=7777 \
+    # GitOps metadata
+    GIT_COMMIT=${GIT_COMMIT} \
+    GIT_SHA=${GIT_SHA} \
+    GIT_BRANCH=${GIT_BRANCH} \
+    BUILD_DATE=${BUILD_DATE} \
+    BUILD_TIMESTAMP=${BUILD_TIMESTAMP} \
+    VERSION=${VERSION} \
+    IMMUTABLE_TAG=${IMMUTABLE_TAG} \
+    REGISTRY_URL=${REGISTRY_URL}
+
+# Labels for GitOps compliance
+LABEL maintainer="FortiGate Nextrade Team" \
+      version="${VERSION}" \
+      description="FortiGate Nextrade - Optimized" \
+      gitops.immutable-tag="${IMMUTABLE_TAG}" \
+      gitops.registry="${REGISTRY_URL}" \
+      build.date="${BUILD_DATE}" \
+      build.timestamp="${BUILD_TIMESTAMP}" \
+      vcs.ref="${GIT_COMMIT}" \
+      vcs.sha="${GIT_SHA}" \
+      vcs.branch="${GIT_BRANCH}"
+
+# Security hardening
+USER fortinet
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:7777/api/health || exit 1
+
+# Expose port
+EXPOSE 7777
+
+# Use exec form for proper signal handling
+ENTRYPOINT ["python3"]
+CMD ["/app/src/main.py", "--web"]

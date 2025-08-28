@@ -1,0 +1,70 @@
+/**
+ * Navigation Click Fix
+ * Ensures all navigation elements are properly clickable
+ */
+
+/* Ensure sidebar is above other content */
+.sidebar {
+    z-index: 1000 !important;
+    position: relative;
+}
+
+/* Make all navigation links explicitly clickable */
+.nav-link,
+.nav-sublink {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Ensure links are interactive */
+.nav-link:not(.disabled),
+.nav-sublink:not(.disabled) {
+    pointer-events: auto !important;
+}
+
+/* Fix for submenu parent links */
+.has-submenu > .nav-link {
+    pointer-events: auto !important;
+}
+
+/* Ensure nav items are clickable */
+.nav-item {
+    pointer-events: auto !important;
+}
+
+/* Remove any overlays that might block clicks */
+.sidebar::before,
+.sidebar::after {
+    pointer-events: none !important;
+}
+
+/* Fix z-index stacking issues */
+.nav-menu {
+    position: relative;
+    z-index: 10;
+}
+
+/* Ensure touch targets are adequate for mobile */
+@media (max-width: 768px) {
+    .nav-link,
+    .nav-sublink {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+}
+
+/* Debug styles - uncomment to visualize clickable areas */
+/*
+.nav-link {
+    border: 1px solid red !important;
+}
+
+.nav-sublink {
+    border: 1px solid blue !important;
+}
+*/

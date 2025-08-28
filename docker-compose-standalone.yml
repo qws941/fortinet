@@ -1,0 +1,91 @@
+# =============================================================================
+# FortiGate Nextrade - Standalone Services Configuration
+# 포트 설정: Fortinet (30777), Redis (30778), PostgreSQL (30779)
+# 완전 독립 실행 - 서비스 간 의존성 없음
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # Redis Cache Service - 독립 실행
+  fortinet-redis:
+    image: registry.jclee.me/fortinet-redis:latest
+    container_name: fortinet-redis
+    ports:
+      - "30778:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - fortinet-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped
+
+  # PostgreSQL Database Service - 독립 실행
+  fortinet-postgresql:
+    image: registry.jclee.me/fortinet-postgresql:latest
+    container_name: fortinet-postgresql
+    ports:
+      - "30779:5432"
+    environment:
+      POSTGRES_DB: fortinet_db
+      POSTGRES_USER: fortinet
+      POSTGRES_PASSWORD: fortinet123
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - fortinet-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fortinet"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped
+
+  # Main FortiGate Application - 독립 실행
+  fortinet:
+    image: registry.jclee.me/fortinet:latest
+    container_name: fortinet
+    ports:
+      - "30777:7777"
+    environment:
+      - APP_MODE=production
+      - WEB_APP_PORT=7777
+      - REDIS_HOST=fortinet-redis
+      - REDIS_PORT=6379
+      - DATABASE_URL=postgresql://fortinet:fortinet123@fortinet-postgresql:5432/fortinet_db
+      - PYTHONPATH=/app/src
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - fortinet-data:/app/data
+      - fortinet-logs:/app/logs
+    networks:
+      - fortinet-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7777/api/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  fortinet-network:
+    name: fortinet-network
+    driver: bridge
+
+volumes:
+  redis-data:
+    name: fortinet-redis-data
+  postgres-data:
+    name: fortinet-postgres-data
+  fortinet-data:
+    name: fortinet-data
+  fortinet-logs:
+    name: fortinet-logs

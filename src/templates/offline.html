@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오프라인 - FortiGate Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #1a202c;
+            color: #f7fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .offline-container {
+            text-align: center;
+            max-width: 500px;
+        }
+        
+        .offline-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(229, 0, 56, 0.1);
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .offline-icon::before {
+            content: '📡';
+            font-size: 60px;
+            filter: grayscale(100%);
+            opacity: 0.5;
+        }
+        
+        .offline-icon::after {
+            content: '❌';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            font-size: 40px;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #E50038;
+        }
+        
+        p {
+            font-size: 1.125rem;
+            color: #a0aec0;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .offline-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #E50038;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #b8002d;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: #E50038;
+            border: 2px solid #E50038;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(229, 0, 56, 0.1);
+        }
+        
+        .offline-info {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .offline-info h3 {
+            font-size: 1.125rem;
+            margin-bottom: 0.75rem;
+            color: #f7fafc;
+        }
+        
+        .offline-info ul {
+            list-style: none;
+            text-align: left;
+        }
+        
+        .offline-info li {
+            padding: 0.5rem 0;
+            color: #a0aec0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .offline-info li::before {
+            content: '✓';
+            color: #48bb78;
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            p {
+                font-size: 1rem;
+            }
+            
+            .offline-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon"></div>
+        
+        <h1>오프라인 상태입니다</h1>
+        
+        <p>현재 네트워크에 연결되어 있지 않습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.</p>
+        
+        <div class="offline-actions">
+            <button class="btn-primary" onclick="window.location.reload()">
+                다시 시도
+            </button>
+            <button class="btn-secondary" onclick="window.history.back()">
+                이전 페이지
+            </button>
+        </div>
+        
+        <div class="offline-info">
+            <h3>오프라인에서도 사용 가능한 기능:</h3>
+            <ul>
+                <li>이전에 캐시된 페이지 보기</li>
+                <li>저장된 분석 결과 확인</li>
+                <li>다운로드한 보고서 열람</li>
+                <li>기본 네비게이션</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // Check for connection periodically
+        setInterval(() => {
+            fetch('/api/health', { method: 'HEAD' })
+                .then(() => {
+                    // Connection restored
+                    window.location.reload();
+                })
+                .catch(() => {
+                    // Still offline
+                });
+        }, 5000);
+        
+        // Listen for online event
+        window.addEventListener('online', () => {
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>

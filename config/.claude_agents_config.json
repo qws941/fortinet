@@ -1,0 +1,61 @@
+{
+  "project_name": "fortinet",
+  "project_type": "python_flask_gitops",
+  "agents": {
+    "primary_agents": {
+      "analyzer-project-state": {
+        "description": "FortiGate Nextrade 프로젝트 상태 분석 및 건강도 체크",
+        "use_cases": ["git 상태 분석", "배포 건강도 체크", "코드 품질 평가", "테스트 커버리지 분석"],
+        "triggers": ["프로젝트 시작시", "배포 전후", "정기 건강도 체크"],
+        "tools": ["Read", "Bash", "Grep", "mcp__eslint__lint-files"]
+      },
+      "cleaner-code-quality": {
+        "description": "Python 코드 품질 최적화 및 정리",
+        "use_cases": ["Black/isort 포맷팅", "flake8 린팅", "중복 코드 제거", "임포트 정리"],
+        "triggers": ["코드 정리 요청", "배포 전 품질 체크", "정기 코드 정리"],
+        "tools": ["Edit", "MultiEdit", "Bash", "mcp__eslint__lint-files"]
+      },
+      "runner-test-automation": {
+        "description": "pytest 기반 테스트 자동화 및 커버리지 관리",
+        "use_cases": ["단위/통합 테스트 실행", "커버리지 리포트 생성", "테스트 마커별 실행", "실패 테스트 분석"],
+        "triggers": ["테스트 실행 요청", "배포 전 검증", "커버리지 확인"],
+        "tools": ["Bash", "Read", "Grep", "mcp__code-runner__run-code"]
+      },
+      "specialist-deployment-infra": {
+        "description": "GitOps 기반 배포 및 Kubernetes 인프라 관리",
+        "use_cases": ["GitOps 파이프라인 관리", "ArgoCD 동기화", "Docker 이미지 빌드", "Helm 차트 업데이트"],
+        "triggers": ["배포 요청", "인프라 문제 해결", "GitOps 설정 변경"],
+        "tools": ["Bash", "Read", "Edit", "mcp__docker__create-container"]
+      }
+    },
+    "specialized_agents": {
+      "general-purpose": {
+        "description": "복잡한 멀티태스크 및 일반 목적 작업",
+        "use_cases": ["파일 구조 재편성", "복잡한 리팩토링", "다중 모듈 통합 작업"],
+        "triggers": ["복합 작업 요청", "구조 개편", "대규모 변경"]
+      }
+    }
+  },
+  "workflow_patterns": {
+    "development": {
+      "sequence": ["analyzer-project-state", "cleaner-code-quality", "runner-test-automation"],
+      "description": "개발 워크플로우: 상태 분석 → 코드 정리 → 테스트 실행"
+    },
+    "deployment": {
+      "sequence": ["runner-test-automation", "cleaner-code-quality", "specialist-deployment-infra"],
+      "description": "배포 워크플로우: 테스트 검증 → 코드 품질 → GitOps 배포"
+    },
+    "maintenance": {
+      "sequence": ["analyzer-project-state", "cleaner-code-quality"],
+      "description": "유지보수 워크플로우: 프로젝트 분석 → 코드 정리"
+    }
+  },
+  "project_context": {
+    "architecture": "Flask Blueprint + GitOps",
+    "testing_framework": "pytest",
+    "deployment_target": "NodePort 30777",
+    "ci_cd": "GitHub Actions + ArgoCD",
+    "code_quality_tools": ["black", "isort", "flake8"],
+    "container_registry": "registry.jclee.me/fortinet"
+  }
+}

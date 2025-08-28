@@ -1,0 +1,170 @@
+# ArgoCD MSA Project Configuration
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: fortinet-msa-project
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "FortiNet MSA GitOps Project"
+  
+  # Source repositories
+  sourceRepos:
+    - 'https://charts.jclee.me'
+    - 'https://github.com/jclee94/fortinet.git'
+    - 'https://istio-release.storage.googleapis.com/charts'
+    - 'https://prometheus-community.github.io/helm-charts'
+  
+  # Destination clusters and namespaces
+  destinations:
+    # Production
+    - namespace: microservices
+      server: https://kubernetes.default.svc
+    - namespace: istio-system
+      server: https://kubernetes.default.svc
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+    
+    # Staging
+    - namespace: microservices-staging
+      server: https://kubernetes.default.svc
+    - namespace: istio-system-staging
+      server: https://kubernetes.default.svc
+    - namespace: monitoring-staging
+      server: https://kubernetes.default.svc
+    
+    # Development
+    - namespace: microservices-dev
+      server: https://kubernetes.default.svc
+    - namespace: istio-system-dev
+      server: https://kubernetes.default.svc
+    - namespace: monitoring-dev
+      server: https://kubernetes.default.svc
+  
+  # Cluster resource whitelist
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: "rbac.authorization.k8s.io"
+      kind: ClusterRole
+    - group: "rbac.authorization.k8s.io"
+      kind: ClusterRoleBinding
+    - group: "apiextensions.k8s.io"
+      kind: CustomResourceDefinition
+    - group: "admissionregistration.k8s.io"
+      kind: MutatingWebhookConfiguration
+    - group: "admissionregistration.k8s.io"
+      kind: ValidatingWebhookConfiguration
+    - group: "security.istio.io"
+      kind: PeerAuthentication
+    - group: "networking.istio.io"
+      kind: Gateway
+    - group: "networking.istio.io"
+      kind: VirtualService
+    - group: "install.istio.io"
+      kind: IstioOperator
+  
+  # Namespace resource whitelist
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: ConfigMap
+    - group: ""
+      kind: Secret
+    - group: ""
+      kind: Service
+    - group: ""
+      kind: ServiceAccount
+    - group: ""
+      kind: PersistentVolumeClaim
+    - group: "apps"
+      kind: Deployment
+    - group: "apps"
+      kind: StatefulSet
+    - group: "apps"
+      kind: DaemonSet
+    - group: "networking.k8s.io"
+      kind: Ingress
+    - group: "networking.k8s.io"
+      kind: NetworkPolicy
+    - group: "policy"
+      kind: PodDisruptionBudget
+    - group: "monitoring.coreos.com"
+      kind: ServiceMonitor
+    - group: "monitoring.coreos.com"
+      kind: PrometheusRule
+    - group: "networking.istio.io"
+      kind: DestinationRule
+    - group: "networking.istio.io"
+      kind: Sidecar
+    - group: "security.istio.io"
+      kind: AuthorizationPolicy
+  
+  # RBAC roles
+  roles:
+    # MSA Developer Role
+    - name: msa-developer
+      description: "MSA 개발자 역할"
+      policies:
+        - p, proj:fortinet-msa-project:msa-developer, applications, get, fortinet-msa-project/*, allow
+        - p, proj:fortinet-msa-project:msa-developer, applications, sync, fortinet-msa-project/*, allow
+        - p, proj:fortinet-msa-project:msa-developer, applications, action/*, fortinet-msa-project/*, allow
+        - p, proj:fortinet-msa-project:msa-developer, repositories, get, *, allow
+        - p, proj:fortinet-msa-project:msa-developer, repositories, create, *, allow
+        - p, proj:fortinet-msa-project:msa-developer, repositories, update, *, allow
+        - p, proj:fortinet-msa-project:msa-developer, repositories, delete, *, allow
+      groups:
+        - fortinet-msa-developers
+    
+    # MSA Admin Role
+    - name: msa-admin
+      description: "MSA 관리자 역할"
+      policies:
+        - p, proj:fortinet-msa-project:msa-admin, applications, *, fortinet-msa-project/*, allow
+        - p, proj:fortinet-msa-project:msa-admin, repositories, *, *, allow
+        - p, proj:fortinet-msa-project:msa-admin, clusters, *, *, allow
+        - p, proj:fortinet-msa-project:msa-admin, exec, *, *, allow
+      groups:
+        - fortinet-msa-admins
+        - jclee-admins
+  
+  # Sync windows
+  syncWindows:
+    - kind: allow
+      schedule: "0 6 * * *"
+      duration: 4h
+      applications:
+        - "*-development"
+      namespaces:
+        - microservices-dev
+        - monitoring-dev
+      clusters:
+        - https://kubernetes.default.svc
+    - kind: allow
+      schedule: "0 20 * * 1-5"
+      duration: 2h
+      applications:
+        - "*-staging"
+      namespaces:
+        - microservices-staging
+        - monitoring-staging
+      clusters:
+        - https://kubernetes.default.svc
+    - kind: deny
+      schedule: "0 0 * * 6,0"
+      duration: 24h
+      applications:
+        - "*-production"
+      namespaces:
+        - microservices
+        - monitoring
+      clusters:
+        - https://kubernetes.default.svc
+  
+  # Signature keys for verification
+  signatureKeys:
+    - keyID: jclee-signing-key
+  
+  # Orphaned resources monitoring
+  orphanedResources:
+    warn: true

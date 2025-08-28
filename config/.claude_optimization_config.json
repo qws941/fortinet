@@ -1,0 +1,82 @@
+{
+  "performance_optimization": {
+    "timeouts": {
+      "bash_commands": 120000,
+      "test_execution": 300000,
+      "deployment_pipeline": 600000,
+      "health_checks": 30000
+    },
+    "parallel_execution": {
+      "enabled": true,
+      "max_concurrent_tasks": 4,
+      "parallel_workflows": [
+        "git status && git diff && git log -5 --oneline",
+        "pytest tests/unit/ -x && pytest tests/integration/ -x",
+        "flake8 src/ && black src/ --check && isort src/ --check-only"
+      ]
+    },
+    "caching_strategies": {
+      "test_results": {
+        "enabled": true,
+        "cache_duration": "1 hour",
+        "cache_key_pattern": "test_results_{git_hash}"
+      },
+      "dependency_analysis": {
+        "enabled": true,
+        "cache_duration": "24 hours",
+        "invalidate_on": ["requirements.txt", "pyproject.toml"]
+      },
+      "code_analysis": {
+        "enabled": true,
+        "cache_duration": "30 minutes",
+        "invalidate_on": ["src/**/*.py"]
+      }
+    },
+    "progress_tracking": {
+      "enabled": true,
+      "granularity": "task_level",
+      "notifications": {
+        "completion_threshold": 5,
+        "failure_threshold": 1,
+        "progress_updates": true
+      }
+    }
+  },
+  "resource_management": {
+    "memory_optimization": {
+      "large_file_threshold": "10MB",
+      "chunked_processing": true,
+      "garbage_collection": "aggressive"
+    },
+    "io_optimization": {
+      "batch_file_operations": true,
+      "async_where_possible": false,
+      "file_streaming": true
+    }
+  },
+  "project_specific_optimizations": {
+    "fortinet_patterns": {
+      "flask_app_startup": {
+        "command": "cd src && python3 main.py --web",
+        "expected_startup_time": 5000,
+        "health_check_endpoint": "/api/health"
+      },
+      "test_optimization": {
+        "skip_slow_tests_in_dev": true,
+        "parallel_test_execution": false,
+        "coverage_threshold": 18.24
+      },
+      "gitops_pipeline": {
+        "monitor_frequency": 30000,
+        "auto_health_check": true,
+        "pipeline_timeout": 600000
+      }
+    }
+  },
+  "intelligent_defaults": {
+    "auto_detect_framework": true,
+    "adaptive_timeouts": true,
+    "context_aware_caching": true,
+    "smart_error_recovery": true
+  }
+}

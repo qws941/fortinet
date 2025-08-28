@@ -1,0 +1,408 @@
+{
+  "info": {
+    "name": "FortiGate API Test Collection",
+    "description": "FortiGate API 기능 검증을 위한 Postman 컬렉션",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "value",
+        "value": "{{fortigate_api_token}}",
+        "type": "string"
+      },
+      {
+        "key": "key",
+        "value": "Authorization",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "fortigate_host",
+      "value": "192.168.1.100",
+      "type": "string"
+    },
+    {
+      "key": "fortigate_port",
+      "value": "443",
+      "type": "string"
+    },
+    {
+      "key": "fortigate_api_token",
+      "value": "your-api-token-here",
+      "type": "string"
+    },
+    {
+      "key": "base_url",
+      "value": "https://{{fortigate_host}}:{{fortigate_port}}/api/v2",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "System Status",
+      "item": [
+        {
+          "name": "Get System Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cmdb/system/status",
+              "host": ["{{base_url}}"],
+              "path": ["cmdb", "system", "status"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has required fields\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('results');",
+                  "    pm.expect(jsonData.results).to.have.property('version');",
+                  "    pm.expect(jsonData.results).to.have.property('serial');",
+                  "});",
+                  "",
+                  "pm.test(\"Response time is less than 2000ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get System Global Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cmdb/system/global",
+              "host": ["{{base_url}}"],
+              "path": ["cmdb", "system", "global"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Firewall Policies",
+      "item": [
+        {
+          "name": "Get All Policies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cmdb/firewall/policy",
+              "host": ["{{base_url}}"],
+              "path": ["cmdb", "firewall", "policy"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains policy list\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('results');",
+                  "    pm.expect(jsonData.results).to.be.an('array');",
+                  "});",
+                  "",
+                  "if (pm.response.json().results.length > 0) {",
+                  "    pm.collectionVariables.set(\"policy_id\", pm.response.json().results[0].policyid);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Specific Policy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cmdb/firewall/policy/{{policy_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["cmdb", "firewall", "policy", "{{policy_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create New Policy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"json\": {\n    \"name\": \"Test_Policy_{{$timestamp}}\",\n    \"srcintf\": [{\"name\": \"port1\"}],\n    \"dstintf\": [{\"name\": \"port2\"}],\n    \"srcaddr\": [{\"name\": \"all\"}],\n    \"dstaddr\": [{\"name\": \"all\"}],\n    \"action\": \"accept\",\n    \"schedule\": \"always\",\n    \"service\": [{\"name\": \"ALL\"}],\n    \"nat\": \"enable\",\n    \"status\": \"enable\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cmdb/firewall/policy",
+              "host": ["{{base_url}}"],
+              "path": ["cmdb", "firewall", "policy"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Policy created successfully\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.mkey) {",
+                  "        pm.collectionVariables.set(\"created_policy_id\", jsonData.mkey);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Network Interfaces",
+      "item": [
+        {
+          "name": "Get All Interfaces",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cmdb/system/interface",
+              "host": ["{{base_url}}"],
+              "path": ["cmdb", "system", "interface"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains interfaces\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('results');",
+                  "    pm.expect(jsonData.results).to.be.an('array');",
+                  "    pm.expect(jsonData.results.length).to.be.greaterThan(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Interface Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/monitor/system/interface",
+              "host": ["{{base_url}}"],
+              "path": ["monitor", "system", "interface"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Security Profiles",
+      "item": [
+        {
+          "name": "Get Antivirus Profiles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cmdb/antivirus/profile",
+              "host": ["{{base_url}}"],
+              "path": ["cmdb", "antivirus", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get IPS Profiles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cmdb/ips/sensor",
+              "host": ["{{base_url}}"],
+              "path": ["cmdb", "ips", "sensor"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Web Filter Profiles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cmdb/webfilter/profile",
+              "host": ["{{base_url}}"],
+              "path": ["cmdb", "webfilter", "profile"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Logs and Monitoring",
+      "item": [
+        {
+          "name": "Get Traffic Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/log/traffic/forward",
+              "host": ["{{base_url}}"],
+              "path": ["log", "traffic", "forward"],
+              "query": [
+                {
+                  "key": "rows",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get System Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/log/event/system",
+              "host": ["{{base_url}}"],
+              "path": ["log", "event", "system"],
+              "query": [
+                {
+                  "key": "rows",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get CPU Usage",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/monitor/system/resource/usage",
+              "host": ["{{base_url}}"],
+              "path": ["monitor", "system", "resource", "usage"],
+              "query": [
+                {
+                  "key": "resource",
+                  "value": "cpu"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "VPN",
+      "item": [
+        {
+          "name": "Get IPSec Tunnels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cmdb/vpn.ipsec/phase1-interface",
+              "host": ["{{base_url}}"],
+              "path": ["cmdb", "vpn.ipsec", "phase1-interface"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get SSL-VPN Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/cmdb/vpn.ssl/settings",
+              "host": ["{{base_url}}"],
+              "path": ["cmdb", "vpn.ssl", "settings"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request script to handle authentication",
+          "// Add any global pre-request logic here"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "// Log response time for all requests",
+          "console.log(`Response time: ${pm.response.responseTime}ms`);"
+        ]
+      }
+    }
+  ]
+}

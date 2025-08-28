@@ -1,0 +1,485 @@
+{% extends "base.html" %}
+
+{% block title %}텍스트 오버플로우 테스트{% endblock %}
+
+{% block extra_css %}
+<style>
+/* 텍스트 오버플로우 테스트 전용 스타일 */
+.overflow-test-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.test-section {
+    margin-bottom: 40px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.test-title {
+    color: #2c3e50;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+/* 테스트 케이스별 스타일 */
+.test-case {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.test-case h4 {
+    color: #e74c3c;
+    margin-bottom: 10px;
+}
+
+/* 1. 긴 텍스트 오버플로우 테스트 */
+.long-text-container {
+    width: 300px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.text-wrap {
+    word-wrap: break-word;
+    word-break: break-all;
+}
+
+.text-scroll {
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+/* 2. 테이블 오버플로우 테스트 */
+.table-test {
+    width: 100%;
+    max-width: 600px;
+    border-collapse: collapse;
+}
+
+.table-test th,
+.table-test td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.table-test th {
+    background-color: #f2f2f2;
+}
+
+.table-fixed-col {
+    width: 100px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 3. 카드형 레이아웃 오버플로우 테스트 */
+.card-container {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.test-card {
+    width: 250px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card-content {
+    max-height: 60px;
+    overflow: hidden;
+    line-height: 1.4;
+    position: relative;
+}
+
+.card-content::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 30px;
+    height: 20px;
+    background: linear-gradient(to right, transparent, white);
+}
+
+/* 4. 네비게이션 메뉴 오버플로우 테스트 */
+.nav-test {
+    background: #34495e;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 20px;
+}
+
+.nav-item {
+    color: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    background: #2c3e50;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+/* 5. 반응형 오버플로우 테스트 */
+.responsive-container {
+    width: 100%;
+    max-width: 500px;
+    border: 1px solid #ccc;
+    padding: 15px;
+    resize: horizontal;
+    overflow: auto;
+}
+
+.responsive-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 6. 다중 라인 오버플로우 테스트 */
+.multiline-ellipsis {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
+    max-height: 4.2em; /* line-height * line-clamp */
+}
+
+/* 수정 필요한 스타일 (문제 케이스) */
+.problem-case {
+    background: #ffebee;
+    border-left: 4px solid #e74c3c;
+}
+
+.fixed-case {
+    background: #e8f5e8;
+    border-left: 4px solid #27ae60;
+}
+
+/* 실제 애플리케이션에서 발생할 수 있는 문제 시나리오 */
+.device-name-long {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.policy-description {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ip-address-cell {
+    font-family: monospace;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="overflow-test-container">
+    <h1 class="test-title">텍스트 오버플로우 테스트 페이지</h1>
+    <p class="text-muted">다양한 텍스트 오버플로우 시나리오를 테스트하고 해결 방안을 확인합니다.</p>
+
+    <!-- 1. 긴 텍스트 오버플로우 테스트 -->
+    <div class="test-section">
+        <h2 class="test-title">1. 긴 텍스트 처리 방법</h2>
+        
+        <div class="test-case problem-case">
+            <h4>❌ 문제: 텍스트가 컨테이너를 벗어남</h4>
+            <div class="long-text-container">
+                FortiGate-HEADQUARTERS-MAIN-FIREWALL-DEVICE-001-PRODUCTION-ENVIRONMENT-NETWORK-SECURITY-APPLIANCE
+            </div>
+        </div>
+
+        <div class="test-case fixed-case">
+            <h4>✅ 해결: 말줄임표(ellipsis) 적용</h4>
+            <div class="long-text-container text-ellipsis">
+                FortiGate-HEADQUARTERS-MAIN-FIREWALL-DEVICE-001-PRODUCTION-ENVIRONMENT-NETWORK-SECURITY-APPLIANCE
+            </div>
+        </div>
+
+        <div class="test-case fixed-case">
+            <h4>✅ 해결: 단어 단위 줄바꿈</h4>
+            <div class="long-text-container text-wrap">
+                FortiGate-HEADQUARTERS-MAIN-FIREWALL-DEVICE-001-PRODUCTION-ENVIRONMENT-NETWORK-SECURITY-APPLIANCE
+            </div>
+        </div>
+
+        <div class="test-case fixed-case">
+            <h4>✅ 해결: 가로 스크롤</h4>
+            <div class="long-text-container text-scroll">
+                FortiGate-HEADQUARTERS-MAIN-FIREWALL-DEVICE-001-PRODUCTION-ENVIRONMENT-NETWORK-SECURITY-APPLIANCE
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 테이블 오버플로우 테스트 -->
+    <div class="test-section">
+        <h2 class="test-title">2. 테이블 열 오버플로우 처리</h2>
+        
+        <table class="table-test">
+            <thead>
+                <tr>
+                    <th class="table-fixed-col">장치명</th>
+                    <th class="table-fixed-col">IP 주소</th>
+                    <th class="table-fixed-col">상태</th>
+                    <th>설명</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="table-fixed-col device-name-long">FortiGate-HEADQUARTERS-MAIN-001</td>
+                    <td class="table-fixed-col ip-address-cell">192.168.100.1</td>
+                    <td class="table-fixed-col">온라인</td>
+                    <td class="policy-description">본사 메인 방화벽 장치로 모든 인터넷 트래픽을 제어하며 고급 위협 방어 기능을 제공합니다</td>
+                </tr>
+                <tr>
+                    <td class="table-fixed-col device-name-long">FortiGate-DMZ-EXTERNAL-PROTECTION-002</td>
+                    <td class="table-fixed-col ip-address-cell">172.16.10.1</td>
+                    <td class="table-fixed-col">오프라인</td>
+                    <td class="policy-description">DMZ 구간 보안을 담당하는 방화벽으로 웹 서버와 메일 서버 보호를 위한 정책이 적용되어 있습니다</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 3. 카드형 레이아웃 오버플로우 테스트 -->
+    <div class="test-section">
+        <h2 class="test-title">3. 카드형 레이아웃 텍스트 처리</h2>
+        
+        <div class="card-container">
+            <div class="test-card">
+                <div class="card-title">FortiGate-HEADQUARTERS-MAIN-FIREWALL-DEVICE-001</div>
+                <div class="card-content">
+                    본사 메인 방화벽 장치로 모든 인터넷 트래픽을 제어하며 고급 위협 방어 기능을 제공합니다. 
+                    IPS, 안티바이러스, 웹 필터링, 애플리케이션 제어 등의 보안 기능이 활성화되어 있으며 
+                    24시간 모니터링을 통해 네트워크 보안을 유지합니다.
+                </div>
+            </div>
+            
+            <div class="test-card">
+                <div class="card-title">FortiGate-DMZ-PROTECTION</div>
+                <div class="card-content">
+                    DMZ 구간의 서버들을 보호하는 방화벽으로 웹 서버, 메일 서버, DNS 서버에 대한 접근을 제어합니다.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. 네비게이션 메뉴 오버플로우 테스트 -->
+    <div class="test-section">
+        <h2 class="test-title">4. 네비게이션 메뉴 텍스트 처리</h2>
+        
+        <nav class="nav-test">
+            <ul class="nav-list">
+                <li class="nav-item">네트워크 모니터링</li>
+                <li class="nav-item">방화벽 정책 관리</li>
+                <li class="nav-item">보안 이벤트 분석</li>
+                <li class="nav-item">시스템 성능 최적화</li>
+                <li class="nav-item">사용자 권한 관리</li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- 5. 반응형 오버플로우 테스트 -->
+    <div class="test-section">
+        <h2 class="test-title">5. 반응형 텍스트 처리 (컨테이너 크기 조절 가능)</h2>
+        
+        <div class="responsive-container">
+            <div class="responsive-text">
+                FortiGate Nextrade 통합 네트워크 관리 시스템 - 실시간 모니터링 및 정책 관리
+            </div>
+            <p><small>위 컨테이너의 우측 하단을 드래그하여 크기를 조절해보세요.</small></p>
+        </div>
+    </div>
+
+    <!-- 6. 다중 라인 오버플로우 테스트 -->
+    <div class="test-section">
+        <h2 class="test-title">6. 다중 라인 텍스트 말줄임</h2>
+        
+        <div class="test-case fixed-case">
+            <h4>✅ 3줄 제한 + 말줄임표</h4>
+            <div class="multiline-ellipsis" style="width: 300px;">
+                FortiGate Nextrade는 네트워크 보안을 위한 통합 관리 시스템입니다. 
+                실시간 모니터링, 정책 관리, 위협 탐지, 성능 분석 등의 기능을 제공하며 
+                관리자가 효율적으로 네트워크 보안을 관리할 수 있도록 지원합니다.
+                추가적으로 자동화된 보고서 생성, 알림 시스템, 사용자 권한 관리 등의 
+                고급 기능도 포함되어 있어 기업 환경에서 필요한 모든 요구사항을 충족합니다.
+            </div>
+        </div>
+    </div>
+
+    <!-- 실제 애플리케이션 시나리오 -->
+    <div class="test-section">
+        <h2 class="test-title">7. 실제 애플리케이션 시나리오</h2>
+        
+        <div class="test-case">
+            <h4>FortiGate 장치 목록 테이블</h4>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th style="width: 200px;">장치명</th>
+                        <th style="width: 120px;">IP 주소</th>
+                        <th style="width: 80px;">상태</th>
+                        <th>정책 설명</th>
+                        <th style="width: 100px;">작업</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="device-name-long">FortiGate-HEADQUARTERS-MAIN-SECURITY-APPLIANCE-001</div>
+                        </td>
+                        <td>
+                            <div class="ip-address-cell">192.168.100.1</div>
+                        </td>
+                        <td><span class="badge bg-success">온라인</span></td>
+                        <td>
+                            <div class="policy-description">
+                                본사 메인 방화벽으로 모든 인터넷 트래픽 제어 및 고급 위협 방어 기능 제공
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary">관리</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="device-name-long">FortiGate-DMZ-WEB-SERVER-PROTECTION-FIREWALL-002</div>
+                        </td>
+                        <td>
+                            <div class="ip-address-cell">172.16.10.1</div>
+                        </td>
+                        <td><span class="badge bg-warning">경고</span></td>
+                        <td>
+                            <div class="policy-description">
+                                DMZ 구간 웹 서버 보호를 위한 전용 방화벽으로 HTTP/HTTPS 트래픽 필터링 담당
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-warning">점검</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- CSS 참고 코드 -->
+    <div class="test-section">
+        <h2 class="test-title">8. 권장 CSS 패턴</h2>
+        
+        <div class="test-case">
+            <h4>기본 텍스트 오버플로우 처리</h4>
+            <pre><code>/* 한 줄 말줄임표 */
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 다중 라인 말줄임표 */
+.text-multiline-ellipsis {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* 단어 단위 줄바꿈 */
+.text-break-word {
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+/* 테이블 열 고정 너비 */
+.table-fixed-width {
+    width: 150px;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}</code></pre>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 텍스트 오버플로우 테스트 관련 JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // 긴 텍스트에 툴팁 추가
+    const ellipsisElements = document.querySelectorAll('.text-ellipsis, .device-name-long, .policy-description');
+    
+    ellipsisElements.forEach(element => {
+        // 텍스트가 잘렸는지 확인
+        if (element.scrollWidth > element.clientWidth) {
+            element.title = element.textContent || element.innerText;
+            element.style.cursor = 'help';
+        }
+    });
+    
+    // 반응형 컨테이너 크기 변경 이벤트
+    const responsiveContainer = document.querySelector('.responsive-container');
+    if (responsiveContainer) {
+        const resizeObserver = new ResizeObserver(entries => {
+            entries.forEach(entry => {
+                const textElement = entry.target.querySelector('.responsive-text');
+                if (textElement && textElement.scrollWidth > textElement.clientWidth) {
+                    textElement.title = textElement.textContent;
+                } else if (textElement) {
+                    textElement.removeAttribute('title');
+                }
+            });
+        });
+        
+        resizeObserver.observe(responsiveContainer);
+    }
+    
+    console.log('텍스트 오버플로우 테스트 페이지가 로드되었습니다.');
+});
+</script>
+{% endblock %}

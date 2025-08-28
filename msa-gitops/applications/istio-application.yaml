@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: istio-${ENVIRONMENT}
+  namespace: argocd
+  labels:
+    app: istio
+    service-type: infrastructure
+    env: ${ENVIRONMENT}
+    managed-by: msa-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: fortinet-msa-project
+  source:
+    repoURL: https://istio-release.storage.googleapis.com/charts
+    chart: istiod
+    targetRevision: "1.20.2"
+    helm:
+      values: |
+        global:
+          meshID: mesh-${ENVIRONMENT}
+          network: network-${ENVIRONMENT}
+        pilot:
+          env:
+            EXTERNAL_ISTIOD: false
+        telemetry:
+          v2:
+            enabled: true
+            prometheus:
+              configOverride:
+                metric_relabeling_configs:
+                  - source_labels: [__name__]
+                    regex: "istio_.*"
+                    target_label: __tmp_istio_metric
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: istio-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

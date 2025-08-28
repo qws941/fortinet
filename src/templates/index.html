@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Nextrade Network Monitor{% endblock %}
+
+{% block head_extra %}
+<!-- All styles are now in the unified CSS system -->
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="fas fa-shield-alt"></i>
+        FortiGate 정책 분석
+    </h1>
+    <p class="page-description">네트워크 트래픽 경로를 실시간으로 분석하고 FortiGate 방화벽 정책을 통한 패킷 흐름을 추적합니다.</p>
+</div>
+
+<!-- Analysis Section -->
+<section id="analysis-section" class="section">
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">방화벽 정책 분석</h3>
+                <div class="button-group">
+                    <button class="button button-secondary" id="quick-test">
+                        <i class="fas fa-flask"></i> 빠른 테스트
+                    </button>
+                    <button class="button button-outline" id="clear-form">
+                        <i class="fas fa-eraser"></i> 초기화
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <form id="analysis-form">
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="src_ip" class="form-label">출발지 IP 주소</label>
+                                <input type="text" class="form-control" id="src_ip" name="src_ip" 
+                                       placeholder="예: {{ example_src_ip }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="dst_ip" class="form-label">목적지 IP 주소</label>
+                                <input type="text" class="form-control" id="dst_ip" name="dst_ip" 
+                                       placeholder="예: {{ example_dst_ip }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="src_port" class="form-label">출발지 포트 (선택)</label>
+                                <input type="number" class="form-control" id="src_port" name="src_port" 
+                                       placeholder="예: 80" min="1" max="65535">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="dst_port" class="form-label">목적지 포트 (선택)</label>
+                                <input type="number" class="form-control" id="dst_port" name="dst_port" 
+                                       placeholder="예: 443" min="1" max="65535">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="protocol" class="form-label">프로토콜</label>
+                                <select class="form-control" id="protocol" name="protocol">
+                                    <option value="TCP">TCP</option>
+                                    <option value="UDP">UDP</option>
+                                    <option value="ICMP">ICMP</option>
+                                    <option value="ANY">ANY</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="analysis_type" class="form-label">분석 유형</label>
+                                <select class="form-control" id="analysis_type" name="analysis_type">
+                                    <option value="path">경로 분석</option>
+                                    <option value="policy">정책 매칭</option>
+                                    <option value="both">전체 분석</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="submit" class="button button-primary">
+                            <i class="fas fa-search"></i>
+                            분석 시작
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Results Section -->
+<section id="results-section" class="section" style="display: none;">
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">분석 결과</h3>
+                <div class="button-group">
+                    <button class="button button-outline" id="export-results">
+                        <i class="fas fa-download"></i> 결과 내보내기
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="analysis-results">
+                    <div class="loading-state">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">분석 중...</span>
+                        </div>
+                        <div class="loading-text">네트워크 경로를 분석하고 있습니다...</div>
+                        <div class="loading-subtext">잠시만 기다려주세요</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section REMOVED per user request -->
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('analysis-form');
+    const resultsSection = document.getElementById('results-section');
+    const resultsDiv = document.getElementById('analysis-results');
+    
+    // Quick test button
+    document.getElementById('quick-test').addEventListener('click', function() {
+        document.getElementById('src_ip').value = '{{ example_src_ip }}';
+        document.getElementById('dst_ip').value = '{{ example_dst_ip }}';
+        document.getElementById('dst_port').value = '80';
+        document.getElementById('protocol').value = 'TCP';
+        document.getElementById('analysis_type').value = 'both';
+    });
+    
+    // Clear form button
+    document.getElementById('clear-form').addEventListener('click', function() {
+        form.reset();
+    });
+    
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Show results section
+        resultsSection.style.display = 'block';
+        resultsSection.scrollIntoView({ behavior: 'smooth' });
+        
+        // Show loading state
+        resultsDiv.innerHTML = `
+            <div class="loading-state">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">분석 중...</span>
+                </div>
+                <div class="loading-text">네트워크 경로를 분석하고 있습니다...</div>
+                <div class="loading-subtext">잠시만 기다려주세요</div>
+            </div>
+        `;
+        
+        // Get form data
+        const formData = new FormData(form);
+        const data = {};
+        for (let [key, value] of formData.entries()) {
+            if (value) data[key] = value;
+        }
+        
+        // Make API call
+        fetch('/api/analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayResults(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultsDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    분석 중 오류가 발생했습니다: ${error.message}
+                </div>
+            `;
+        });
+    });
+    
+    function displayResults(data) {
+        if (data.success) {
+            let html = '<div class="analysis-results">';
+            
+            if (data.analysis && data.analysis.routing_table) {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h4 class="card-title"><i class="fas fa-route"></i> 경로 정보</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>구간</th>
+                                            <th>게이트웨이</th>
+                                            <th>인터페이스</th>
+                                            <th>메트릭</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                `;
+                
+                data.analysis.routing_table.forEach((route, index) => {
+                    html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${route.gateway || 'N/A'}</td>
+                            <td>${route.interface || 'N/A'}</td>
+                            <td>${route.metric || 'N/A'}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (data.analysis && data.analysis.policies) {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h4 class="card-title"><i class="fas fa-shield-alt"></i> 적용된 정책</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>방화벽</th>
+                                            <th>정책 ID</th>
+                                            <th>이름</th>
+                                            <th>출발지</th>
+                                            <th>목적지</th>
+                                            <th>서비스</th>
+                                            <th>액션</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                `;
+                
+                data.analysis.policies.forEach(policy => {
+                    const actionClass = policy.action === 'accept' ? 'status-badge-success' : 'status-badge-danger';
+                    html += `
+                        <tr>
+                            <td>${policy.hostname || 'N/A'}</td>
+                            <td>${policy.id}</td>
+                            <td>${policy.name || 'N/A'}</td>
+                            <td>${policy.srcaddr}</td>
+                            <td>${policy.dstaddr}</td>
+                            <td>${policy.service}</td>
+                            <td><span class="status-badge ${actionClass}">${policy.action}</span></td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        } else {
+            resultsDiv.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    ${data.message || '분석 결과를 가져올 수 없습니다.'}
+                </div>
+            `;
+        }
+    }
+    
+    // Export results button
+    document.getElementById('export-results').addEventListener('click', function() {
+        // Simple text export
+        const results = document.getElementById('analysis-results').innerText;
+        const blob = new Blob([results], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'network-analysis-results.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    });
+});
+</script>
+{% endblock %}

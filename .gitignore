@@ -1,0 +1,166 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/*.log
+logs/*.json
+src/logs/*.json
+src/logs/*.log
+!logs/.gitkeep
+!src/logs/.gitkeep
+
+# Temporary files
+*.tmp
+*.cache
+*.pid
+
+# Backups
+*.bak
+*.backup
+*-backup
+*-original
+*-old
+*_backup*
+*_original*
+*_old*
+backup/
+backup-*/
+backups/
+.backup/
+*-backup-*/
+
+# Archives (except releases)
+*.tar.gz
+*.zip
+!packages/releases/*.tar.gz
+# 폐쇄망 배포 파일은 Git LFS로 관리
+!offline-deployment/*.tar.gz
+
+# Config files with sensitive data
+*.env
+.env.*
+!.env.example
+*secret*
+!helm/fortinet/templates/secrets*.yaml
+*password*
+data/config.json
+data/git_log_config.json
+!data/default_config.json
+.ssh/
+*.key
+*.pem
+
+# Runtime files
+auto-deploy.pid*
+*.pid
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Node modules (if any)
+node_modules/
+
+# Local development
+.local/
+*.local
+
+# CI/CD artifacts
+.gitlab-ci-local/
+.env
+
+# 오프라인 패키지 (Git LFS로 관리)
+offline-packages/
+# Kubernetes Secrets
+k8s/manifests/secrets.yaml
+**/secrets.yaml
+venv_ppt/
+
+# Serena MCP Cache
+.serena/cache/
+.serena/memories/
+
+# Claude Code MCP Tool Configurations
+config/agent-config.json
+config/mcp-tools-config.json
+agent-config.json
+mcp-tools-config.json
+
+# Test artifacts and temporary files
+*_test_*.json
+*_2024*.json
+*_2025*.json
+ui_test_results_*.json
+fortimanager_new_api_test_*.json
+packet_path_analysis_results.json
+health-check-results.json
+test-results/
+temp-data/
+temp/
+tmp/
+
+# Build and development artifacts
+build/
+exports/
+reports/
+helm-packages/
+htmlcov/
+
+# Pipeline and deployment artifacts
+fortinet-*.tgz
+pipeline_fix_report.json
+
+# Temporary Python scripts
+init-*.py
+start-dev.py
+validate-setup.py
+fortinet-cli.py
+
+# Documentation restrictions (only README.md and CLAUDE.md allowed)
+*.md
+!README.md
+!CLAUDE.md
+!helm/**/README.md
+!docs/**/*.md

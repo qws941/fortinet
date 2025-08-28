@@ -1,0 +1,136 @@
+{
+  "system_metrics": {
+    "collection_interval": 5.0,
+    "max_history": 1000,
+    "thresholds": {
+      "cpu_usage": {
+        "warning": "${CPU_WARNING_THRESHOLD:80.0}",
+        "critical": "${CPU_CRITICAL_THRESHOLD:95.0}",
+        "unit": "%",
+        "description": "CPU 사용률"
+      },
+      "memory_usage": {
+        "warning": "${MEMORY_WARNING_THRESHOLD:85.0}",
+        "critical": "${MEMORY_CRITICAL_THRESHOLD:95.0}",
+        "unit": "%",
+        "description": "메모리 사용률"
+      },
+      "disk_usage": {
+        "warning": "${DISK_WARNING_THRESHOLD:85.0}",
+        "critical": "${DISK_CRITICAL_THRESHOLD:95.0}",
+        "unit": "%",
+        "description": "디스크 사용률"
+      },
+      "network_error_rate": {
+        "warning": 1.0,
+        "critical": 5.0,
+        "unit": "%",
+        "description": "네트워크 오류율"
+      },
+      "load_average": {
+        "warning": 2.0,
+        "critical": 4.0,
+        "unit": "",
+        "description": "시스템 로드"
+      }
+    }
+  },
+  "api_performance": {
+    "collection_interval": 5.0,
+    "max_history": 1000,
+    "auto_optimization": true,
+    "thresholds": {
+      "response_time_warning": {
+        "warning": 1000.0,
+        "critical": 3000.0,
+        "unit": "ms",
+        "description": "응답 시간"
+      },
+      "error_rate": {
+        "warning": 5.0,
+        "critical": 10.0,
+        "unit": "%",
+        "description": "오류율"
+      },
+      "throughput_min": {
+        "warning": 10.0,
+        "critical": 5.0,
+        "unit": "req/min",
+        "description": "최소 처리량"
+      }
+    }
+  },
+  "security_scan": {
+    "scan_interval": 3600.0,
+    "max_history": 500,
+    "auto_fix": true,
+    "scan_types": {
+      "port_scan": true,
+      "vulnerability_scan": true,
+      "file_integrity_check": true,
+      "network_scan": true,
+      "docker_security_scan": true,
+      "log_analysis": true
+    }
+  },
+  "auto_recovery": {
+    "check_interval": 30.0,
+    "max_history": 1000,
+    "enabled": true,
+    "recovery_rules": [
+      {
+        "name": "high_cpu_usage",
+        "condition": {
+          "type": "threshold",
+          "metric": "cpu_usage",
+          "operator": ">",
+          "value": 90
+        },
+        "action": {
+          "type": "free_memory",
+          "params": {}
+        },
+        "cooldown": 300
+      },
+      {
+        "name": "high_memory_usage",
+        "condition": {
+          "type": "threshold",
+          "metric": "memory_usage",
+          "operator": ">",
+          "value": 95
+        },
+        "action": {
+          "type": "free_memory",
+          "params": {}
+        },
+        "cooldown": 300
+      },
+      {
+        "name": "application_unresponsive",
+        "condition": {
+          "type": "boolean",
+          "metric": "application.responsive",
+          "value": false
+        },
+        "action": {
+          "type": "restart_container",
+          "params": {
+            "container_name": "fortigate-nextrade"
+          }
+        },
+        "cooldown": 600
+      }
+    ]
+  },
+  "global_log_level": "${GLOBAL_LOG_LEVEL:INFO}",
+  "data_retention_hours": "${DATA_RETENTION_HOURS:24}",
+  "export_enabled": "${EXPORT_ENABLED:true}",
+  "export_interval": "${EXPORT_INTERVAL:3600}",
+  "websocket_enabled": "${WEBSOCKET_ENABLED:true}",
+  "_metadata": {
+    "version": "1.0",
+    "last_updated": "2025-06-08T16:51:51.504294",
+    "description": "FortiGate Nextrade 통합 모니터링 설정"
+  }
+}

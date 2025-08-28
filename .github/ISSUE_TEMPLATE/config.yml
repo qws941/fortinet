@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: CI/CD Documentation
+    url: https://github.com/JCLEE94/fortinet/blob/master/docs/cicd-validation-report.md
+    about: Check the CI/CD documentation for common issues
+  - name: GitHub Actions Status
+    url: https://www.githubstatus.com/
+    about: Check if GitHub Actions is experiencing issues

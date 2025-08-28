@@ -1,0 +1,152 @@
+# MSA Notifications Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: msa-notifications-config
+  namespace: argocd
+data:
+  notifications.yaml: |
+    service:
+      webhook:
+        msa-webhook:
+          url: https://hooks.slack.com/services/YOUR_SLACK_WEBHOOK
+          headers:
+          - name: Content-Type
+            value: application/json
+      
+      email:
+        host: smtp.gmail.com
+        port: 587
+        username: $email-username
+        password: $email-password
+        from: noreply@jclee.me
+        
+      teams:
+        msa-teams:
+          recipientUrls:
+            webhook: https://outlook.office.com/webhook/YOUR_TEAMS_WEBHOOK
+    
+    templates:
+      # MSA Sync Status Template
+      template.msa-sync-status: |
+        message: |
+          🔄 MSA Service Sync Status
+          Application: {{.app.metadata.name}}
+          Environment: {{.app.metadata.labels.environment}}
+          Service: {{.app.metadata.labels.service}}
+          Status: {{.app.status.sync.status}}
+          Health: {{.app.status.health.status}}
+          Repository: {{.app.spec.source.repoURL}}
+          Revision: {{.app.status.sync.revision}}
+          Time: {{.app.status.operationState.finishedAt}}
+          
+          🌐 URLs:
+          - ArgoCD: https://argo.jclee.me/applications/{{.app.metadata.name}}
+          - Service: https://{{.app.metadata.labels.service}}.jclee.me
+          - Monitoring: https://grafana.jclee.me
+      
+      # MSA Health Alert Template  
+      template.msa-health-alert: |
+        message: |
+          🚨 MSA Service Health Alert
+          Application: {{.app.metadata.name}}
+          Environment: {{.app.metadata.labels.environment}}
+          Service: {{.app.metadata.labels.service}}
+          Current Health: {{.app.status.health.status}}
+          Previous Health: {{.app.status.health.status}}
+          Message: {{.app.status.health.message}}
+          
+          📊 Details:
+          {{- range .app.status.conditions}}
+          - {{.type}}: {{.message}}
+          {{- end}}
+          
+          🔗 Quick Actions:
+          - View in ArgoCD: https://argo.jclee.me/applications/{{.app.metadata.name}}
+          - Check Logs: https://k8s.jclee.me
+          - Service Health: https://{{.app.metadata.labels.service}}.jclee.me/health
+          
+      # MSA Deployment Complete Template
+      template.msa-deployment-complete: |
+        message: |
+          ✅ MSA Deployment Complete
+          Application: {{.app.metadata.name}}
+          Environment: {{.app.metadata.labels.environment}}
+          Service: {{.app.metadata.labels.service}}
+          Version: {{.app.status.sync.revision}}
+          Duration: {{.app.status.operationState.operation.sync.syncStrategy}}
+          
+          🎯 Results:
+          - Sync Status: {{.app.status.sync.status}}
+          - Health Status: {{.app.status.health.status}}
+          - Resources: {{len .app.status.resources}} resources deployed
+          
+          🌐 Access:
+          - Service URL: https://{{.app.metadata.labels.service}}.jclee.me
+          - Health Check: https://{{.app.metadata.labels.service}}.jclee.me/health
+          - Metrics: https://grafana.jclee.me/d/msa-overview
+    
+    triggers:
+      # MSA Application Sync Status
+      trigger.on-msa-sync-status-unknown: |
+        - when: app.status.sync.status == 'Unknown'
+          send: [msa-sync-status]
+      trigger.on-msa-sync-failed: |
+        - when: app.status.sync.status == 'OutOfSync'
+          send: [msa-sync-status]
+      trigger.on-msa-sync-succeeded: |
+        - when: app.status.sync.status == 'Synced'
+          send: [msa-deployment-complete]
+      
+      # MSA Application Health
+      trigger.on-msa-health-degraded: |
+        - when: app.status.health.status == 'Degraded'
+          send: [msa-health-alert]
+      trigger.on-msa-health-progressing: |
+        - when: app.status.health.status == 'Progressing'
+          send: [msa-sync-status]
+      trigger.on-msa-health-suspended: |
+        - when: app.status.health.status == 'Suspended'
+          send: [msa-health-alert]
+    
+    subscriptions:
+      # MSA Services Subscriptions
+      - recipients: [msa-webhook, teams:msa-teams]
+        triggers:
+          - on-msa-sync-status-unknown
+          - on-msa-sync-failed
+          - on-msa-sync-succeeded
+          - on-msa-health-degraded
+          - on-msa-health-progressing
+          - on-msa-health-suspended
+        selector: app.metadata.labels.project == 'fortinet-msa-project'
+      
+      # Production Environment Critical Alerts
+      - recipients: [email:admin@jclee.me, teams:msa-teams]
+        triggers:
+          - on-msa-health-degraded
+          - on-msa-sync-failed
+        selector: >
+          app.metadata.labels.project == 'fortinet-msa-project' && 
+          app.metadata.labels.environment == 'production'
+      
+      # Development Environment Info
+      - recipients: [msa-webhook]
+        triggers:
+          - on-msa-deployment-complete
+        selector: >
+          app.metadata.labels.project == 'fortinet-msa-project' && 
+          app.metadata.labels.environment == 'development'
+
+---
+# Secret for Notification Credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: msa-notifications-secret
+  namespace: argocd
+type: Opaque
+stringData:
+  email-username: "noreply@jclee.me"
+  email-password: "your-email-app-password"
+  slack-token: "xoxb-your-slack-bot-token"

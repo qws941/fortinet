@@ -1,0 +1,11 @@
+[Unit]
+Description=Run FortiGate K8s Auto Updater every 5 minutes
+Requires=fortinet-k8s-updater.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+Unit=fortinet-k8s-updater.service
+
+[Install]
+WantedBy=timers.target

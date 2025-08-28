@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}정보 - FortiGate 방화벽 경로 분석기{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>FortiGate 방화벽 경로 분석기 정보</h4>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-shield-alt fa-4x text-primary mb-3"></i>
+                    <h3>FortiGate 방화벽 경로 분석기</h3>
+                    <p class="lead">버전 1.0.0</p>
+                </div>
+                
+                <h5><i class="fas fa-tasks me-2"></i>주요 기능</h5>
+                <ul class="mb-4">
+                    <li>출발지에서 목적지까지의 트래픽 경로 추적</li>
+                    <li>각 방화벽에서 적용되는 정책 규칙 상세 분석</li>
+                    <li>트래픽 경로의 시각적 다이어그램 생성</li>
+                    <li>차단된 트래픽의 정확한 차단 지점 및 규칙 식별</li>
+                    <li>CSV 파일을 통한 다수의 트래픽 경로 일괄 분석</li>
+                    <li>오프라인 환경에서도 동작하는 독립 실행형 애플리케이션</li>
+                    <li>FortiGate 방화벽과 FortiManager 통합 모두 지원</li>
+                </ul>
+                
+                <h5><i class="fas fa-cogs me-2"></i>기술 정보</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <tr>
+                            <th width="30%">개발 언어</th>
+                            <td>Python 3.9+</td>
+                        </tr>
+                        <tr>
+                            <th>웹 프레임워크</th>
+                            <td>Flask</td>
+                        </tr>
+                        <tr>
+                            <th>UI 프레임워크</th>
+                            <td>Bootstrap 5</td>
+                        </tr>
+                        <tr>
+                            <th>시각화 라이브러리</th>
+                            <td>Cytoscape.js</td>
+                        </tr>
+                        <tr>
+                            <th>데이터 테이블</th>
+                            <td>DataTables</td>
+                        </tr>
+                        <tr>
+                            <th>배포 형태</th>
+                            <td>Docker 컨테이너</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <h5 class="mt-4"><i class="fas fa-book me-2"></i>연관 문서</h5>
+                <div class="list-group mb-4">
+                    <a href="{{ url_for('main.help') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-question-circle me-2"></i>사용자 도움말
+                    </a>
+                    <a href="{{ url_for('static', filename='samples/batch_sample.csv') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file-csv me-2"></i>배치 분석 샘플 CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow mt-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-user-shield me-2"></i>관리자 정보</h5>
+            </div>
+            <div class="card-body">
+                <p>FortiGate 방화벽 경로 분석기는 사내 방화벽 분석을 위한 도구로 개발되었습니다.</p>
+                <p class="mb-0">문제 보고 또는 추가 기능 요청은 IT 관리팀에 문의하세요.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,556 @@
+{
+  "info": {
+    "name": "FortiManager API Test Collection",
+    "description": "FortiManager API 기능 검증을 위한 Postman 컬렉션",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "value",
+        "value": "{{fortimanager_api_token}}",
+        "type": "string"
+      },
+      {
+        "key": "key",
+        "value": "Authorization",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "fortimanager_host",
+      "value": "192.168.1.200",
+      "type": "string"
+    },
+    {
+      "key": "fortimanager_port",
+      "value": "443",
+      "type": "string"
+    },
+    {
+      "key": "fortimanager_api_token",
+      "value": "your-api-token-here",
+      "type": "string"
+    },
+    {
+      "key": "base_url",
+      "value": "https://{{fortimanager_host}}:{{fortimanager_port}}/jsonrpc",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"method\": \"exec\",\n  \"params\": [\n    {\n      \"url\": \"/sys/login/user\",\n      \"data\": {\n        \"user\": \"admin\",\n        \"passwd\": \"{{password}}\"\n      }\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login successful\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Session ID received\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('session');",
+                  "    pm.collectionVariables.set(\"session_id\", jsonData.session);",
+                  "});",
+                  "",
+                  "pm.test(\"Response time is acceptable\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 2,\n  \"method\": \"exec\",\n  \"params\": [\n    {\n      \"url\": \"/sys/logout\"\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Device Management",
+      "item": [
+        {
+          "name": "Get All Devices",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 3,\n  \"method\": \"get\",\n  \"params\": [\n    {\n      \"url\": \"/dvmdb/device\",\n      \"option\": \"object member\"\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Device list retrieved\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('result');",
+                  "    pm.expect(jsonData.result[0]).to.have.property('data');",
+                  "});",
+                  "",
+                  "// Save first device name for later use",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.result && jsonData.result[0].data && jsonData.result[0].data.length > 0) {",
+                  "    pm.collectionVariables.set(\"device_name\", jsonData.result[0].data[0].name);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Device Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 4,\n  \"method\": \"get\",\n  \"params\": [\n    {\n      \"url\": \"/dvmdb/device/{{device_name}}\",\n      \"option\": \"object member\"\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 5,\n  \"method\": \"exec\",\n  \"params\": [\n    {\n      \"url\": \"/dvm/cmd/add/device\",\n      \"data\": {\n        \"adom\": \"root\",\n        \"device\": {\n          \"name\": \"FortiGate-Test-{{$timestamp}}\",\n          \"device action\": \"add_model\",\n          \"mgmt_mode\": \"fmg\",\n          \"mr\": 2,\n          \"os_ver\": \"7.0\",\n          \"os_type\": \"fos\",\n          \"platform_str\": \"FortiGate-VM64\",\n          \"sn\": \"FGVM{{$timestamp}}\"\n        }\n      }\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Policy Management",
+      "item": [
+        {
+          "name": "Get All Policies",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 6,\n  \"method\": \"get\",\n  \"params\": [\n    {\n      \"url\": \"/pm/config/adom/root/pkg/default/firewall/policy\",\n      \"option\": \"object member\"\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Policies retrieved successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains policy data\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('result');",
+                  "    pm.expect(jsonData.result[0]).to.have.property('status');",
+                  "});",
+                  "",
+                  "// Save policy ID for later use",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.result && jsonData.result[0].data && jsonData.result[0].data.length > 0) {",
+                  "    pm.collectionVariables.set(\"policy_id\", jsonData.result[0].data[0].policyid);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Policy Package",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 7,\n  \"method\": \"add\",\n  \"params\": [\n    {\n      \"url\": \"/pm/config/adom/root/pkg/default/firewall/policy\",\n      \"data\": {\n        \"name\": \"Test_Policy_{{$timestamp}}\",\n        \"srcintf\": [\"any\"],\n        \"dstintf\": [\"any\"],\n        \"srcaddr\": [\"all\"],\n        \"dstaddr\": [\"all\"],\n        \"action\": \"accept\",\n        \"schedule\": [\"always\"],\n        \"service\": [\"ALL\"],\n        \"nat\": \"enable\",\n        \"status\": \"enable\",\n        \"comments\": \"Created via Postman API test\"\n      }\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Install Policy Package",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 8,\n  \"method\": \"exec\",\n  \"params\": [\n    {\n      \"url\": \"/securityconsole/install/package\",\n      \"data\": {\n        \"adom\": \"root\",\n        \"pkg\": \"default\",\n        \"scope\": [\n          {\n            \"name\": \"{{device_name}}\",\n            \"vdom\": \"root\"\n          }\n        ]\n      }\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Advanced Features",
+      "item": [
+        {
+          "name": "Packet Path Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 9,\n  \"method\": \"exec\",\n  \"params\": [\n    {\n      \"url\": \"/dvmdb/adom/root/workspace/lock\",\n      \"data\": {\n        \"src_ip\": \"192.168.1.10\",\n        \"dst_ip\": \"8.8.8.8\",\n        \"src_port\": 12345,\n        \"dst_port\": 443,\n        \"protocol\": \"tcp\",\n        \"device\": \"{{device_name}}\"\n      }\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Packet path analysis completed\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Analysis results returned\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('result');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Compliance Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 10,\n  \"method\": \"get\",\n  \"params\": [\n    {\n      \"url\": \"/pm/config/adom/root/obj/compliance/profile\",\n      \"option\": \"object member\"\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Security Fabric Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 11,\n  \"method\": \"get\",\n  \"params\": [\n    {\n      \"url\": \"/dvmdb/adom/root/device\",\n      \"option\": \"count\",\n      \"filter\": [\"fabric_object\", \"==\", 1]\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "System Tasks",
+      "item": [
+        {
+          "name": "Get Task List",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 12,\n  \"method\": \"get\",\n  \"params\": [\n    {\n      \"url\": \"/task/task\",\n      \"limit\": 10\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Task list retrieved\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Save task ID if available",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.result && jsonData.result[0].data && jsonData.result[0].data.length > 0) {",
+                  "    pm.collectionVariables.set(\"task_id\", jsonData.result[0].data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Task Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 13,\n  \"method\": \"get\",\n  \"params\": [\n    {\n      \"url\": \"/task/task/{{task_id}}\"\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Monitoring",
+      "item": [
+        {
+          "name": "Get System Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 14,\n  \"method\": \"get\",\n  \"params\": [\n    {\n      \"url\": \"/sys/status\"\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"System status retrieved\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Contains system information\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.result[0].data).to.have.property('version');",
+                  "    pm.expect(jsonData.result[0].data).to.have.property('serial');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Log Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 15,\n  \"method\": \"get\",\n  \"params\": [\n    {\n      \"url\": \"/logview/adom/root/logfiles/state\",\n      \"device\": \"{{device_name}}\",\n      \"logtype\": \"traffic\"\n    }\n  ],\n  \"session\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "// Ensure session ID is set for authenticated requests",
+          "if (pm.info.requestName !== \"Login\" && !pm.collectionVariables.get(\"session_id\")) {",
+          "    console.warn(\"No session ID found. Please run Login request first.\");",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "// Check for API errors",
+          "const jsonData = pm.response.json();",
+          "if (jsonData && jsonData.result && jsonData.result[0]) {",
+          "    if (jsonData.result[0].status && jsonData.result[0].status.code !== 0) {",
+          "        console.error(`API Error: ${jsonData.result[0].status.message}`);",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+}

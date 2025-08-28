@@ -1,0 +1,40 @@
+{
+  "deployment_ready": true,
+  "total_issues": 0,
+  "total_warnings": 1,
+  "validation_results": {
+    "build_config": {
+      "issues": [],
+      "status": "passed"
+    },
+    "security": {
+      "issues": [
+        "하드코딩된 비밀정보 수정 필요: /home/jclee/app/fortinet/src/utils/security_fixes.py"
+      ],
+      "status": "warnings"
+    },
+    "startup": {
+      "issues": [],
+      "status": "passed"
+    },
+    "deployment": {
+      "issues": [],
+      "status": "passed"
+    },
+    "recommendations": [
+      "환경변수 SECRET_KEY=암호화된 32바이트 시크릿 키 설정",
+      "환경변수 VERIFY_SSL=true 설정",
+      "환경변수 SESSION_COOKIE_SECURE=true 설정",
+      "환경변수 SESSION_COOKIE_HTTPONLY=true 설정",
+      "환경변수 JWT_EXPIRES_IN=900 설정",
+      "환경변수 API_TIMEOUT=30 설정",
+      "환경변수 LOG_LEVEL=INFO 설정",
+      "HTTPS 강제 사용 (ingress.annotations.ssl-redirect: true)",
+      "방화벽 규칙 적용 (필요한 포트만 개방)",
+      "컨테이너 리소스 제한 설정",
+      "정기적인 보안 스캔 실행",
+      "로그 모니터링 및 알람 설정"
+    ]
+  },
+  "timestamp": "2025-08-22T09:44:21.299850"
+}

@@ -1,0 +1,182 @@
+# =============================================================================
+# FortiGate Nextrade - Independent Services Docker Compose Configuration
+# 완전 독립 실행: 의존성 없는 서비스 구성
+# =============================================================================
+
+version: '3.8'
+
+networks:
+  fortinet-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis-data:
+    driver: local
+  postgresql-data:
+    driver: local
+  fortinet-logs:
+    driver: local
+
+services:
+  # Redis Cache Service - 독립 실행
+  redis:
+    image: registry.jclee.me/fortinet-redis:latest
+    container_name: fortinet-redis
+    hostname: fortinet-redis
+    restart: unless-stopped
+    networks:
+      fortinet-network:
+        ipv4_address: 172.20.0.10
+    volumes:
+      - redis-data:/data
+      - fortinet-logs:/var/log/redis
+    environment:
+      - REDIS_PORT=6379
+      - REDIS_MAXMEMORY=256mb
+      - REDIS_MAXMEMORY_POLICY=allkeys-lru
+      - REDIS_APPENDONLY=yes
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.stop-signal=SIGTERM"
+      - "traefik.enable=false"
+
+  # PostgreSQL Database Service - 독립 실행
+  postgresql:
+    image: registry.jclee.me/fortinet-postgresql:latest
+    container_name: fortinet-postgresql
+    hostname: fortinet-postgresql
+    restart: unless-stopped
+    networks:
+      fortinet-network:
+        ipv4_address: 172.20.0.20
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+      - fortinet-logs:/var/log/postgresql
+    environment:
+      - POSTGRES_USER=fortinet
+      - POSTGRES_PASSWORD=fortinet123
+      - POSTGRES_DB=fortinet_db
+      - PGDATA=/var/lib/postgresql/data
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --locale=en_US.utf8
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "fortinet", "-d", "fortinet_db"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.stop-signal=SIGTERM"
+      - "traefik.enable=false"
+
+  # FortiGate Main Application - 독립 실행
+  fortinet:
+    image: registry.jclee.me/fortinet:latest
+    container_name: fortinet
+    hostname: fortinet
+    restart: unless-stopped
+    # depends_on 완전 제거 - 독립 실행
+    networks:
+      fortinet-network:
+        ipv4_address: 172.20.0.30
+    volumes:
+      - fortinet-logs:/app/logs
+      - ./data:/app/data:ro
+    environment:
+      # Application settings
+      - APP_MODE=production
+      - OFFLINE_MODE=false
+      - WEB_APP_HOST=0.0.0.0
+      - WEB_APP_PORT=7777
+      - PYTHONPATH=/app/src
+      
+      # Database connections - 자동 재시도 및 대기 메커니즘
+      - DATABASE_URL=postgresql://fortinet:fortinet123@fortinet-postgresql:5432/fortinet_db
+      - POSTGRES_HOST=fortinet-postgresql
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=fortinet
+      - POSTGRES_PASSWORD=fortinet123
+      - POSTGRES_DB=fortinet_db
+      
+      # Redis connection - 자동 재시도 및 대기 메커니즘
+      - REDIS_URL=redis://fortinet-redis:6379/0
+      - REDIS_HOST=fortinet-redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      
+      # Connection retry settings
+      - DB_CONNECTION_RETRIES=10
+      - DB_CONNECTION_DELAY=5
+      - REDIS_CONNECTION_RETRIES=10
+      - REDIS_CONNECTION_DELAY=3
+      
+      # Security
+      - SECRET_KEY=${SECRET_KEY:-fortinet-secret-key-2024}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-jwt-secret-fortinet-2024}
+      
+      # Performance
+      - WORKERS=4
+      - WORKER_CLASS=gevent
+      - TIMEOUT=120
+      
+      # Logging
+      - LOG_LEVEL=INFO
+      - STRUCTURED_LOGGING=true
+    ports:
+      - "7777:7777"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7777/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s  # 더 긴 시작 시간으로 다른 서비스 준비 대기
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.stop-signal=SIGTERM"
+      # Traefik labels
+      - "traefik.enable=true"
+      - "traefik.http.routers.fortinet.rule=Host(`fortinet.jclee.me`)"
+      - "traefik.http.routers.fortinet.entrypoints=websecure"
+      - "traefik.http.routers.fortinet.tls.certresolver=letsencrypt"
+      - "traefik.http.services.fortinet.loadbalancer.server.port=7777"
+      
+  # Watchtower for automatic updates
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: fortinet-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.docker/config.json:/config.json:ro
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_POLL_INTERVAL=300  # 5 minutes
+      - WATCHTOWER_ROLLING_RESTART=true
+      - WATCHTOWER_TIMEOUT=60s
+      - WATCHTOWER_NOTIFICATIONS=webhook
+      - WATCHTOWER_NOTIFICATION_WEBHOOK_URL=${WEBHOOK_URL:-}
+      - WATCHTOWER_HTTP_API_TOKEN=${WATCHTOWER_TOKEN:-fortinet-watchtower-2024}
+      - WATCHTOWER_HTTP_API_UPDATE=true
+    ports:
+      - "8080:8080"
+    networks:
+      - fortinet-network
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+      - "traefik.enable=false"
+    command: --label-enable --cleanup --interval 300 --rolling-restart

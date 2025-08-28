@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}컴플라이언스 보고서 - Nextrade Fortigate{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">
+                <i class="fas fa-shield-alt"></i> 컴플라이언스 보고서
+            </h1>
+        </div>
+    </div>
+    
+    <!-- 보고서 설정 -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">보고서 설정</h5>
+                </div>
+                <div class="card-body">
+                    <form id="compliance-form">
+                        <div class="mb-3">
+                            <label for="adom" class="form-label">ADOM</label>
+                            <select class="form-select" id="adom" name="adom">
+                                <option value="root">Root</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="compliance-type" class="form-label">컴플라이언스 유형</label>
+                            <select class="form-select" id="compliance-type" name="type">
+                                <option value="general">일반 보안 점검</option>
+                                <option value="pci-dss">PCI-DSS</option>
+                                <option value="hipaa">HIPAA</option>
+                                <option value="sox">SOX</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-file-alt"></i> 보고서 생성
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 보고서 상태 -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">보고서 상태</h5>
+                </div>
+                <div class="card-body">
+                    <div id="report-status">
+                        <p class="text-muted">보고서를 생성하려면 왼쪽 설정을 완료하고 '보고서 생성' 버튼을 클릭하세요.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 보고서 결과 -->
+    <div class="row" id="report-results" style="display: none;">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">컴플라이언스 보고서 결과</h5>
+                    <div>
+                        <button class="btn btn-sm btn-secondary" onclick="exportReport('pdf')">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportReport('excel')">
+                            <i class="fas fa-file-excel"></i> Excel
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportReport('json')">
+                            <i class="fas fa-file-code"></i> JSON
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- 요약 섹션 -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="stat-card text-center">
+                                <h4 id="total-devices">0</h4>
+                                <p>전체 장치</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card text-center text-success">
+                                <h4 id="compliant-devices">0</h4>
+                                <p>준수</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card text-center text-danger">
+                                <h4 id="non-compliant-devices">0</h4>
+                                <p>미준수</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card text-center text-warning">
+                                <h4 id="total-warnings">0</h4>
+                                <p>경고</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 상세 결과 테이블 -->
+                    <div class="table-responsive">
+                        <table id="compliance-table" class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>장치명</th>
+                                    <th>유형</th>
+                                    <th>상태</th>
+                                    <th>점검 항목</th>
+                                    <th>문제점</th>
+                                    <th>조치사항</th>
+                                </tr>
+                            </thead>
+                            <tbody id="compliance-tbody">
+                                <!-- 데이터가 여기에 추가됩니다 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // 폼 제출 이벤트
+    $('#compliance-form').on('submit', function(e) {
+        e.preventDefault();
+        generateReport();
+    });
+});
+
+function generateReport() {
+    const adom = $('#adom').val();
+    const type = $('#compliance-type').val();
+    
+    // 상태 업데이트
+    $('#report-status').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 보고서 생성 중...</div>');
+    
+    // API 호출
+    $.ajax({
+        url: '/api/compliance/report',
+        method: 'GET',
+        data: { adom: adom, type: type },
+        success: function(response) {
+            if (response.success) {
+                displayReport(response.report);
+                $('#report-status').html('<div class="text-success"><i class="fas fa-check-circle"></i> 보고서가 생성되었습니다.</div>');
+                $('#report-results').show();
+            } else {
+                $('#report-status').html('<div class="text-danger"><i class="fas fa-exclamation-circle"></i> ' + response.message + '</div>');
+            }
+        },
+        error: function(xhr, status, error) {
+            $('#report-status').html('<div class="text-danger"><i class="fas fa-exclamation-circle"></i> 보고서 생성 실패: ' + error + '</div>');
+        }
+    });
+}
+
+function displayReport(report) {
+    // 요약 정보 업데이트
+    $('#total-devices').text(report.summary.total_devices);
+    $('#compliant-devices').text(report.summary.compliant_devices);
+    $('#non-compliant-devices').text(report.summary.non_compliant_devices);
+    $('#total-warnings').text(report.summary.warnings);
+    
+    // 테이블 데이터 삭제 및 재구성
+    const tbody = $('#compliance-tbody');
+    tbody.empty();
+    
+    report.device_compliance.forEach(function(device) {
+        const statusClass = device.compliance_status === 'compliant' ? 'text-success' : 'text-danger';
+        const statusIcon = device.compliance_status === 'compliant' ? 'check-circle' : 'times-circle';
+        
+        let issuesHtml = '';
+        if (device.issues.length > 0) {
+            issuesHtml = '<ul class="mb-0">';
+            device.issues.forEach(function(issue) {
+                const severityColor = issue.severity === 'high' ? 'danger' : 'warning';
+                issuesHtml += `<li><span class="badge bg-${severityColor}">${issue.severity}</span> ${issue.description}</li>`;
+            });
+            issuesHtml += '</ul>';
+        } else {
+            issuesHtml = '<span class="text-muted">없음</span>';
+        }
+        
+        const row = `
+            <tr>
+                <td>${device.device_name}</td>
+                <td>${device.device_type}</td>
+                <td class="${statusClass}">
+                    <i class="fas fa-${statusIcon}"></i> ${device.compliance_status}
+                </td>
+                <td>${device.checks_performed.join(', ')}</td>
+                <td>${issuesHtml}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="showRemediation('${device.device_name}')">
+                        <i class="fas fa-tools"></i> 조치
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.append(row);
+    });
+    
+    // DataTable 초기화
+    if ($.fn.DataTable.isDataTable('#compliance-table')) {
+        $('#compliance-table').DataTable().destroy();
+    }
+    
+    $('#compliance-table').DataTable({
+        pageLength: 25,
+        order: [[2, 'asc']],
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.10.25/i18n/Korean.json'
+        }
+    });
+}
+
+function exportReport(format) {
+    const adom = $('#adom').val();
+    
+    window.location.href = `/api/compliance/export?adom=${adom}&format=${format}`;
+}
+
+function showRemediation(deviceName) {
+    // 조치사항 모달 표시
+    alert('조치사항 기능은 추후 구현 예정입니다.');
+}
+</script>
+{% endblock %}

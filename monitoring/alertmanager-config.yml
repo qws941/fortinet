@@ -1,0 +1,109 @@
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'fortinet-alerts@jclee.me'
+  slack_api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+
+# 알림 라우팅 규칙
+route:
+  group_by: ['alertname', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+  receiver: 'default'
+  routes:
+  - match:
+      severity: critical
+    receiver: 'critical-alerts'
+    group_wait: 10s
+    repeat_interval: 30m
+  - match:
+      severity: warning  
+    receiver: 'warning-alerts'
+    group_wait: 5m
+    repeat_interval: 2h
+  - match:
+      service: fortinet
+    receiver: 'fortinet-team'
+
+# 알림 수신자 설정
+receivers:
+- name: 'default'
+  email_configs:
+  - to: 'admin@jclee.me'
+    subject: 'FortiGate Alert: {{ .GroupLabels.alertname }}'
+    body: |
+      {{ range .Alerts }}
+      Alert: {{ .Annotations.summary }}
+      Description: {{ .Annotations.description }}
+      Service: {{ .Labels.service }}
+      Severity: {{ .Labels.severity }}
+      Time: {{ .StartsAt }}
+      {{ end }}
+
+- name: 'critical-alerts'
+  email_configs:
+  - to: 'critical@jclee.me'
+    subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+    body: |
+      CRITICAL ALERT TRIGGERED
+      
+      {{ range .Alerts }}
+      🔥 Alert: {{ .Annotations.summary }}
+      📋 Description: {{ .Annotations.description }}  
+      🏷️ Service: {{ .Labels.service }}
+      ⚠️ Severity: {{ .Labels.severity }}
+      ⏰ Time: {{ .StartsAt }}
+      {{ end }}
+  slack_configs:
+  - channel: '#critical-alerts'
+    title: '🚨 Critical Alert: {{ .GroupLabels.alertname }}'
+    text: |
+      {{ range .Alerts }}
+      *Alert:* {{ .Annotations.summary }}
+      *Description:* {{ .Annotations.description }}
+      *Service:* {{ .Labels.service }}
+      *Time:* {{ .StartsAt }}
+      {{ end }}
+
+- name: 'warning-alerts'
+  email_configs:
+  - to: 'warnings@jclee.me'  
+    subject: '⚠️ WARNING: {{ .GroupLabels.alertname }}'
+    body: |
+      WARNING ALERT
+      
+      {{ range .Alerts }}
+      ⚠️ Alert: {{ .Annotations.summary }}
+      📋 Description: {{ .Annotations.description }}
+      🏷️ Service: {{ .Labels.service }}
+      ⏰ Time: {{ .StartsAt }}
+      {{ end }}
+
+- name: 'fortinet-team'
+  email_configs:
+  - to: 'fortinet-team@jclee.me'
+    subject: 'FortiGate Nextrade Alert: {{ .GroupLabels.alertname }}'
+    body: |
+      FortiGate Nextrade System Alert
+      
+      {{ range .Alerts }}
+      🛡️ Alert: {{ .Annotations.summary }}
+      📋 Description: {{ .Annotations.description }}
+      🏷️ Service: {{ .Labels.service }}
+      📊 Severity: {{ .Labels.severity }}
+      ⏰ Time: {{ .StartsAt }}
+      
+      Dashboard: http://grafana.jclee.me/d/fortinet/fortinet-dashboard
+      Logs: http://kibana.jclee.me/app/kibana#/discover?_g=(filters:!(),time:(from:now-1h,to:now))&_a=(columns:!(_source),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'logs-*',key:kubernetes.labels.app,negate:!f,params:(query:fortinet),type:phrase),query:(match:(kubernetes.labels.app:(query:fortinet,type:phrase))))),index:'logs-*')
+      {{ end }}
+
+# 알림 억제 규칙
+inhibit_rules:
+- source_match:
+    severity: 'critical'
+  target_match:
+    severity: 'warning'
+  equal: ['alertname', 'service']
+
+# 알림 그룹핑 설정  
+group_by_label: true

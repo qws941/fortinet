@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jclee94.github.io/fortinet/sitemap.xml

@@ -1,0 +1,174 @@
+# =============================================================================
+# FortiGate Nextrade - Standalone Self-Contained Docker Image
+# No external dependencies or volume mounts required
+# =============================================================================
+
+FROM python:3.11-slim as base
+
+# Environment setup - All configurations embedded
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH=/app/src \
+    APP_MODE=production \
+    WEB_APP_HOST=0.0.0.0 \
+    WEB_APP_PORT=7777 \
+    # Embedded configuration - no external config needed
+    OFFLINE_MODE=true \
+    SELF_CONTAINED=true \
+    NO_EXTERNAL_DEPS=true \
+    # Embedded Redis alternative (using in-memory cache)
+    USE_MEMORY_CACHE=true \
+    REDIS_ENABLED=false \
+    # Performance settings
+    WORKERS=4 \
+    WORKER_CLASS=sync \
+    TIMEOUT=120
+
+# Labels for metadata
+LABEL maintainer="FortiGate Nextrade Team" \
+      version="standalone-1.0" \
+      description="Self-contained FortiGate Nextrade - No external dependencies"
+
+# =============================================================================
+# System Dependencies - Minimal set for standalone operation
+# =============================================================================
+FROM base as system-deps
+
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    && apt-get autoremove -y \
+    && apt-get autoclean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# =============================================================================
+# Python Dependencies - All embedded
+# =============================================================================
+FROM system-deps as python-deps
+
+# Create app user
+RUN groupadd -r fortinet && useradd -r -g fortinet -s /bin/bash fortinet
+
+# Create all necessary directories with proper permissions
+RUN mkdir -p /app/src /app/data /app/logs /app/temp /app/config /app/static /app/templates \
+    && chown -R fortinet:fortinet /app
+
+# Copy and install requirements
+COPY requirements.txt /app/
+WORKDIR /app
+
+# Install Python dependencies with fallbacks for standalone operation
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir gunicorn
+
+# =============================================================================
+# Application Stage - Embed everything
+# =============================================================================
+FROM python-deps as app
+
+# Copy entire application
+COPY --chown=fortinet:fortinet . /app/
+
+# Create embedded default configuration
+RUN echo '{ \
+  "app_name": "FortiGate Nextrade Standalone", \
+  "version": "1.0.0", \
+  "mode": "standalone", \
+  "offline_mode": true, \
+  "self_contained": true, \
+  "api": { \
+    "mock_mode": true, \
+    "fortigate": { \
+      "enabled": false, \
+      "mock_responses": true \
+    }, \
+    "fortimanager": { \
+      "enabled": false, \
+      "mock_responses": true \
+    } \
+  }, \
+  "cache": { \
+    "type": "memory", \
+    "redis_enabled": false, \
+    "ttl": 300 \
+  }, \
+  "security": { \
+    "secret_key": "standalone-secure-key", \
+    "csrf_enabled": true, \
+    "session_timeout": 3600 \
+  }, \
+  "monitoring": { \
+    "enabled": true, \
+    "health_check_enabled": true, \
+    "metrics_enabled": false \
+  }, \
+  "logging": { \
+    "level": "INFO", \
+    "file": "/app/logs/app.log", \
+    "max_size": "10MB", \
+    "backup_count": 3 \
+  } \
+}' > /app/data/config.json
+
+# Create embedded mock data
+RUN mkdir -p /app/data/mock && echo '{ \
+  "devices": [ \
+    { \
+      "id": "FGT001", \
+      "name": "FortiGate-001", \
+      "ip": "192.168.1.1", \
+      "status": "online", \
+      "model": "FGT-100F" \
+    }, \
+    { \
+      "id": "FGT002", \
+      "name": "FortiGate-002", \
+      "ip": "192.168.2.1", \
+      "status": "online", \
+      "model": "FGT-200F" \
+    } \
+  ] \
+}' > /app/data/mock/devices.json
+
+# Create standalone startup script
+COPY --chown=fortinet:fortinet start_standalone.sh /app/start_standalone.sh
+RUN chmod +x /app/start_standalone.sh
+
+# Mock server is included in the application code
+
+# Compile Python bytecode for performance
+RUN python -m compileall /app/src/ -b -qq || true
+
+# Create embedded static files
+RUN mkdir -p /app/static/css /app/static/js /app/static/img && \
+    echo "/* Embedded CSS */" > /app/static/css/style.css && \
+    echo "// Embedded JS" > /app/static/js/app.js
+
+# Set final permissions
+RUN chown -R fortinet:fortinet /app && \
+    chmod -R 755 /app/src && \
+    chmod 777 /app/data /app/logs /app/temp
+
+# =============================================================================
+# Runtime Configuration
+# =============================================================================
+
+# Health check - no external dependencies
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD python3 -c "import urllib.request; response = urllib.request.urlopen('http://localhost:7777/api/health', timeout=5); exit(0 if response.status == 200 else 1)" || exit 1
+
+# Switch to non-root user
+USER fortinet
+WORKDIR /app
+
+# Expose port
+EXPOSE 7777
+
+# No volumes - everything is self-contained
+# VOLUME declarations removed intentionally
+
+# Start with standalone script
+CMD ["/app/start_standalone.sh"]

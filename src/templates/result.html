@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block title %}분석 결과 - Nextrade Network Monitor{% endblock %}
+
+{% block head_extra %}
+<style>
+    .result-page {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .result-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .result-status {
+        font-size: 1.875rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .info-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .info-table th {
+        background: var(--bg-secondary);
+        padding: 0.75rem;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-primary);
+        width: 35%;
+    }
+    
+    .info-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-primary);
+    }
+    
+    .info-table tr:last-child td,
+    .info-table tr:last-child th {
+        border-bottom: none;
+    }
+    
+    .path-container {
+        background: var(--bg-secondary);
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .path-step {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    
+    .path-step:last-child {
+        margin-bottom: 0;
+    }
+    
+    .path-step::before {
+        content: '';
+        position: absolute;
+        left: 2rem;
+        top: 3rem;
+        bottom: -1.5rem;
+        width: 2px;
+        background: var(--border);
+    }
+    
+    .path-step:last-child::before {
+        display: none;
+    }
+    
+    .step-icon {
+        width: 4rem;
+        height: 4rem;
+        background: var(--accent);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        z-index: 1;
+    }
+    
+    .step-content {
+        flex: 1;
+        margin-left: 1.5rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+    
+    .step-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+    
+    .step-details {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+    
+    .alert-box {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .alert-info {
+        background: rgba(33, 150, 243, 0.1);
+        border: 1px solid rgba(33, 150, 243, 0.3);
+        color: #2196F3;
+    }
+    
+    .policy-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    
+    .policy-table th,
+    .policy-table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .policy-table th {
+        background: var(--bg-secondary);
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .policy-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .status-allowed {
+        color: var(--success);
+        font-weight: 600;
+    }
+    
+    .status-blocked {
+        color: var(--danger);
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="result-page">
+    <!-- Page Header -->
+    <div class="result-header">
+        <div class="result-status">
+            {% if data.allowed %}
+            <i class="fas fa-check-circle" style="color: var(--success);"></i>
+            <span style="color: var(--success);">트래픽 허용됨</span>
+            {% else %}
+            <i class="fas fa-times-circle" style="color: var(--danger);"></i>
+            <span style="color: var(--danger);">트래픽 차단됨</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <p style="color: var(--text-secondary); margin-bottom: 2rem;">경로 분석 결과 및 상세 정보</p>
+
+    <!-- Analysis Summary -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-info-circle"></i> 분석 요약
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="alert-box alert-info">
+                <i class="fas fa-route"></i>
+                <div>
+                    <strong>고급 라우팅 기반 경로 분석</strong>
+                    <div style="font-size: 0.875rem; margin-top: 0.25rem;">
+                        서브넷 기반이 아닌 실제 라우팅 테이블 정보를 기반으로 정확한 경로를 결정합니다.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="summary-grid">
+                <div>
+                    <table class="info-table">
+                        <tr>
+                            <th>출발지 IP</th>
+                            <td>{{ data.src_ip }}</td>
+                        </tr>
+                        <tr>
+                            <th>목적지 IP</th>
+                            <td>{{ data.dst_ip }}</td>
+                        </tr>
+                        <tr>
+                            <th>포트</th>
+                            <td>{{ data.port }}</td>
+                        </tr>
+                        <tr>
+                            <th>프로토콜</th>
+                            <td>{{ data.protocol|upper }}</td>
+                        </tr>
+                        <tr>
+                            <th>트래픽 상태</th>
+                            <td>
+                                {% if data.allowed %}
+                                <span class="status-allowed">
+                                    <i class="fas fa-check-circle"></i> 허용됨
+                                </span>
+                                {% else %}
+                                <span class="status-blocked">
+                                    <i class="fas fa-times-circle"></i> 차단됨
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>경유 홉 수</th>
+                            <td>{{ data.path|length }}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div>
+                    <div class="card" style="height: 100%;">
+                        <div class="card-body text-center">
+                            <h5 style="margin-bottom: 1rem;">
+                                <i class="fas fa-project-diagram"></i> 네트워크 맵
+                            </h5>
+                            <div style="padding: 2rem; background: var(--bg-secondary); border-radius: 0.5rem; margin-bottom: 1rem;">
+                                <i class="fas fa-network-wired" style="font-size: 3rem; color: var(--text-muted);"></i>
+                            </div>
+                            <a href="/topology" class="btn btn-primary">
+                                <i class="fas fa-expand"></i> 전체 네트워크 맵 보기
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Packet Path Details -->
+    <div class="card" style="margin-top: 2rem;">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-route"></i> 패킷 경로 상세
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="path-container">
+                {% for hop in data.path %}
+                <div class="path-step">
+                    <div class="step-icon">
+                        {% if hop.type == 'source' %}
+                        <i class="fas fa-desktop"></i>
+                        {% elif hop.type == 'firewall' %}
+                        <i class="fas fa-shield-alt"></i>
+                        {% elif hop.type == 'destination' %}
+                        <i class="fas fa-server"></i>
+                        {% else %}
+                        <i class="fas fa-network-wired"></i>
+                        {% endif %}
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">
+                            {{ hop.device }}
+                            {% if hop.type == 'firewall' %}
+                            <span style="color: var(--accent); font-size: 0.875rem;">
+                                ({{ hop.firewall_name|default('FortiGate') }})
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="step-details">
+                            <div>인터페이스: {{ hop.interface|default('N/A') }}</div>
+                            {% if hop.zone %}
+                            <div>보안 존: {{ hop.zone }}</div>
+                            {% endif %}
+                            {% if hop.action %}
+                            <div style="margin-top: 0.5rem;">
+                                동작: 
+                                {% if hop.action == 'forward' %}
+                                <span style="color: var(--success);">전달</span>
+                                {% elif hop.action == 'accept' %}
+                                <span style="color: var(--success);">허용</span>
+                                {% else %}
+                                <span style="color: var(--danger);">{{ hop.action }}</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Applied Policies -->
+    {% if data.policies %}
+    <div class="card" style="margin-top: 2rem;">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-list-alt"></i> 적용된 정책
+            </h3>
+        </div>
+        <div class="card-body">
+            <table class="policy-table">
+                <thead>
+                    <tr>
+                        <th>정책 ID</th>
+                        <th>정책명</th>
+                        <th>출발지</th>
+                        <th>목적지</th>
+                        <th>서비스</th>
+                        <th>동작</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for policy in data.policies %}
+                    <tr>
+                        <td>{{ policy.id }}</td>
+                        <td>{{ policy.name }}</td>
+                        <td>{{ policy.src_addr|join(', ') }}</td>
+                        <td>{{ policy.dst_addr|join(', ') }}</td>
+                        <td>{{ policy.service|join(', ') }}</td>
+                        <td>
+                            {% if policy.action == 'accept' %}
+                            <span class="status-allowed">허용</span>
+                            {% else %}
+                            <span class="status-blocked">차단</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div style="margin-top: 2rem; text-align: center;">
+        <a href="/" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> 새로운 분석
+        </a>
+        <button onclick="window.print()" class="btn btn-outline">
+            <i class="fas fa-print"></i> 인쇄
+        </button>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{
+  "fortigate": {
+    "hostname": "${FORTIGATE_HOST:192.168.1.100}",
+    "api_token": "${FORTIGATE_API_TOKEN:}",
+    "username": "${FORTIGATE_USERNAME:admin}",
+    "password": "${FORTIGATE_PASSWORD:}",
+    "verify_ssl": "${FORTIGATE_VERIFY_SSL:false}",
+    "timeout": "${FORTIGATE_TIMEOUT:30}",
+    "description": "FortiGate 방화벽 API 설정"
+  },
+  "fortimanager": {
+    "hostname": "${FORTIMANAGER_HOST:192.168.1.200}",
+    "api_token": "${FORTIMANAGER_API_TOKEN:}",
+    "username": "${FORTIMANAGER_USERNAME:admin}", 
+    "password": "${FORTIMANAGER_PASSWORD:}",
+    "verify_ssl": "${FORTIMANAGER_VERIFY_SSL:false}",
+    "timeout": "${FORTIMANAGER_TIMEOUT:30}",
+    "adom": "${FORTIMANAGER_ADOM:root}",
+    "description": "FortiManager 중앙 관리 API 설정"
+  },
+  "settings": {
+    "cache_ttl": "${CACHE_TTL:300}",
+    "max_retries": "${API_MAX_RETRIES:3}",
+    "retry_delay": "${API_RETRY_DELAY:5}",
+    "enable_ssl": "${ENABLE_SSL:false}",
+    "ssl_cert_path": "${SSL_CERT_PATH:/app/ssl/certificate.crt}",
+    "ssl_key_path": "${SSL_KEY_PATH:/app/ssl/private.key}",
+    "redis": {
+      "enabled": "${REDIS_ENABLED:true}",
+      "host": "${REDIS_HOST:localhost}",
+      "port": "${REDIS_PORT:6379}",
+      "password": "${REDIS_PASSWORD:}",
+      "db": "${REDIS_DB:0}",
+      "ttl": "${REDIS_TTL:300}"
+    }
+  },
+  "monitoring": {
+    "enabled": "${MONITORING_ENABLED:true}",
+    "interval": "${MONITORING_INTERVAL:30}",
+    "alert_threshold": {
+      "cpu": "${ALERT_THRESHOLD_CPU:80}",
+      "memory": "${ALERT_THRESHOLD_MEMORY:90}",
+      "sessions": "${ALERT_THRESHOLD_SESSIONS:10000}"
+    }
+  }
+}

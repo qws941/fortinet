@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}500 - 서버 오류{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <i class="fas fa-exclamation-triangle text-danger fa-5x mb-4"></i>
+                    <h1 class="display-4">500</h1>
+                    <h2 class="mb-4">서버 오류가 발생했습니다</h2>
+                    <p class="lead">요청을 처리하는 중에 문제가 발생했습니다. 나중에 다시 시도해 주세요.</p>
+                </div>
+
+                {% if diagnosis %}
+                <div class="mt-5">
+                    <h3 class="mb-3"><i class="fas fa-stethoscope me-2"></i>시스템 진단 결과</h3>
+                    
+                    <!-- 시스템 상태 -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-server me-2"></i>시스템 상태</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for key, value in diagnosis.system_status.items() %}
+                                <div class="col-md-6 mb-2">
+                                    <strong>{{ key }}:</strong> 
+                                    {% if value %}
+                                        <span class="text-success">정상</span>
+                                    {% else %}
+                                        <span class="text-danger">오류</span>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 오류 정보 -->
+                    {% if diagnosis.errors %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>오류</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                            {% for error in diagnosis.errors %}
+                                <li class="mb-2">
+                                    <i class="fas fa-times-circle text-danger me-2"></i>
+                                    {{ error }}
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 권장 사항 -->
+                    {% if diagnosis.recommendations %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>권장 사항</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                            {% for recommendation in diagnosis.recommendations %}
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-info me-2"></i>
+                                    {{ recommendation }}
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 진단 실행 시간 -->
+                    <div class="text-muted text-center mt-3">
+                        <small>진단 실행 시간: {{ diagnosis.diagnosis_time }}</small>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-home me-2"></i>홈으로 돌아가기
+                    </a>
+                    <button onclick="runDiagnostics()" class="btn btn-secondary btn-lg ms-2">
+                        <i class="fas fa-sync-alt me-2"></i>진단 다시 실행
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function runDiagnostics() {
+    window.location.href = '/api/diagnostics';
+}
+</script>
+{% endblock %}

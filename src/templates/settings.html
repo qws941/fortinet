@@ -1,0 +1,1141 @@
+{% extends "base.html" %}
+
+{% block title %}설정 - Nextrade Network Monitor{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="fas fa-cog"></i>
+        설정
+    </h1>
+</div>
+
+    <!-- 연결 상태 카드 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-wifi"></i>
+                연결 상태
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="connection-status-grid">
+                <div class="status-item">
+                    <div class="status-icon">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <div class="status-info">
+                        <h5>FortiGate/FortiManager</h5>
+                        <div class="status-indicator" id="fortigate-status">
+                            <i class="fas fa-circle text-warning"></i>
+                            <span>연결 확인 중...</span>
+                        </div>
+                        <!-- 실시간 연결 상태 표시 -->
+                        <div class="live-connection-status mt-2" id="live-connection-status" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <div class="status-pulse me-2" id="connection-pulse"></div>
+                                <small class="text-muted" id="connection-details">실시간 상태 확인 중...</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="status-item">
+                    <div class="status-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="status-info">
+                        <h5>Redis 캐시</h5>
+                        <div class="status-indicator" id="redis-connection-status">
+                            <i class="fas fa-circle text-warning"></i>
+                            <span>연결 확인 중...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="status-item">
+                    <div class="status-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div class="status-info">
+                        <h5>SSL 인증서</h5>
+                        <div class="status-indicator" id="ssl-connection-status">
+                            <i class="fas fa-circle text-warning"></i>
+                            <span>상태 확인 중...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API 설정 카드 -->
+    <div class="card" id="api-settings-card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-plug"></i>
+                API 연결 설정
+            </h3>
+        </div>
+        <div class="card-body">
+                <form id="settings-form" method="post" action="/api/settings">
+                    <!-- FortiManager 연결만 지원 -->
+                    <input type="hidden" name="client_type" value="fortimanager">
+                    <div class="mb-4">
+                        <div class="alert alert-info">
+                            <i class="fas fa-server me-2"></i>
+                            <strong>FortiManager 연결</strong><br>
+                            이 시스템은 FortiManager를 통한 중앙집중식 관리를 지원합니다.
+                        </div>
+                    </div>
+                    
+                    <!-- FortiManager 설정 -->
+                    <div id="fortimanager-settings" class="api-settings mb-4">
+                        <h5 class="card-title">FortiManager 설정</h5>
+                        <div class="mb-3">
+                            <label for="fortimanager_hostname" class="form-label">FortiManager 호스트 주소:</label>
+                            <input type="text" class="form-control" id="fortimanager_hostname" name="fortimanager_hostname" 
+                                   placeholder="예: 10.0.0.10 또는 fortimanager.example.com" 
+                                   value="{{ config.get('fortimanager', {}).get('hostname', '') }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="fortimanager_port" class="form-label">FortiManager 포트:</label>
+                            <input type="number" class="form-control" id="fortimanager_port" name="fortimanager_port" 
+                                   placeholder="기본값: 14005" value="{{ config.get('fortimanager', {}).get('port', 14005) }}">
+                        </div>
+                        
+                        <!-- 인증 방식 선택 -->
+                        <div class="mb-4">
+                            <label class="form-label">인증 방식 선택:</label>
+                            <div class="auth-method-selector">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="auth_method" id="auth-token" value="token" 
+                                           {% if config.get('fortimanager', {}).get('api_token') %}checked{% endif %}>
+                                    <label class="form-check-label" for="auth-token">
+                                        <i class="fas fa-key text-primary me-2"></i>API 토큰 인증 (권장)
+                                    </label>
+                                </div>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="radio" name="auth_method" id="auth-session" value="session"
+                                           {% if not config.get('fortimanager', {}).get('api_token') %}checked{% endif %}>
+                                    <label class="form-check-label" for="auth-session">
+                                        <i class="fas fa-user text-success me-2"></i>세션 기반 인증 (사용자/비밀번호)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- API 토큰 인증 섹션 -->
+                        <div id="token-auth-section" class="auth-section {% if not config.get('fortimanager', {}).get('api_token') %}d-none{% endif %}">
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>API 토큰은 FortiManager에서 다음 명령으로 생성할 수 있습니다:
+                                <code class="d-block mt-2">execute api-user generate-key [username]</code>
+                            </div>
+                            <div class="mb-3">
+                                <label for="fortimanager_api_token" class="form-label">
+                                    <i class="fas fa-key me-2"></i>FortiManager API 토큰:
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="fortimanager_api_token" name="fortimanager_api_token" 
+                                           placeholder="API 토큰 입력" value="{{ config.get('fortimanager', {}).get('api_token', '') }}">
+                                    <button class="btn btn-outline-secondary" type="button" id="toggle-token-visibility">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">토큰 권한 필요: rpc-permit=read-write</small>
+                            </div>
+                        </div>
+                        
+                        <!-- 세션 인증 섹션 -->
+                        <div id="session-auth-section" class="auth-section {% if config.get('fortimanager', {}).get('api_token') %}d-none{% endif %}">
+                            <div class="alert alert-warning mb-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>세션 인증은 주기적인 재로그인이 필요할 수 있습니다.
+                            </div>
+                            <div class="mb-3">
+                                <label for="fortimanager_username" class="form-label">
+                                    <i class="fas fa-user me-2"></i>FortiManager 사용자 이름:
+                                </label>
+                                <input type="text" class="form-control" id="fortimanager_username" name="fortimanager_username" 
+                                       placeholder="관리자 계정" value="{{ config.get('fortimanager', {}).get('username', '') }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="fortimanager_password" class="form-label">
+                                    <i class="fas fa-lock me-2"></i>FortiManager 비밀번호:
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="fortimanager_password" name="fortimanager_password" 
+                                           placeholder="관리자 비밀번호" value="{{ config.get('fortimanager', {}).get('password', '') }}">
+                                    <button class="btn btn-outline-secondary" type="button" id="toggle-password-visibility">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="button" id="convert-to-token-btn" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-exchange-alt me-2"></i>세션 인증으로 API 토큰 생성
+                                </button>
+                            </div>
+                            <div id="token-generation-result" class="alert alert-info mt-3 d-none" role="alert">
+                                <span id="token-generation-message"></span>
+                            </div>
+                        </div>
+                        
+                        <!-- 고급 설정 -->
+                        <div class="mt-4">
+                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#advanced-settings">
+                                <i class="fas fa-cog me-2"></i>고급 설정
+                            </button>
+                            <div class="collapse mt-3" id="advanced-settings">
+                                <div class="card card-body">
+                                    <div class="mb-3">
+                                        <label for="fortimanager_adom" class="form-label">기본 ADOM:</label>
+                                        <input type="text" class="form-control" id="fortimanager_adom" name="fortimanager_adom" 
+                                               placeholder="root" value="{{ config.get('fortimanager', {}).get('adom', 'root') }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="fortimanager_timeout" class="form-label">연결 타임아웃 (초):</label>
+                                        <input type="number" class="form-control" id="fortimanager_timeout" name="fortimanager_timeout" 
+                                               placeholder="30" value="{{ config.get('fortimanager', {}).get('timeout', 30) }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="verify_ssl" name="verify_ssl" value="true"
+                               {% if config and config.get('verify_ssl', False) %}checked{% endif %}>
+                        <label class="form-check-label" for="verify_ssl">SSL 인증서 검증</label>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="submit" class="button button-primary">
+                            <i class="fas fa-save"></i> 설정 저장
+                        </button>
+                        <button type="button" id="test-connection-btn" class="button button-secondary">
+                            <i class="fas fa-plug"></i> 연결 테스트
+                        </button>
+                    </div>
+                </form>
+                
+                <div id="connection-result" class="alert mt-3 d-none" role="alert">
+                    <span id="connection-message"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SSL 인증서 설정 카드 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-lock"></i>
+                SSL 인증서 설정
+            </h3>
+        </div>
+        <div class="card-body">
+
+            <form id="ssl-upload-form" enctype="multipart/form-data">
+                <div class="form-grid-2">
+                    <div>
+                        <div class="mb-3">
+                            <label for="ssl_cert" class="form-label">
+                                <i class="fas fa-certificate"></i> SSL 인증서 파일 (.crt, .pem)
+                            </label>
+                            <input type="file" class="form-control" id="ssl_cert" name="ssl_cert" accept=".crt,.pem,.cer">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="ssl_key" class="form-label">
+                                <i class="fas fa-key"></i> 개인 키 파일 (.key, .pem)
+                            </label>
+                            <input type="file" class="form-control" id="ssl_key" name="ssl_key" accept=".key,.pem">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="ssl_chain" class="form-label">
+                        <i class="fas fa-link"></i> 인증서 체인 파일 (선택사항)
+                    </label>
+                    <input type="file" class="form-control" id="ssl_chain" name="ssl_chain" accept=".crt,.pem">
+                </div>
+
+                <div class="mb-3">
+                    <label for="ssl_port" class="form-label">HTTPS 포트</label>
+                    <input type="number" class="form-control" id="ssl_port" name="ssl_port" 
+                           value="443" placeholder="443">
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="button button-primary">
+                        <i class="fas fa-upload"></i> 인증서 업로드
+                    </button>
+                    <button type="button" id="check-ssl-btn" class="button button-secondary">
+                        <i class="fas fa-check-circle"></i> 현재 인증서 확인
+                    </button>
+                </div>
+            </form>
+
+            <div id="ssl-status" class="mt-3">
+                <!-- SSL 상태가 여기에 표시됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Redis 캐싱 설정 카드 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-database"></i>
+                Redis 캐싱 설정
+            </h3>
+        </div>
+        <div class="card-body">
+            <form id="redis-settings-form">
+                <div class="form-grid-2">
+                    <div>
+                        <div class="mb-3">
+                            <label for="redis_host" class="form-label">Redis 서버 주소</label>
+                            <input type="text" class="form-control" id="redis_host" name="redis_host" 
+                                   placeholder="redis-server" value="redis-server">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="redis_port" class="form-label">Redis 포트</label>
+                            <input type="number" class="form-control" id="redis_port" name="redis_port" 
+                                   placeholder="6379" value="6379">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="redis_password" class="form-label">Redis 비밀번호 (선택사항)</label>
+                    <input type="password" class="form-control" id="redis_password" name="redis_password" 
+                           placeholder="비밀번호가 설정된 경우 입력">
+                </div>
+
+                <div class="mb-3">
+                    <label for="redis_db" class="form-label">데이터베이스 번호</label>
+                    <input type="number" class="form-control" id="redis_db" name="redis_db" 
+                           placeholder="0" value="0" min="0" max="15">
+                </div>
+
+                <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="redis_enabled" name="redis_enabled" checked>
+                    <label class="form-check-label" for="redis_enabled">
+                        Redis 캐싱 활성화
+                    </label>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="button button-primary">
+                        <i class="fas fa-save"></i> Redis 설정 저장
+                    </button>
+                    <button type="button" id="test-redis-btn" class="button button-secondary">
+                        <i class="fas fa-plug"></i> Redis 연결 테스트
+                    </button>
+                </div>
+            </form>
+
+            <div id="redis-status" class="mt-3">
+                <!-- Redis 상태가 여기에 표시됩니다 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.mode-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 1rem;
+}
+
+.mode-option {
+    text-align: center;
+    padding: 2rem;
+    border: 2px solid var(--border);
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+    background: var(--bg-card);
+}
+
+.mode-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.mode-option.active {
+    border-color: var(--accent);
+    background: rgba(229, 0, 56, 0.05);
+}
+
+.mode-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    font-size: 2rem;
+    color: var(--accent);
+}
+
+.mode-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.mode-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.mode-btn {
+    min-width: 150px;
+}
+
+#api-settings-card.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* 실시간 연결 상태 스타일 */
+.live-connection-status {
+    border-top: 1px solid var(--border);
+    padding-top: 0.5rem;
+}
+
+.status-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-pulse.connecting {
+    background-color: #ffc107;
+    animation: pulse 1s infinite;
+}
+
+.status-pulse.connected {
+    background-color: #28a745;
+    animation: none;
+}
+
+.status-pulse.failed {
+    background-color: #dc3545;
+    animation: none;
+}
+
+.status-pulse.disconnected {
+    background-color: #6c757d;
+    animation: none;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+    }
+    
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+    }
+    
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+    }
+}
+
+/* 입력 필드 실시간 검증 스타일 */
+.form-control.validating {
+    border-color: #ffc107;
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
+
+.form-control.valid {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.form-control.invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 현재 모드 저장
+let currentMode = false; // Production only
+
+// 전역 변수 선언
+let liveConnectionTimer = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    
+    function showNotification(type, message) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const icon = type === 'success' ? 'check-circle' : 'times-circle';
+        
+        const notification = document.createElement('div');
+        notification.className = `alert ${alertClass} notification`;
+        notification.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
+        
+        document.querySelector('.container').insertBefore(notification, document.querySelector('.container').firstChild);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+    // FortiManager만 지원하므로 타입 선택 관련 코드 제거됨
+    
+    // 인증 방식 변경 시 실시간 상태 확인
+    const authMethodRadios = document.querySelectorAll('input[name="auth_method"]');
+    authMethodRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const tokenSection = document.getElementById('token-auth-section');
+            const sessionSection = document.getElementById('session-auth-section');
+            
+            if (this.value === 'token') {
+                tokenSection.classList.remove('d-none');
+                sessionSection.classList.add('d-none');
+            } else {
+                tokenSection.classList.add('d-none');
+                sessionSection.classList.remove('d-none');
+            }
+            
+            // 인증 방식 변경 시 재확인
+            if (liveConnectionTimer) {
+                checkConnectionStatus();
+            }
+        });
+    });
+    
+    // FortiManager/FortiGate 입력 필드 실시간 모니터링
+    const fmgInputs = [
+        'fortimanager_hostname',
+        'fortimanager_port', 
+        'fortimanager_api_token',
+        'fortimanager_username',
+        'fortimanager_password'
+    ];
+    
+    const fgtInputs = [
+        'fortigate_hostname',
+        'fortigate_token'
+    ];
+    
+    [...fmgInputs, ...fgtInputs].forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            // 입력 중일 때
+            input.addEventListener('input', function() {
+                this.classList.add('validating');
+                this.classList.remove('valid', 'invalid');
+                
+                // 0.8초 후 상태 확인 (빈번한 요청 방지)
+                clearTimeout(this.validationTimeout);
+                this.validationTimeout = setTimeout(() => {
+                    if (liveConnectionTimer && this.value.trim()) {
+                        checkConnectionStatus();
+                    }
+                }, 800);
+            });
+            
+            // 포커스 아웃 시 즉시 확인
+            input.addEventListener('blur', function() {
+                if (liveConnectionTimer && this.value.trim()) {
+                    clearTimeout(this.validationTimeout);
+                    setTimeout(() => checkConnectionStatus(), 100);
+                }
+            });
+        }
+    });
+    
+    // FortiGate 관련 코드 제거됨 (FortiManager만 지원)
+    
+    // 페이지 벗어날 때 타이머 정리
+    window.addEventListener('beforeunload', function() {
+        stopLiveConnectionCheck();
+    });
+    
+    // 페이지 숨겨질 때 타이머 정리 (모바일 대응)
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            stopLiveConnectionCheck();
+        } else {
+            // 페이지가 다시 보일 때 FortiManager가 선택되어 있으면 재시작
+            const fortimanagerSelected = document.getElementById('fortimanager-radio')?.checked;
+            const fortigateSelected = document.getElementById('fortigate-radio')?.checked;
+            if (fortimanagerSelected || fortigateSelected) {
+                setTimeout(() => startLiveConnectionCheck(), 500);
+            }
+        }
+    });
+    
+    // 사용자/비밀번호 필드 토글
+    const showCredentialsToggle = document.getElementById('show-credentials-toggle');
+    const credentialsFields = document.getElementById('credentials-fields');
+    
+    showCredentialsToggle.addEventListener('change', function() {
+        if (this.checked) {
+            credentialsFields.classList.remove('d-none');
+        } else {
+            credentialsFields.classList.add('d-none');
+        }
+    });
+    
+    // 실시간 연결 상태 확인 변수
+    const liveConnectionStatus = document.getElementById('live-connection-status');
+    const connectionPulse = document.getElementById('connection-pulse');
+    const connectionDetails = document.getElementById('connection-details');
+    
+    // 실시간 연결 상태 확인 함수
+    function startLiveConnectionCheck() {
+        liveConnectionStatus.style.display = 'block';
+        updateConnectionStatus('connecting', '연결 확인 중...');
+        
+        // 즉시 한번 확인
+        checkConnectionStatus();
+        
+        // 3초마다 상태 확인
+        if (liveConnectionTimer) {
+            clearInterval(liveConnectionTimer);
+        }
+        liveConnectionTimer = setInterval(checkConnectionStatus, 3000);
+    }
+    
+    function stopLiveConnectionCheck() {
+        if (liveConnectionTimer) {
+            clearInterval(liveConnectionTimer);
+            liveConnectionTimer = null;
+        }
+        liveConnectionStatus.style.display = 'none';
+    }
+    
+    function updateConnectionStatus(status, message, details = null) {
+        // 펄스 상태 업데이트
+        connectionPulse.className = 'status-pulse ' + status;
+        
+        // 메시지 업데이트
+        connectionDetails.textContent = message;
+        
+        // 상세 정보가 있으면 추가
+        if (details) {
+            connectionDetails.innerHTML = message + '<br><small>' + details + '</small>';
+        }
+        
+        // 메인 상태 표시도 업데이트
+        const mainStatus = document.getElementById('fortigate-status');
+        const mainIcon = mainStatus.querySelector('i');
+        const mainText = mainStatus.querySelector('span');
+        
+        switch (status) {
+            case 'connected':
+                mainIcon.className = 'fas fa-circle text-success';
+                mainText.textContent = '연결됨';
+                break;
+            case 'failed':
+                mainIcon.className = 'fas fa-circle text-danger';
+                mainText.textContent = '연결 실패';
+                break;
+            case 'connecting':
+                mainIcon.className = 'fas fa-circle text-warning';
+                mainText.textContent = '연결 중...';
+                break;
+            default:
+                mainIcon.className = 'fas fa-circle text-secondary';
+                mainText.textContent = '연결 안됨';
+        }
+    }
+    
+    function checkConnectionStatus() {
+        // 현재 입력된 값들 가져오기
+        const clientType = document.querySelector('input[name="client_type"]:checked')?.value || 'fortimanager';
+        const authMethod = document.querySelector('input[name="auth_method"]:checked')?.value || 'token';
+        
+        const requestData = {
+            client_type: clientType
+        };
+        
+        if (clientType === 'fortimanager') {
+            const hostname = document.getElementById('fortimanager_hostname')?.value?.trim();
+            const port = document.getElementById('fortimanager_port')?.value?.trim();
+            
+            if (!hostname) {
+                updateConnectionStatus('disconnected', '호스트 주소를 입력하세요');
+                return;
+            }
+            
+            requestData.fortimanager_hostname = hostname;
+            requestData.fortimanager_port = port || '443';
+            
+            if (authMethod === 'token') {
+                const apiToken = document.getElementById('fortimanager_api_token')?.value?.trim();
+                if (apiToken) {
+                    requestData.fortimanager_api_token = apiToken;
+                }
+            } else {
+                const username = document.getElementById('fortimanager_username')?.value?.trim();
+                const password = document.getElementById('fortimanager_password')?.value?.trim();
+                if (username && password) {
+                    requestData.fortimanager_username = username;
+                    requestData.fortimanager_password = password;
+                }
+            }
+        } else {
+            const hostname = document.getElementById('fortigate_hostname')?.value?.trim();
+            const token = document.getElementById('fortigate_token')?.value?.trim();
+            
+            if (!hostname) {
+                updateConnectionStatus('disconnected', '호스트 주소를 입력하세요');
+                return;
+            }
+            
+            requestData.fortigate_hostname = hostname;
+            if (token) {
+                requestData.fortigate_token = token;
+            }
+        }
+        
+        // SSL 검증 설정
+        const verifySSL = document.getElementById('verify_ssl')?.checked;
+        requestData.verify_ssl = verifySSL ? 'true' : 'false';
+        
+        // 빠른 연결 상태 확인 요청
+        fetch('/api/test-connection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 연결 성공
+                const connectionData = data.data || {};
+                let details = '';
+                
+                if (connectionData.device_count !== undefined) {
+                    details = `장치: ${connectionData.device_count}개`;
+                    if (connectionData.adom_count !== undefined) {
+                        details += `, ADOM: ${connectionData.adom_count}개`;
+                    }
+                } else if (connectionData.auth_method) {
+                    details = `인증: ${connectionData.auth_method}`;
+                    if (connectionData.limited_access) {
+                        details += ' (제한적 접근)';
+                    }
+                }
+                
+                if (connectionData.version) {
+                    details += details ? ` | ${connectionData.version}` : connectionData.version;
+                }
+                
+                updateConnectionStatus('connected', '연결됨', details);
+                updateInputValidation(true);
+            } else {
+                // 연결 실패
+                updateConnectionStatus('failed', '연결 실패', data.message || '알 수 없는 오류');
+                updateInputValidation(false);
+            }
+        })
+        .catch(error => {
+            console.warn('Connection check failed:', error);
+            updateConnectionStatus('failed', '연결 오류', '네트워크 오류 또는 서버 응답 없음');
+            updateInputValidation(false);
+        });
+    }
+    
+    // 입력 필드 검증 상태 업데이트
+    function updateInputValidation(isValid) {
+        const clientType = document.querySelector('input[name="client_type"]:checked')?.value;
+        const authMethod = document.querySelector('input[name="auth_method"]:checked')?.value;
+        
+        if (clientType === 'fortimanager') {
+            const hostname = document.getElementById('fortimanager_hostname');
+            const port = document.getElementById('fortimanager_port');
+            
+            // 기본 필드 검증
+            if (hostname) {
+                hostname.classList.remove('validating');
+                hostname.classList.toggle('valid', isValid && hostname.value.trim());
+                hostname.classList.toggle('invalid', !isValid && hostname.value.trim());
+            }
+            
+            if (port) {
+                port.classList.remove('validating');
+                port.classList.toggle('valid', isValid && port.value.trim());
+                port.classList.toggle('invalid', !isValid && port.value.trim());
+            }
+            
+            // 인증 방식별 필드 검증
+            if (authMethod === 'token') {
+                const token = document.getElementById('fortimanager_api_token');
+                if (token) {
+                    token.classList.remove('validating');
+                    token.classList.toggle('valid', isValid && token.value.trim());
+                    token.classList.toggle('invalid', !isValid && token.value.trim());
+                }
+            } else {
+                const username = document.getElementById('fortimanager_username');
+                const password = document.getElementById('fortimanager_password');
+                
+                if (username) {
+                    username.classList.remove('validating');
+                    username.classList.toggle('valid', isValid && username.value.trim());
+                    username.classList.toggle('invalid', !isValid && username.value.trim());
+                }
+                
+                if (password) {
+                    password.classList.remove('validating');
+                    password.classList.toggle('valid', isValid && password.value.trim());
+                    password.classList.toggle('invalid', !isValid && password.value.trim());
+                }
+            }
+        }
+    }
+    
+    // 연결 테스트 기능
+    const testConnectionBtn = document.getElementById('test-connection-btn');
+    const connectionResult = document.getElementById('connection-result');
+    const connectionMessage = document.getElementById('connection-message');
+    
+    // 폼 제출 처리
+    const settingsForm = document.getElementById('settings-form');
+    settingsForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(settingsForm);
+        const data = {};
+        
+        // FormData를 JSON 객체로 변환
+        for (let [key, value] of formData.entries()) {
+            data[key] = value;
+        }
+        
+        fetch('/api/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('설정 저장 실패: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('설정 저장 중 오류가 발생했습니다.');
+        });
+    });
+    
+    testConnectionBtn.addEventListener('click', function() {
+        // 버튼 비활성화 및 로딩 상태 표시
+        testConnectionBtn.disabled = true;
+        testConnectionBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 연결 테스트 중...';
+        connectionResult.classList.add('d-none');
+        
+        // 폼 데이터 수집
+        const formData = new FormData(document.getElementById('settings-form'));
+        const data = {};
+        
+        // FormData를 JSON 객체로 변환
+        for (let [key, value] of formData.entries()) {
+            data[key] = value;
+        }
+        
+        // 연결 테스트 요청
+        fetch('{{ url_for("api.test_connection") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            // 결과 표시
+            if (data.success) {
+                connectionResult.classList.remove('alert-danger');
+                connectionResult.classList.add('alert-success');
+                
+                let message = `<i class="fas fa-check-circle me-2"></i> ${data.message}`;
+                
+                // 추가 정보가 있으면 표시
+                if (data.data) {
+                    if (formData.get('client_type') === 'fortimanager' && data.data.adoms) {
+                        message += `<br><small>발견된 ADOM: ${data.data.adom_count}개 (${data.data.adoms.join(', ')})</small>`;
+                    }
+                }
+                
+                connectionMessage.innerHTML = message;
+            } else {
+                connectionResult.classList.remove('alert-success');
+                connectionResult.classList.add('alert-danger');
+                connectionMessage.innerHTML = `<i class="fas fa-times-circle me-2"></i> ${data.message}`;
+            }
+            
+            connectionResult.classList.remove('d-none');
+            
+            // 버튼 상태 복원
+            testConnectionBtn.disabled = false;
+            testConnectionBtn.innerHTML = '<i class="fas fa-plug me-2"></i>연결 테스트';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            connectionResult.classList.remove('alert-success');
+            connectionResult.classList.add('alert-danger');
+            connectionMessage.innerHTML = `<i class="fas fa-times-circle me-2"></i> 서버 오류가 발생했습니다: ${error}`;
+            connectionResult.classList.remove('d-none');
+            
+            // 버튼 상태 복원
+            testConnectionBtn.disabled = false;
+            testConnectionBtn.innerHTML = '<i class="fas fa-plug me-2"></i>연결 테스트';
+        });
+    });
+    
+    // 토큰 생성 버튼 이벤트 핸들러
+    const generateTokenBtn = document.getElementById('generate-token-btn');
+    const tokenGenerationResult = document.getElementById('token-generation-result');
+    const tokenGenerationMessage = document.getElementById('token-generation-message');
+    
+    generateTokenBtn.addEventListener('click', function() {
+        // 버튼 비활성화 및 로딩 상태 표시
+        generateTokenBtn.disabled = true;
+        generateTokenBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 토큰 생성 중...';
+        tokenGenerationResult.classList.add('d-none');
+        
+        // 폼 데이터 수집
+        const formData = new FormData();
+        formData.append('fortimanager_hostname', document.getElementById('fortimanager_hostname').value);
+        formData.append('fortimanager_username', document.getElementById('fortimanager_username').value);
+        formData.append('fortimanager_password', document.getElementById('fortimanager_password').value);
+        formData.append('fortimanager_port', document.getElementById('fortimanager_port') ? document.getElementById('fortimanager_port').value : '443');
+        formData.append('fortimanager_verify_ssl', document.getElementById('verify_ssl').checked ? 'true' : 'false');
+        
+        // 토큰 생성 요청
+        fetch('/api/generate_token', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 토큰을 API 토큰 필드에 자동 입력
+                document.getElementById('fortimanager_api_token').value = data.token;
+                
+                tokenGenerationResult.classList.remove('alert-danger');
+                tokenGenerationResult.classList.add('alert-success');
+                tokenGenerationMessage.innerHTML = `<i class="fas fa-check-circle me-2"></i> ${data.message}`;
+            } else {
+                tokenGenerationResult.classList.remove('alert-success');
+                tokenGenerationResult.classList.add('alert-danger');
+                tokenGenerationMessage.innerHTML = `<i class="fas fa-times-circle me-2"></i> ${data.message}`;
+            }
+            
+            tokenGenerationResult.classList.remove('d-none');
+            
+            // 버튼 상태 복원
+            generateTokenBtn.disabled = false;
+            generateTokenBtn.innerHTML = '<i class="fas fa-key me-2"></i>사용자/비밀번호로 토큰 생성';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            tokenGenerationResult.classList.remove('alert-success');
+            tokenGenerationResult.classList.add('alert-danger');
+            tokenGenerationMessage.innerHTML = '<i class="fas fa-times-circle me-2"></i> 토큰 생성 중 오류가 발생했습니다.';
+            tokenGenerationResult.classList.remove('d-none');
+            
+            // 버튼 상태 복원
+            generateTokenBtn.disabled = false;
+            generateTokenBtn.innerHTML = '<i class="fas fa-key me-2"></i>사용자/비밀번호로 토큰 생성';
+        });
+    });
+
+    // SSL 인증서 업로드 처리
+    const sslUploadForm = document.getElementById('ssl-upload-form');
+    const sslStatus = document.getElementById('ssl-status');
+    
+    sslUploadForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        const certFile = document.getElementById('ssl_cert').files[0];
+        const keyFile = document.getElementById('ssl_key').files[0];
+        const chainFile = document.getElementById('ssl_chain').files[0];
+        const sslPort = document.getElementById('ssl_port').value;
+        
+        if (!certFile || !keyFile) {
+            showNotification('error', '인증서와 개인 키 파일을 모두 선택해주세요.');
+            return;
+        }
+        
+        formData.append('ssl_cert', certFile);
+        formData.append('ssl_key', keyFile);
+        if (chainFile) {
+            formData.append('ssl_chain', chainFile);
+        }
+        formData.append('ssl_port', sslPort);
+        
+        try {
+            const response = await fetch('/api/ssl/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('success', 'SSL 인증서가 성공적으로 업로드되었습니다.');
+                checkSSLStatus();
+            } else {
+                showNotification('error', result.message || 'SSL 인증서 업로드 실패');
+            }
+        } catch (error) {
+            showNotification('error', '업로드 중 오류가 발생했습니다: ' + error.message);
+        }
+    });
+    
+    // SSL 상태 확인
+    const checkSSLBtn = document.getElementById('check-ssl-btn');
+    checkSSLBtn.addEventListener('click', checkSSLStatus);
+    
+    async function checkSSLStatus() {
+        try {
+            const response = await fetch('/api/ssl/status');
+            const result = await response.json();
+            
+            if (result.success) {
+                let statusHtml = '<div class="alert alert-info">';
+                if (result.ssl_enabled) {
+                    statusHtml += '<i class="fas fa-check-circle text-success"></i> SSL이 활성화되어 있습니다.<br>';
+                    statusHtml += `<strong>인증서 정보:</strong><br>`;
+                    statusHtml += `- 발급 대상: ${result.cert_info.subject}<br>`;
+                    statusHtml += `- 발급자: ${result.cert_info.issuer}<br>`;
+                    statusHtml += `- 유효 기간: ${result.cert_info.valid_from} ~ ${result.cert_info.valid_to}<br>`;
+                    statusHtml += `- HTTPS 포트: ${result.https_port}`;
+                } else {
+                    statusHtml += '<i class="fas fa-times-circle text-warning"></i> SSL이 비활성화되어 있습니다.';
+                }
+                statusHtml += '</div>';
+                sslStatus.innerHTML = statusHtml;
+            } else {
+                sslStatus.innerHTML = `<div class="alert alert-warning">SSL 상태를 확인할 수 없습니다: ${result.message}</div>`;
+            }
+        } catch (error) {
+            sslStatus.innerHTML = `<div class="alert alert-danger">SSL 상태 확인 중 오류: ${error.message}</div>`;
+        }
+    }
+    
+    // Redis 설정 처리
+    const redisSettingsForm = document.getElementById('redis-settings-form');
+    const redisStatus = document.getElementById('redis-status');
+    
+    redisSettingsForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            redis_host: document.getElementById('redis_host').value,
+            redis_port: document.getElementById('redis_port').value,
+            redis_password: document.getElementById('redis_password').value,
+            redis_db: document.getElementById('redis_db').value,
+            redis_enabled: document.getElementById('redis_enabled').checked
+        };
+        
+        try {
+            const response = await fetch('/api/redis/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('success', 'Redis 설정이 저장되었습니다.');
+                checkRedisStatus();
+            } else {
+                showNotification('error', result.message || 'Redis 설정 저장 실패');
+            }
+        } catch (error) {
+            showNotification('error', 'Redis 설정 저장 중 오류: ' + error.message);
+        }
+    });
+    
+    // Redis 연결 테스트
+    const testRedisBtn = document.getElementById('test-redis-btn');
+    testRedisBtn.addEventListener('click', checkRedisStatus);
+    
+    async function checkRedisStatus() {
+        try {
+            const response = await fetch('/api/redis/test');
+            const result = await response.json();
+            
+            if (result.success) {
+                redisStatus.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> Redis 연결 성공!<br>
+                        <strong>서버 정보:</strong><br>
+                        - 버전: ${result.info.redis_version}<br>
+                        - 메모리 사용: ${result.info.used_memory_human}<br>
+                        - 연결된 클라이언트: ${result.info.connected_clients}<br>
+                        - 캐시 히트율: ${result.cache_stats.hit_rate}%
+                    </div>
+                `;
+            } else {
+                redisStatus.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle"></i> Redis 연결 실패: ${result.message}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            redisStatus.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> Redis 테스트 중 오류: ${error.message}
+                </div>
+            `;
+        }
+    }
+    
+    // 페이지 로드 시 상태 확인
+    window.addEventListener('load', function() {
+        checkSSLStatus();
+        checkRedisStatus();
+        // 실시간 연결 상태 확인 시작
+        setTimeout(() => {
+            startLiveConnectionCheck();
+        }, 1000);
+    });
+});
+</script>
+</div>
+{% endblock %}

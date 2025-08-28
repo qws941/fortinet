@@ -1,0 +1,310 @@
+/**
+ * UI 공통 수정 사항 - 통합 버전
+ * Version: 2.0
+ * Date: 2025-06-06
+ * 
+ * 이 파일은 다음 파일들을 통합합니다:
+ * - fix_ui_issues.css
+ * - text-overflow-fixes.css
+ */
+
+/* ==============================================
+   1. 핵심 텍스트 오버플로우 패턴
+   ============================================== */
+
+/* 기본 한 줄 말줄임표 */
+.text-ellipsis,
+.overflow-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 다중 라인 말줄임표 */
+.text-clamp-2,
+.overflow-ellipsis-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4em;
+    max-height: 2.8em;
+}
+
+.text-clamp-3,
+.overflow-ellipsis-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4em;
+    max-height: 4.2em;
+}
+
+/* 텍스트 줄바꿈 옵션 */
+.text-break-word {
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+}
+
+.text-nowrap {
+    white-space: nowrap;
+}
+
+/* ==============================================
+   2. 테이블 반응형 컬럼 크기
+   ============================================== */
+
+/* 테이블 컬럼 크기 클래스 */
+.table-col-xs {
+    width: 80px;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.table-col-sm {
+    width: 120px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.table-col-md {
+    width: 180px;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.table-col-lg {
+    width: 250px;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.table-col-xl {
+    width: 300px;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 텍스트 오버플로우 툴팁 */
+.text-overflow-tooltip {
+    cursor: help;
+    position: relative;
+}
+
+.text-overflow-tooltip:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+/* ==============================================
+   3. FortiGate 특화 클래스
+   ============================================== */
+
+.fortigate-device-name {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fortigate-policy-name {
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fortigate-address-object {
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==============================================
+   4. 글로벌 텍스트 오버플로우 수정
+   ============================================== */
+
+/* 모든 테이블 셀에 기본 오버플로우 처리 */
+.table td, .table th,
+table td, table th {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 카드 제목 및 내용 */
+.card-title, .card-subtitle, .card-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+}
+
+/* 네비게이션 텍스트 */
+.nav-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 150px;
+}
+
+/* 장치 정보 텍스트 */
+.device-info, .device-name, .device-ip {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 정책 관련 텍스트 */
+.policy-info, .policy-name, .policy-description {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 통계 및 메트릭 텍스트 */
+.stat-label, .metric-label {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 버튼 텍스트 */
+.button, .btn {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 입력 필드 플레이스홀더 */
+.form-control::placeholder {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 일반적인 컨테이너 요소들 */
+.container, .content, .main-content {
+    overflow-x: hidden;
+}
+
+/* ==============================================
+   5. 반응형 유틸리티
+   ============================================== */
+
+@media (max-width: 768px) {
+    .table-col-sm,
+    .table-col-md,
+    .table-col-lg,
+    .table-col-xl {
+        width: auto;
+        max-width: 150px;
+    }
+    
+    .fortigate-device-name,
+    .fortigate-policy-name,
+    .fortigate-address-object {
+        max-width: 120px;
+    }
+}
+
+@media (max-width: 576px) {
+    .table-col-xs,
+    .table-col-sm,
+    .table-col-md,
+    .table-col-lg,
+    .table-col-xl {
+        width: auto;
+        max-width: 100px;
+    }
+}
+
+/* ==============================================
+   5. 테이블 최적화
+   ============================================== */
+
+.table-enhanced {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.table-enhanced th,
+.table-enhanced td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 테이블 반응형 처리 */
+.table-responsive-stack {
+    overflow-x: auto;
+    min-height: 0.01%;
+}
+
+/* ==============================================
+   6. 성능 최적화
+   ============================================== */
+
+/* GPU 가속 활성화 */
+.text-overflow-gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* 애니메이션 성능 개선 */
+.text-transition {
+    transition: all 0.2s ease-in-out;
+    will-change: transform, opacity;
+}
+
+/* ==============================================
+   7. 접근성 개선
+   ============================================== */
+
+/* 스크린 리더를 위한 숨김 텍스트 */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* 포커스 향상 */
+.text-overflow:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}

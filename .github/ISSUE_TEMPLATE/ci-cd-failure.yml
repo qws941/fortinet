@@ -1,0 +1,70 @@
+name: CI/CD Pipeline Failure
+description: Report a CI/CD pipeline failure (Usually auto-generated)
+title: "[CI/CD] Pipeline Failed - "
+labels: ["ci-failure", "bug", "automated"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## CI/CD Pipeline Failure Report
+        This issue template is for reporting CI/CD pipeline failures. Usually, these issues are automatically created by GitHub Actions.
+        
+  - type: input
+    id: workflow-run
+    attributes:
+      label: Workflow Run ID
+      description: The ID of the failed workflow run
+      placeholder: "12345678"
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: failed-job
+    attributes:
+      label: Failed Job
+      description: Which job failed?
+      multiple: true
+      options:
+        - Test
+        - Build  
+        - Deploy
+        - Offline Package
+    validations:
+      required: true
+      
+  - type: input
+    id: commit-sha
+    attributes:
+      label: Commit SHA
+      description: The commit that triggered the failure
+      placeholder: "abc123d"
+    validations:
+      required: true
+      
+  - type: textarea
+    id: error-logs
+    attributes:
+      label: Error Logs
+      description: Please paste the relevant error logs
+      placeholder: |
+        ```
+        Error logs here...
+        ```
+    validations:
+      required: true
+      
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here
+      
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I have checked for existing issues
+        - label: I have reviewed the workflow logs
+        - label: This is not a transient network error

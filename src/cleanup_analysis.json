@@ -1,0 +1,18 @@
+{
+  "unused_imports": {},
+  "dead_code": {},
+  "duplicates": {
+    "duplicates": []
+  },
+  "metrics": {
+    "total_files": 0,
+    "total_lines": 0,
+    "total_functions": 0,
+    "total_classes": 0,
+    "files_over_500_lines": [],
+    "functions_over_50_lines": [],
+    "missing_docstrings": [],
+    "type_annotation_coverage": 0.0
+  },
+  "recommendations": []
+}

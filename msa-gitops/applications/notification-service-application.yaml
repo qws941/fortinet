@@ -1,0 +1,134 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: notification-service-${ENVIRONMENT}
+  namespace: argocd
+  labels:
+    app: notification-service
+    service-type: microservice
+    env: ${ENVIRONMENT}
+    managed-by: msa-gitops
+    infrastructure: jclee.me
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    notifications.argoproj.io/subscribe.on-deployed.slack: msa-alerts
+    link.argocd.argoproj.io/external-link: https://notification-service.${ENVIRONMENT}.jclee.me
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: fortinet-msa-project
+  source:
+    repoURL: https://charts.jclee.me
+    chart: notification-service
+    targetRevision: "${CHART_VERSION}"
+    helm:
+      releaseName: notification-service
+      valueFiles:
+        - values-${ENVIRONMENT}.yaml
+      values: |
+        global:
+          environment: ${ENVIRONMENT}
+          serviceMesh:
+            enabled: true
+            namespace: istio-system
+        image:
+          tag: "${IMAGE_TAG}"
+        service:
+          type: ClusterIP
+          ports:
+            - name: http
+              port: 8080
+              targetPort: 8080
+            - name: grpc
+              port: 9090
+              targetPort: 9090
+        ingress:
+          enabled: true
+          annotations:
+            kubernetes.io/ingress.class: "istio"
+            cert-manager.io/cluster-issuer: "letsencrypt-prod"
+          hosts:
+            - host: notification-service.${ENVIRONMENT}.jclee.me
+              paths:
+                - path: /
+                  pathType: Prefix
+          tls:
+            - secretName: notification-service-${ENVIRONMENT}-tls
+              hosts:
+                - notification-service.${ENVIRONMENT}.jclee.me
+        serviceMesh:
+          istio:
+            virtualService:
+              enabled: true
+              gateways:
+                - istio-system/main-gateway
+            destinationRule:
+              enabled: true
+              trafficPolicy:
+                loadBalancer:
+                  simple: LEAST_CONN
+        monitoring:
+          prometheus:
+            enabled: true
+            port: 8080
+            path: /metrics
+          jaeger:
+            enabled: true
+        database:
+          type: postgresql
+          host: notification-service-db.${ENVIRONMENT}.jclee.me
+          port: 5432
+          name: notification_service_db
+        messageQueue:
+          kafka:
+            enabled: true
+            brokers: "kafka-cluster.${ENVIRONMENT}.jclee.me:9092"
+            topics:
+              - notification-service.events
+              - notification-service.commands
+        security:
+          authentication:
+            jwt:
+              enabled: true
+              issuer: "https://auth.${ENVIRONMENT}.jclee.me"
+          authorization:
+            rbac:
+              enabled: true
+        replicaCount: ${REPLICA_COUNT}
+        resources:
+          limits:
+            cpu: ${CPU_LIMIT}
+            memory: ${MEMORY_LIMIT}
+          requests:
+            cpu: ${CPU_REQUEST}
+            memory: ${MEMORY_REQUEST}
+        # HPA removed - using fixed replica count only
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ${NAMESPACE}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - ApplyOutOfSyncOnly=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  revisionHistoryLimit: 10
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: networking.istio.io
+      kind: VirtualService
+      jsonPointers:
+        - /spec/http/0/route/0/weight

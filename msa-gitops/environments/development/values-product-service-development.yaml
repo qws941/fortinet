@@ -1,0 +1,41 @@
+# Development Environment - product-service
+global:
+  environment: development
+  domain: jclee.me
+  
+image:
+  tag: "develop"
+  pullPolicy: Always
+
+replicaCount: 1
+namespace: microservices-dev
+
+service:
+  type: NodePort
+  nodePort: 30102
+
+ingress:
+  hosts:
+    - host: product-service-dev.jclee.me
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# HPA removed - using fixed replica count only
+
+database:
+  host: product-service-db-dev.jclee.me
+  
+monitoring:
+  enabled: true
+  
+env:
+  NODE_ENV: development
+  LOG_LEVEL: debug
+  DEBUG: "true"
+  JAEGER_ENDPOINT: "http://jaeger-collector.monitoring:14268/api/traces"

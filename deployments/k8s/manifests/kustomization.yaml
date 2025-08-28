@@ -1,0 +1,25 @@
+# Kustomization for Fortinet manifests
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: fortinet
+
+resources:
+  - 01-namespace.yaml
+  - 02-serviceaccount.yaml
+  - 03-configmap.yaml
+  - 04-secrets.yaml
+  - 05-deployment.yaml
+  - 06-service.yaml
+  - 07-ingress.yaml
+  - 08-servicemonitor.yaml
+  - 09-alerting-rules.yaml
+  - 10-redis.yaml
+
+commonLabels:
+  app: fortinet
+  managed-by: kustomize
+
+images:
+  - name: registry.jclee.me/fortinet
+    newTag: latest

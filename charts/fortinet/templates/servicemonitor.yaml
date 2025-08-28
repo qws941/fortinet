@@ -1,0 +1,36 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.serviceMonitor.enabled }}
+{{- if .Capabilities.APIVersions.Has "monitoring.coreos.com/v1/ServiceMonitor" }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Chart.Name }}-servicemonitor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    component: monitoring
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+  endpoints:
+  - port: http
+    path: {{ .Values.monitoring.serviceMonitor.path }}
+    interval: 30s
+    scrapeTimeout: 10s
+    honorLabels: true
+    metricRelabelings:
+    - sourceLabels: [__name__]
+      regex: '(fortinet_.*)'
+      targetLabel: __name__
+      replacement: '${1}'
+    - sourceLabels: [instance]
+      targetLabel: pod
+      replacement: '${1}'
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+{{- else }}
+# ServiceMonitor CRD not available - skipping creation
+{{- end }}
+{{- end }}

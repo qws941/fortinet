@@ -1,0 +1,13 @@
+{
+  "host": "${REDIS_HOST:localhost}",
+  "port": "${REDIS_PORT:6379}",
+  "password": "${REDIS_PASSWORD:}",
+  "db": "${REDIS_DB:0}",
+  "enabled": "${REDIS_ENABLED:true}",
+  "timeout": "${REDIS_TIMEOUT:5}",
+  "max_connections": "${REDIS_MAX_CONNECTIONS:50}",
+  "connection_pool": {
+    "max_connections": "${REDIS_POOL_MAX:20}",
+    "retry_on_timeout": "${REDIS_RETRY_ON_TIMEOUT:true}"
+  }
+}

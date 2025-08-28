@@ -1,0 +1,117 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fortinet
+  labels:
+    app: fortinet
+    app.kubernetes.io/name: fortinet
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/managed-by: argocd
+    gitops.strategy: pull-based
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    gitops.argocd.argoproj.io/managed: "true"
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # 무중단 배포
+  selector:
+    matchLabels:
+      app: fortinet
+  template:
+    metadata:
+      labels:
+        app: fortinet
+        app.kubernetes.io/name: fortinet
+        app.kubernetes.io/component: backend
+        gitops.strategy: pull-based
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "7777"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: fortinet
+        image: registry.jclee.me/fortinet:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7777
+          name: http
+          protocol: TCP
+        env:
+        - name: APP_MODE
+          value: "production"
+        - name: OFFLINE_MODE
+          value: "true"
+        - name: WEB_APP_PORT
+          value: "7777"
+        - name: WEB_APP_HOST
+          value: "0.0.0.0"
+        - name: EXTERNAL_URL
+          value: "https://fortinet.jclee.me"
+        - name: INTERNAL_URL
+          value: "http://192.168.50.110:30777"
+        - name: REGISTRY
+          value: "registry.jclee.me"
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+            ephemeral-storage: 1Gi
+          requests:
+            cpu: 500m
+            memory: 256Mi
+            ephemeral-storage: 500Mi
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 7777
+            scheme: HTTP
+          initialDelaySeconds: 45
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 7777
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        startupProbe:
+          httpGet:
+            path: /api/health
+            port: 7777
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 10
+          successThreshold: 1
+        volumeMounts:
+        - name: app-data
+          mountPath: /app/data
+        - name: tmp-volume
+          mountPath: /tmp
+      volumes:
+      - name: app-data
+        emptyDir: {}
+      - name: tmp-volume
+        emptyDir: {}
+      imagePullSecrets:
+      - name: registry-secret
+      serviceAccountName: fortinet-sa
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30

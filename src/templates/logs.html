@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그 관리 - FortiGate Nextrade</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        .log-container {
+            background-color: #1e1e1e;
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 15px;
+            border-radius: 5px;
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+        
+        .log-line {
+            margin: 2px 0;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        
+        .log-line.ERROR {
+            background-color: rgba(220, 53, 69, 0.2);
+            border-left: 3px solid #dc3545;
+        }
+        
+        .log-line.WARNING {
+            background-color: rgba(255, 193, 7, 0.2);
+            border-left: 3px solid #ffc107;
+        }
+        
+        .log-line.INFO {
+            background-color: rgba(25, 135, 84, 0.1);
+            border-left: 3px solid #198754;
+        }
+        
+        .log-line.DEBUG {
+            background-color: rgba(13, 110, 253, 0.1);
+            border-left: 3px solid #0d6efd;
+        }
+        
+        .log-timestamp {
+            color: #6c757d;
+            font-weight: bold;
+        }
+        
+        .log-module {
+            color: #0dcaf0;
+            font-weight: bold;
+        }
+        
+        .log-content {
+            color: #ffffff;
+        }
+        
+        .stats-card {
+            border-left: 4px solid #0d6efd;
+        }
+        
+        .search-highlight {
+            background-color: #ffff00;
+            color: #000000;
+            padding: 1px 3px;
+            border-radius: 2px;
+        }
+        
+        .auto-refresh {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <div class="col-12">
+                <h2><i class="fas fa-file-alt"></i> Docker 컨테이너 로그 관리</h2>
+                <p class="text-muted">실시간 로그 모니터링 및 분석</p>
+            </div>
+        </div>
+
+        <!-- 컨트롤 패널 -->
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cogs"></i> 로그 설정</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="logType" class="form-label">로그 타입</label>
+                                <select class="form-select" id="logType">
+                                    <option value="container">컨테이너 로그</option>
+                                    <option value="main">메인 애플리케이션</option>
+                                    <option value="error">에러 로그</option>
+                                    <option value="cache">캐시 로그</option>
+                                    <option value="web">웹 로그</option>
+                                    <option value="api">API 로그</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="logLines" class="form-label">라인 수</label>
+                                <select class="form-select" id="logLines">
+                                    <option value="50">50</option>
+                                    <option value="100" selected>100</option>
+                                    <option value="200">200</option>
+                                    <option value="500">500</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="logSince" class="form-label">기간</label>
+                                <select class="form-select" id="logSince">
+                                    <option value="5m">5분</option>
+                                    <option value="1h" selected>1시간</option>
+                                    <option value="6h">6시간</option>
+                                    <option value="24h">24시간</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="searchPattern" class="form-label">검색 패턴</label>
+                                <input type="text" class="form-control" id="searchPattern" placeholder="검색어 입력...">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button class="btn btn-primary" onclick="loadLogs()">
+                                        <i class="fas fa-sync-alt"></i> 로드
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-2">
+                            <div class="col-md-12">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="autoRefresh">
+                                    <label class="form-check-label" for="autoRefresh">자동 새로고침 (30초)</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="caseSensitive">
+                                    <label class="form-check-label" for="caseSensitive">대소문자 구분</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card stats-card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-bar"></i> 시스템 상태</h5>
+                    </div>
+                    <div class="card-body" id="statsContainer">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">로딩 중...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 로그 디스플레이 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-terminal"></i> 로그 출력</h5>
+                        <div>
+                            <span class="badge bg-info" id="logInfo">준비</span>
+                            <a href="/logs/live" class="btn btn-sm btn-outline-success" target="_blank">
+                                <i class="fas fa-stream"></i> 실시간 스트리밍
+                            </a>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="clearLogs()">
+                                <i class="fas fa-trash"></i> 지우기
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="downloadLogs()">
+                                <i class="fas fa-download"></i> 다운로드
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="log-container" id="logContainer">
+                            <div class="text-center text-muted">
+                                로그를 로드하려면 '로드' 버튼을 클릭하세요.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 로그 파일 목록 -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-list"></i> 사용 가능한 로그 파일</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="logFilesList">
+                            <div class="text-center">
+                                <button class="btn btn-outline-primary" onclick="loadLogFiles()">
+                                    <i class="fas fa-folder-open"></i> 로그 파일 목록 로드
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let autoRefreshInterval = null;
+        let currentLogs = [];
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadLogFiles();
+            
+            // 자동 새로고침 체크박스 이벤트
+            document.getElementById('autoRefresh').addEventListener('change', function() {
+                if (this.checked) {
+                    startAutoRefresh();
+                } else {
+                    stopAutoRefresh();
+                }
+            });
+        });
+
+        // 로그 로드
+        async function loadLogs() {
+            const logType = document.getElementById('logType').value;
+            const lines = document.getElementById('logLines').value;
+            const since = document.getElementById('logSince').value;
+            const searchPattern = document.getElementById('searchPattern').value.trim();
+            
+            const logInfo = document.getElementById('logInfo');
+            const logContainer = document.getElementById('logContainer');
+            
+            logInfo.textContent = '로딩 중...';
+            logInfo.className = 'badge bg-warning';
+            
+            try {
+                let url, params;
+                
+                if (searchPattern) {
+                    // 검색 모드
+                    url = '/api/logs/search';
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            pattern: searchPattern,
+                            type: logType,
+                            lines: parseInt(lines),
+                            case_sensitive: document.getElementById('caseSensitive').checked
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    displaySearchResults(data);
+                } else {
+                    // 일반 로그 로드
+                    if (logType === 'container') {
+                        url = `/api/logs/container?lines=${lines}&since=${since}`;
+                    } else {
+                        url = `/api/logs/application?type=${logType}&lines=${lines}`;
+                    }
+                    
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    displayLogs(data);
+                }
+                
+                logInfo.textContent = `로드 완료 - ${new Date().toLocaleTimeString()}`;
+                logInfo.className = 'badge bg-success';
+                
+            } catch (error) {
+                console.error('로그 로드 실패:', error);
+                logContainer.innerHTML = `<div class="text-danger">로그 로드 실패: ${error.message}</div>`;
+                logInfo.textContent = '로드 실패';
+                logInfo.className = 'badge bg-danger';
+            }
+        }
+
+        // 로그 표시
+        function displayLogs(data) {
+            const logContainer = document.getElementById('logContainer');
+            const logs = data.logs || [];
+            currentLogs = logs;
+            
+            if (logs.length === 0) {
+                logContainer.innerHTML = '<div class="text-muted">로그가 없습니다.</div>';
+                return;
+            }
+            
+            let html = '';
+            logs.forEach(log => {
+                const timestamp = log.timestamp ? `<span class="log-timestamp">[${log.timestamp}]</span> ` : '';
+                const module = log.module ? `<span class="log-module">${log.module}</span> - ` : '';
+                const content = `<span class="log-content">${escapeHtml(log.raw)}</span>`;
+                
+                html += `<div class="log-line ${log.level}">${timestamp}${module}${content}</div>`;
+            });
+            
+            logContainer.innerHTML = html;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // 검색 결과 표시
+        function displaySearchResults(data) {
+            const logContainer = document.getElementById('logContainer');
+            const matches = data.matches || [];
+            currentLogs = matches;
+            
+            if (matches.length === 0) {
+                logContainer.innerHTML = '<div class="text-muted">검색 결과가 없습니다.</div>';
+                return;
+            }
+            
+            let html = `<div class="text-info mb-2">검색 패턴: "${data.pattern}" - ${data.total_matches}개 결과</div>`;
+            
+            matches.forEach(match => {
+                const timestamp = match.timestamp ? `<span class="log-timestamp">[${match.timestamp}]</span> ` : '';
+                const lineNum = `<span class="text-warning">#${match.line_number}</span> `;
+                
+                // 검색어 하이라이트
+                let content = escapeHtml(match.content);
+                const pattern = data.pattern;
+                const regex = new RegExp(`(${escapeRegex(pattern)})`, data.case_sensitive ? 'g' : 'gi');
+                content = content.replace(regex, '<span class="search-highlight">$1</span>');
+                
+                html += `<div class="log-line ${match.level}">${lineNum}${timestamp}<span class="log-content">${content}</span></div>`;
+            });
+            
+            logContainer.innerHTML = html;
+        }
+
+        // 시스템 통계 로드
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/logs/stats');
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                const statsContainer = document.getElementById('statsContainer');
+                
+                let html = '';
+                
+                if (data.container) {
+                    html += `
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="h6 text-primary">CPU</div>
+                                <div class="h5">${data.container.cpu_percent}</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="h6 text-primary">메모리</div>
+                                <div class="h5">${data.container.memory_percent}</div>
+                            </div>
+                        </div>
+                        <hr>
+                    `;
+                }
+                
+                if (data.log_files) {
+                    html += '<div class="h6 text-primary">로그 파일별 라인 수</div>';
+                    Object.entries(data.log_files).forEach(([file, lines]) => {
+                        if (lines > 0) {
+                            html += `<div class="d-flex justify-content-between">
+                                <span>${file}</span>
+                                <span class="badge bg-secondary">${lines}</span>
+                            </div>`;
+                        }
+                    });
+                }
+                
+                statsContainer.innerHTML = html || '<div class="text-muted">통계 정보 없음</div>';
+                
+            } catch (error) {
+                console.error('통계 로드 실패:', error);
+            }
+        }
+
+        // 로그 파일 목록 로드
+        async function loadLogFiles() {
+            try {
+                const response = await fetch('/api/logs/files');
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                const container = document.getElementById('logFilesList');
+                
+                if (!data.log_files || data.log_files.length === 0) {
+                    container.innerHTML = '<div class="text-muted">로그 파일이 없습니다.</div>';
+                    return;
+                }
+                
+                let html = '<div class="row">';
+                data.log_files.forEach(file => {
+                    const hasContent = file.has_content ? 'text-success' : 'text-muted';
+                    html += `
+                        <div class="col-md-6 mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="${hasContent}">${file.name}</span>
+                                <div>
+                                    <span class="badge bg-light text-dark">${file.size_human}</span>
+                                    ${file.has_content ? `<button class="btn btn-sm btn-outline-primary ms-1" onclick="loadSpecificFile('${file.path}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                container.innerHTML = html;
+                
+            } catch (error) {
+                console.error('로그 파일 목록 로드 실패:', error);
+            }
+        }
+
+        // 특정 파일 로드
+        function loadSpecificFile(filePath) {
+            // 파일 경로에서 타입 추출
+            const fileName = filePath.split('/').pop();
+            if (fileName.includes('main')) {
+                document.getElementById('logType').value = 'main';
+            } else if (fileName.includes('error')) {
+                document.getElementById('logType').value = 'error';
+            } else if (fileName.includes('cache')) {
+                document.getElementById('logType').value = 'cache';
+            } else if (fileName.includes('web')) {
+                document.getElementById('logType').value = 'web';
+            } else if (fileName.includes('api')) {
+                document.getElementById('logType').value = 'api';
+            }
+            
+            loadLogs();
+        }
+
+        // 자동 새로고침 시작
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            
+            autoRefreshInterval = setInterval(() => {
+                const refreshBtn = document.querySelector('button[onclick="loadLogs()"]');
+                refreshBtn.classList.add('auto-refresh');
+                loadLogs();
+                
+                setTimeout(() => {
+                    refreshBtn.classList.remove('auto-refresh');
+                }, 1000);
+            }, 30000);
+        }
+
+        // 자동 새로고침 중지
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        // 로그 지우기
+        function clearLogs() {
+            document.getElementById('logContainer').innerHTML = 
+                '<div class="text-center text-muted">로그가 지워졌습니다.</div>';
+            document.getElementById('logInfo').textContent = '지워짐';
+            document.getElementById('logInfo').className = 'badge bg-secondary';
+        }
+
+        // 로그 다운로드
+        function downloadLogs() {
+            if (currentLogs.length === 0) {
+                alert('다운로드할 로그가 없습니다.');
+                return;
+            }
+            
+            const logType = document.getElementById('logType').value;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `${logType}-logs-${timestamp}.txt`;
+            
+            let content = '';
+            currentLogs.forEach(log => {
+                content += (log.raw || log.content) + '\n';
+            });
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // 유틸리티 함수
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'r':
+                        e.preventDefault();
+                        loadLogs();
+                        break;
+                    case 'l':
+                        e.preventDefault();
+                        clearLogs();
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

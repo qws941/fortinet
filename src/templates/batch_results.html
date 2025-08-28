@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}일괄 분석 결과 - FortiGate 방화벽 경로 분석기{% endblock %}
+
+{% block head_extra %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="{{ url_for("static", filename="vendor/datatables/dataTables.bootstrap5.min.css") }}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-tasks me-2"></i>일괄 분석 결과</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-chart-pie me-2"></i>결과 요약</h5>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="h2 mb-0 text-success">
+                                            {{ results|selectattr('status', 'equalto', 'Allowed')|list|length }}
+                                        </div>
+                                        <div class="text-muted">허용됨</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="h2 mb-0 text-danger">
+                                            {{ results|selectattr('status', 'equalto', 'Blocked')|list|length }}
+                                        </div>
+                                        <div class="text-muted">차단됨</div>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="text-center">
+                                    <div class="h3 mb-0">
+                                        {{ results|length }}
+                                    </div>
+                                    <div class="text-muted">총 분석 경로</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-exclamation-triangle me-2"></i>오류 상태</h5>
+                        <div class="card">
+                            <div class="card-body">
+                                {% set error_count = results|selectattr('status', 'equalto', 'Error')|list|length %}
+                                {% if error_count > 0 %}
+                                <div class="alert alert-warning mb-0">
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    <strong>{{ error_count }}개</strong>의 경로에서 오류가 발생했습니다.
+                                    <p class="small mt-2 mb-0">아래 표에서 상세 오류 메시지를 확인하세요.</p>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-success mb-0">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    모든 경로가 성공적으로 분석되었습니다.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h5><i class="fas fa-table me-2"></i>결과 목록</h5>
+                <div class="table-responsive">
+                    <table id="results-table" class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th width="5%">#</th>
+                                <th width="15%">출발지 IP</th>
+                                <th width="15%">목적지 IP</th>
+                                <th width="10%">포트</th>
+                                <th width="10%">프로토콜</th>
+                                <th width="10%">상태</th>
+                                <th width="20%">상세 정보</th>
+                                <th width="15%">액션</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results %}
+                            <tr class="
+                                {% if result.status == 'Error' %}table-warning
+                                {% elif result.status == 'Blocked' %}table-danger
+                                {% elif result.status == 'Allowed' %}table-success
+                                {% endif %}
+                            ">
+                                <td>{{ loop.index }}</td>
+                                <td>{{ result.src_ip }}</td>
+                                <td>{{ result.dst_ip }}</td>
+                                <td>{{ result.port }}</td>
+                                <td>{{ result.protocol }}</td>
+                                <td class="
+                                    {% if result.status == 'Allowed' %}text-success
+                                    {% elif result.status == 'Blocked' %}text-danger
+                                    {% elif result.status == 'Error' %}text-warning
+                                    {% endif %}
+                                ">
+                                    {% if result.status == 'Allowed' %}
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    {% elif result.status == 'Blocked' %}
+                                    <i class="fas fa-times-circle me-1"></i>
+                                    {% elif result.status == 'Error' %}
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    {% endif %}
+                                    {{ result.status }}
+                                </td>
+                                <td>
+                                    {% if result.status == 'Error' %}
+                                    <span class="text-danger">{{ result.message }}</span>
+                                    {% elif result.status == 'Blocked' and result.blocked_by %}
+                                    <strong>방화벽:</strong> {{ result.blocked_by.firewall }}<br>
+                                    <strong>정책 ID:</strong> {{ result.blocked_by.policy_id }}
+                                    {% elif result.status == 'Allowed' %}
+                                    <strong>경유 홉 수:</strong> {{ result.path_length }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if result.status != 'Error' and result.path_data %}
+                                    <button type="button" class="btn btn-sm btn-info view-details" 
+                                            data-bs-toggle="modal" data-bs-target="#detailsModal"
+                                            data-result-index="{{ loop.index0 }}">
+                                        <i class="fas fa-search me-1"></i>상세보기
+                                    </button>
+                                    {% else %}
+                                    <button type="button" class="btn btn-sm btn-secondary" disabled>
+                                        상세보기 불가
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between mb-5">
+            <a href="{{ url_for('main.batch') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>새 일괄 분석
+            </a>
+            <a href="#" onclick="window.print(); return false;" class="btn btn-info">
+                <i class="fas fa-print me-1"></i>결과 인쇄
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 상세 정보 모달 -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalLabel">경로 상세 정보</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="path-details-content">
+                    <div class="d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">로딩 중...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- DataTables JS -->
+<script src="{{ url_for("static", filename="vendor/datatables/jquery.dataTables.min.js") }}"></script>
+<script src="{{ url_for("static", filename="vendor/datatables/dataTables.bootstrap5.min.js") }}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 결과 데이터
+    const resultsData = {{ results|tojson }};
+    
+    // 데이터 테이블 초기화
+    $('#results-table').DataTable({
+        responsive: true,
+        ordering: true,
+        searching: true,
+        language: {
+            search: "검색:",
+            lengthMenu: "_MENU_ 개씩 보기",
+            info: "_TOTAL_ 개 중 _START_ - _END_ 표시",
+            infoEmpty: "표시할 데이터가 없습니다",
+            infoFiltered: "(총 _MAX_ 개 중 필터링됨)",
+            paginate: {
+                first: "처음",
+                last: "마지막",
+                next: "다음",
+                previous: "이전"
+            }
+        }
+    });
+    
+    // 상세보기 버튼 클릭 이벤트
+    document.querySelectorAll('.view-details').forEach(button => {
+        button.addEventListener('click', function() {
+            const resultIndex = parseInt(this.getAttribute('data-result-index'));
+            const resultData = resultsData[resultIndex];
+            
+            if (resultData && resultData.path_data) {
+                const pathData = resultData.path_data;
+                const pathDetailsContent = document.getElementById('path-details-content');
+                
+                let statusClass = pathData.allowed ? 'success' : 'danger';
+                let statusText = pathData.allowed ? '허용됨' : '차단됨';
+                let statusIcon = pathData.allowed ? 'check-circle' : 'times-circle';
+                
+                // 상세 내용 생성
+                let detailsHtml = `
+                    <div class="alert alert-${statusClass} mb-3">
+                        <i class="fas fa-${statusIcon} me-2"></i>
+                        <strong>${resultData.src_ip}</strong> &rarr; <strong>${resultData.dst_ip}</strong>
+                        (포트: ${resultData.port}, 프로토콜: ${resultData.protocol}) 트래픽이 
+                        <strong>${statusText}</strong>
+                    </div>
+                    
+                    <h6><i class="fas fa-route me-2"></i>패킷 경로</h6>
+                `;
+                
+                // 경로 표시
+                if (pathData.path && pathData.path.length > 0) {
+                    detailsHtml += '<ol class="list-group list-group-numbered mb-3">';
+                    
+                    pathData.path.forEach(hop => {
+                        let hopStatusClass = hop.action === 'deny' ? 'list-group-item-danger' : 'list-group-item-success';
+                        
+                        detailsHtml += `
+                            <li class="list-group-item ${hopStatusClass} d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">${hop.firewall_name}</div>
+                                    <div class="small">
+                                        <strong>정책 ID:</strong> ${hop.policy_id || 'N/A'}<br>
+                                        <strong>출발지:</strong> ${hop.src_ip} &rarr; <strong>목적지:</strong> ${hop.dst_ip}
+                                    </div>
+                                </div>
+                                <span class="badge bg-${hop.action === 'deny' ? 'danger' : 'success'} rounded-pill">
+                                    ${hop.action}
+                                </span>
+                            </li>
+                        `;
+                    });
+                    
+                    detailsHtml += '</ol>';
+                    
+                    // 차단된 경우 차단 정보 표시
+                    if (!pathData.allowed && pathData.blocked_by) {
+                        detailsHtml += `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-ban me-2"></i>
+                                <strong>차단 지점:</strong> 방화벽 ${pathData.blocked_by.firewall_name}의 
+                                정책 ID ${pathData.blocked_by.policy_id}
+                            </div>
+                        `;
+                    }
+                } else {
+                    detailsHtml += `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            경로 데이터가 없습니다.
+                        </div>
+                    `;
+                }
+                
+                pathDetailsContent.innerHTML = detailsHtml;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,11 @@
+[Unit]
+Description=FortiGate K8s Auto Updater
+After=network.target
+
+[Service]
+Type=oneshot
+User=jclee
+WorkingDirectory=/home/jclee/app/fortinet
+ExecStart=/home/jclee/app/fortinet/scripts/k8s-auto-update.sh
+StandardOutput=journal
+StandardError=journal

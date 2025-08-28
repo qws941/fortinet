@@ -1,0 +1,43 @@
+# GitHub Pages Configuration
+title: "이준철 - Fortinet MSA Platform Portfolio"
+description: "99.95% 가용성, 3200 RPS 고성능 마이크로서비스 플랫폼 개발자"
+url: "https://jclee94.github.io"
+baseurl: "/fortinet"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# Site settings
+author:
+  name: "이준철 (Lee Jun Chul)"
+  email: "jclee94@example.com"
+  github: "JCLEE94"
+
+# Collections
+collections:
+  projects:
+    output: true
+    permalink: /:collection/:name/
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Exclude files
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - .bundle
+  - .git
+  - .github
+  - src/
+  - services/
+  - tests/
+  - scripts/

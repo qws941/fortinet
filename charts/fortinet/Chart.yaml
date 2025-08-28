@@ -1,0 +1,23 @@
+apiVersion: v2
+name: fortinet
+description: FortiGate Nextrade - Enterprise Network Monitoring Platform
+type: application
+version: 1.0.9
+appVersion: "1.0.9"
+keywords:
+  - microservice
+  - jclee.me
+  - gitops
+  - argocd
+  - fortinet
+  - network-security
+home: https://fortinet.jclee.me
+sources:
+  - https://github.com/jclee/fortinet
+maintainers:
+  - name: jclee
+    email: admin@jclee.me
+annotations:
+  category: microservice
+  infrastructure: jclee.me
+  security: network-monitoring

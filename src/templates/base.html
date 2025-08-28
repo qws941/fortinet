@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Nextrade Network Monitor{% endblock %}</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0a0e27">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    
+    <!-- Unified CSS System -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nextrade-unified-system.css') }}?v=2.9">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ui-common-fixes.css') }}?v=2.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/overflow-fixes-v2.css') }}?v=2.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation-submenu.css') }}?v=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation-fix.css') }}?v=1.0">
+    
+    <!-- Font Awesome CDN Fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
+          integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='img/nextrade/logo_new.svg') }}" alt="Nextrade">
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <div class="nav-item">
+                    <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+                        <span class="nav-icon"><i class="fas fa-th-large"></i></span>
+                        <span class="nav-text">대시보드</span>
+                    </a>
+                </div>
+                
+                
+                <div class="nav-item">
+                    <a href="{{ url_for('main.devices') }}" class="nav-link {% if request.endpoint == 'main.devices' %}active{% endif %}">
+                        <span class="nav-icon"><i class="fas fa-server"></i></span>
+                        <span class="nav-text">장치 관리</span>
+                    </a>
+                </div>
+                
+                <div class="nav-item">
+                    <a href="{{ url_for('main.topology') }}" class="nav-link {% if request.endpoint == 'main.topology' %}active{% endif %}">
+                        <span class="nav-icon"><i class="fas fa-project-diagram"></i></span>
+                        <span class="nav-text">네트워크 맵</span>
+                    </a>
+                </div>
+                
+                <div class="nav-item">
+                    <a href="{{ url_for('main.packet_sniffer') }}" class="nav-link {% if request.endpoint == 'main.packet_sniffer' %}active{% endif %}">
+                        <span class="nav-icon"><i class="fas fa-network-wired"></i></span>
+                        <span class="nav-text">패킷 분석</span>
+                    </a>
+                </div>
+                
+                <div class="nav-item">
+                    <a href="{{ url_for('main.policy_analysis') }}" class="nav-link {% if request.endpoint == 'main.policy_analysis' %}active{% endif %}">
+                        <span class="nav-icon"><i class="fas fa-search"></i></span>
+                        <span class="nav-text">정책 분석</span>
+                    </a>
+                </div>
+                
+                <div class="nav-item">
+                    <a href="{{ url_for('main.policy_scenarios') }}" class="nav-link {% if request.endpoint == 'main.policy_scenarios' %}active{% endif %}">
+                        <span class="nav-icon"><i class="fas fa-shield-alt"></i></span>
+                        <span class="nav-text">정책 시나리오</span>
+                    </a>
+                </div>
+                
+                <div class="nav-item has-submenu">
+                    <a href="#" class="nav-link {% if request.endpoint and 'itsm' in request.endpoint %}active{% endif %}" onclick="toggleSubmenu('itsm-submenu'); return false;">
+                        <span class="nav-icon"><i class="fas fa-clipboard-list"></i></span>
+                        <span class="nav-text">ITSM</span>
+                        <span class="nav-arrow"><i class="fas fa-chevron-down"></i></span>
+                    </a>
+                    <div id="itsm-submenu" class="nav-submenu {% if request.endpoint and 'itsm' in request.endpoint %}expanded{% endif %}">
+                        <div class="nav-subitem">
+                            <a href="{{ url_for('itsm.itsm') }}" class="nav-sublink {% if request.endpoint == 'itsm.itsm' %}active{% endif %}">
+                                <span class="nav-icon"><i class="fas fa-ticket-alt"></i></span>
+                                <span class="nav-text">서비스 티켓</span>
+                            </a>
+                        </div>
+                        <div class="nav-subitem">
+                            <a href="{{ url_for('itsm.itsm_scraper_page') }}" class="nav-sublink {% if request.endpoint == 'itsm.itsm_scraper_page' %}active{% endif %}">
+                                <span class="nav-icon"><i class="fas fa-sync-alt"></i></span>
+                                <span class="nav-text">정책 스크래핑</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            
+            <div class="nav-menu" style="border-top: 1px solid var(--border); padding-top: 1rem;">
+                <div class="nav-item">
+                    <a href="{{ url_for('main.settings') }}" class="nav-link {% if request.endpoint == 'main.settings' %}active{% endif %}">
+                        <span class="nav-icon"><i class="fas fa-cog"></i></span>
+                        <span class="nav-text">설정</span>
+                    </a>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Container -->
+        <div class="main-container">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    
+                    <!-- 헤더 로고/타이틀 제거 -->
+                    
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="검색...">
+                    </div>
+                </div>
+                
+                <div class="header-right">
+                    <button class="header-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge"></span>
+                    </button>
+                    
+                    <button class="header-btn" onclick="toggleTheme()">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    
+                    <button class="header-btn">
+                        <i class="fas fa-user-circle"></i>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Content -->
+            <main class="content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        // Toggle Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+            
+            // Mobile
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('mobile-open');
+            }
+        }
+        
+        // Toggle Submenu
+        function toggleSubmenu(submenuId) {
+            const submenu = document.getElementById(submenuId);
+            const navItem = submenu.parentElement;
+            const arrow = navItem.querySelector('.nav-arrow i');
+            
+            submenu.classList.toggle('expanded');
+            
+            // 화살표 회전
+            if (submenu.classList.contains('expanded')) {
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                arrow.style.transform = 'rotate(0deg)';
+            }
+            
+            // 다른 서브메뉴 닫기
+            document.querySelectorAll('.nav-submenu').forEach(otherSubmenu => {
+                if (otherSubmenu.id !== submenuId && otherSubmenu.classList.contains('expanded')) {
+                    otherSubmenu.classList.remove('expanded');
+                    const otherArrow = otherSubmenu.parentElement.querySelector('.nav-arrow i');
+                    if (otherArrow) otherArrow.style.transform = 'rotate(0deg)';
+                }
+            });
+        }
+        
+        // Theme Toggle (placeholder)
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            html.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
+        }
+    </script>
+    
+    <!-- Test Mode Indicator (개발/테스트 환경에서만 로드) -->
+    {% if show_test_mode %}
+    <script src="{{ url_for('static', filename='js/test-mode-indicator.js') }}"></script>
+    {% endif %}
+    
+    <!-- Navigation Fix -->
+    <script src="{{ url_for('static', filename='js/navigation-fix.js') }}"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

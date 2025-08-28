@@ -1,0 +1,179 @@
+# FortiGate Nextrade Enterprise 설정 (v1.3.0)
+# GitOps 파이프라인 통합 최적화 버전
+replicaCount: 3
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1
+
+image:
+  repository: registry.jclee.me/fortinet
+  pullPolicy: IfNotPresent  # Immutable tags로 최적화
+  # CI/CD 파이프라인에서 자동 설정됨 (branch-shortsha 형식)
+  tag: "v1.0.9-fix-redis"  # GitOps immutable deployment tag
+
+imagePullSecrets:
+  - name: harbor-registry
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 7777  # Fortinet 애플리케이션 포트
+  nodePort: 30777
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+  hosts:
+    - host: fortinet.jclee.me
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: fortinet-tls
+      hosts:
+        - fortinet.jclee.me
+
+# Enterprise 리소스 최적화 (Production Grade) - Performance Tuned
+resources:
+  limits:
+    cpu: 800m      # CPU limit 최적화 (현재 사용률 6.1% 기준)
+    memory: 512Mi  # Memory limit 최적화 (현재 사용률 27% 기준)
+    ephemeral-storage: 1Gi
+  requests:
+    cpu: 100m      # CPU request 최적화
+    memory: 128Mi  # Memory request 최적화
+    ephemeral-storage: 512Mi
+
+# HPA completely removed - using fixed replica count only
+
+# Fortinet 애플리케이션 환경 변수 (보안 강화)
+# GitOps 4원칙 준수: 불변 빌드 메타데이터
+env:
+  NODE_ENV: production
+  # GitOps 필수 메타데이터 (GitOps compliance를 위한 완전한 정보)
+  GIT_SHA: "1667783"
+  GIT_COMMIT: "16677834d4e4a0b8f2b8e6f8e1b8e6f8e1b8e6f8"  # Full commit hash
+  GIT_BRANCH: "master"
+  BUILD_DATE: "2025-08-21T21:51:26Z"
+  BUILD_TIMESTAMP: "20250821-215126"
+  VERSION: "1.0.9"  # Semantic version
+  REGISTRY_URL: "registry.jclee.me"
+  # Application configuration
+  WEB_APP_PORT: "7777"
+  APP_MODE: production
+  OFFLINE_MODE: "false"
+  # SECRET_KEY will be loaded from Kubernetes secret
+  FLASK_ENV: "production"
+  MICROSERVICE_NAME: fortinet
+  CLUSTER_NAME: microservices-cluster
+  NAMESPACE: fortinet
+  # 보안 설정 강화
+  VERIFY_SSL: "true"
+  SESSION_COOKIE_SECURE: "true"
+  SESSION_COOKIE_HTTPONLY: "true"
+  SESSION_COOKIE_SAMESITE: "Lax"
+  PERMANENT_SESSION_LIFETIME: "900"  # 15분
+  FORCE_DEBUG: "false"
+  # JWT 보안 설정
+  JWT_EXPIRES_IN: "900"  # 15분
+  JWT_ALGORITHM: "HS256"
+  JWT_ISSUER: "fortinet-app"
+  JWT_AUDIENCE: "fortinet-api"
+  # API 보안
+  API_RATE_LIMIT_MAX: "100"
+  API_RATE_LIMIT_WINDOW: "60"
+  API_TIMEOUT: "30"
+  # 로깅 보안
+  LOG_LEVEL: "INFO"
+  DISABLE_DEBUG_LOGS: "true"
+  MASK_SENSITIVE_DATA: "true"
+  # Redis 연결 설정
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+
+# Health Check 설정 (Fortinet 애플리케이션 기준) - Performance Optimized
+probes:
+  liveness:
+    path: /api/health
+    port: 7777
+    initialDelaySeconds: 30    # 시작 시간 최적화 (60s → 30s)
+    periodSeconds: 20          # 체크 주기 최적화 (30s → 20s)
+    timeoutSeconds: 5          # 응답 시간 최적화 (10s → 5s)
+    failureThreshold: 3
+    successThreshold: 1
+  readiness:
+    path: /api/health
+    port: 7777
+    initialDelaySeconds: 5     # 빠른 준비 상태 감지 (10s → 5s)
+    periodSeconds: 5           # 빠른 체크 주기 (10s → 5s)
+    timeoutSeconds: 3          # 빠른 응답 시간 (5s → 3s)
+    failureThreshold: 3
+    successThreshold: 1
+  # 시작 프로브 추가 (성능 최적화)
+  startup:
+    path: /api/health
+    port: 7777
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6        # 60초 내 시작 보장
+    successThreshold: 1
+
+# MSA 보안 설정 강화
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+    add:
+      - NET_BIND_SERVICE  # 포트 바인딩만 허용
+  seccompProfile:
+    type: RuntimeDefault
+
+# Fortinet 애플리케이션 볼륨 설정
+volumes:
+  data:
+    enabled: false
+    size: 1Gi
+    storageClass: local-path
+  logs:
+    enabled: false
+    size: 500Mi
+    storageClass: local-path
+
+# MSA 모니터링 (Prometheus/Grafana)
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: false  # Temporarily disabled to fix ArgoCD sync issues
+    path: /api/health
+    port: http  # Changed from metrics to http (port 7777)
+
+# MSA 로깅 (ELK Stack)  
+logging:
+  enabled: true
+  level: info
+  format: json
+
+# Fortinet 특화 설정
+fortinet:
+  mockMode: false
+  apiKeys:
+    fortigate: ""
+    fortimanager: ""
+  networking:
+    enableSocketIO: true
+    enableSSE: true

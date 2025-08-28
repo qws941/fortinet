@@ -1,0 +1,44 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fortinet-metrics
+  namespace: fortinet
+  labels:
+    app: fortinet
+    monitoring: prometheus
+    gitops.argocd.argoproj.io/managed: "true"
+spec:
+  selector:
+    matchLabels:
+      app: fortinet
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+    scheme: http
+    metricRelabelings:
+    - sourceLabels: [__name__]
+      regex: 'fortinet_.*'
+      action: keep
+  namespaceSelector:
+    matchNames:
+    - fortinet
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fortinet-metrics
+  namespace: fortinet
+  labels:
+    app: fortinet
+    component: metrics
+spec:
+  selector:
+    app: fortinet
+  ports:
+  - name: metrics
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  type: ClusterIP

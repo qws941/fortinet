@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Metrics - FortiGate Nextrade{% endblock %}
+
+{% block content %}
+<div class="content-area">
+    <div class="page-header">
+        <h1><i class="fas fa-chart-line"></i> Performance Metrics</h1>
+        <p class="page-description">시스템 성능 모니터링 및 메트릭</p>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="card-header">
+                <h3>CPU Usage</h3>
+            </div>
+            <div class="card-body">
+                <div class="metric-value">45.2%</div>
+                <div class="metric-trend positive">+2.1% from last hour</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Memory Usage</h3>
+            </div>
+            <div class="card-body">
+                <div class="metric-value">62.8%</div>
+                <div class="metric-trend negative">-1.5% from last hour</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Network Traffic</h3>
+            </div>
+            <div class="card-body">
+                <div class="metric-value">1.2 GB/s</div>
+                <div class="metric-trend positive">+5.3% from last hour</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="performanceChart"></canvas>
+    </div>
+</div>
+{% endblock %}

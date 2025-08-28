@@ -1,0 +1,85 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: fortinet-alerts
+  namespace: fortinet
+  labels:
+    app: fortinet
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+  - name: fortinet.rules
+    interval: 30s
+    rules:
+    - alert: FortinetPodCrashLooping
+      expr: rate(kube_pod_container_status_restarts_total{namespace="fortinet", pod=~"fortinet-.*"}[5m]) > 0
+      for: 2m
+      labels:
+        severity: critical
+        service: fortinet
+        environment: production
+      annotations:
+        summary: "FortiNet Pod가 지속적으로 재시작하고 있습니다"
+        description: "Pod {{ $labels.pod }}가 {{ $value }}회/분 재시작하고 있습니다. 애플리케이션 로그를 확인하세요."
+        runbook_url: "https://docs.jclee.me/runbooks/pod-crashloop"
+    
+    - alert: FortinetHighResponseTime
+      expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{namespace="fortinet"}[5m])) > 1
+      for: 5m
+      labels:
+        severity: warning
+        service: fortinet
+        environment: production
+      annotations:
+        summary: "FortiNet 응답 시간이 1초를 초과했습니다"
+        description: "95th percentile 응답 시간이 {{ $value }}초입니다. 성능 튜닝이 필요합니다."
+        runbook_url: "https://docs.jclee.me/runbooks/high-latency"
+    
+    - alert: FortinetHighMemoryUsage
+      expr: container_memory_working_set_bytes{namespace="fortinet", container="fortinet"} / container_spec_memory_limit_bytes{namespace="fortinet", container="fortinet"} > 0.8
+      for: 5m
+      labels:
+        severity: warning
+        service: fortinet
+        environment: production
+      annotations:
+        summary: "FortiNet 메모리 사용량이 80%를 초과했습니다"
+        description: "메모리 사용량이 {{ $value | humanizePercentage }}입니다. 메모리 누수를 확인하세요."
+        runbook_url: "https://docs.jclee.me/runbooks/memory-usage"
+    
+    - alert: FortinetPodNotReady
+      expr: kube_pod_status_ready{namespace="fortinet", pod=~"fortinet-.*", condition="true"} == 0
+      for: 3m
+      labels:
+        severity: critical
+        service: fortinet
+        environment: production
+      annotations:
+        summary: "FortiNet Pod가 Ready 상태가 아닙니다"
+        description: "Pod {{ $labels.pod }}가 3분 이상 Ready 상태가 아닙니다. 헬스체크 실패 가능성이 높습니다."
+        runbook_url: "https://docs.jclee.me/runbooks/pod-not-ready"
+    
+    - alert: FortinetServiceDown
+      expr: up{job="fortinet-metrics", namespace="fortinet"} == 0
+      for: 1m
+      labels:
+        severity: critical
+        service: fortinet
+        environment: production
+      annotations:
+        summary: "FortiNet 서비스가 다운되었습니다"
+        description: "FortiNet 애플리케이션이 응답하지 않습니다. 즉시 확인이 필요합니다."
+        runbook_url: "https://docs.jclee.me/runbooks/service-down"
+    
+    - alert: FortinetHighCPUUsage
+      expr: rate(container_cpu_usage_seconds_total{namespace="fortinet", container="fortinet"}[5m]) > 0.8
+      for: 10m
+      labels:
+        severity: warning
+        service: fortinet
+        environment: production
+      annotations:
+        summary: "FortiNet CPU 사용량이 80%를 초과했습니다"
+        description: "CPU 사용량이 {{ $value | humanizePercentage }}입니다. 스케일링을 고려하세요."
+        runbook_url: "https://docs.jclee.me/runbooks/cpu-usage"

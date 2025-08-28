@@ -1,0 +1,91 @@
+groups:
+  - name: fortinet_alerts
+    interval: 30s
+    rules:
+      # Container Health Alerts
+      - alert: FortinetContainerDown
+        expr: up{job="fortinet"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          service: fortinet
+        annotations:
+          summary: "FortiNet container is down"
+          description: "FortiNet container has been down for more than 5 minutes"
+      
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{name="fortinet-prod"}[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          service: fortinet
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for more than 10 minutes"
+      
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes{name="fortinet-prod"} / container_spec_memory_limit_bytes{name="fortinet-prod"} > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          service: fortinet
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 90% of limit for more than 10 minutes"
+      
+      # API Response Time
+      - alert: SlowAPIResponse
+        expr: http_request_duration_seconds{job="fortinet", quantile="0.99"} > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: fortinet
+        annotations:
+          summary: "Slow API response times"
+          description: "99th percentile response time is above 2 seconds"
+      
+      # Error Rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{job="fortinet", status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: fortinet
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 5% for more than 5 minutes"
+      
+      # Disk Space
+      - alert: LowDiskSpace
+        expr: node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} < 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "Low disk space"
+          description: "Less than 10% disk space remaining"
+      
+      # Redis Connection
+      - alert: RedisDown
+        expr: redis_up{job="redis"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been unreachable for more than 5 minutes"
+      
+      # Certificate Expiry
+      - alert: CertificateExpirySoon
+        expr: probe_ssl_earliest_cert_expiry{job="fortinet"} - time() < 86400 * 7
+        for: 1h
+        labels:
+          severity: warning
+          service: fortinet
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate will expire in less than 7 days"

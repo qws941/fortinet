@@ -1,0 +1,346 @@
+# =============================================================================
+# Docker Build Context Exclusions
+# Reduces build context size and improves security
+# =============================================================================
+
+# Version Control
+.git/
+.gitignore
+.github/
+.gitattributes
+.gitlab-ci.yml
+.travis.yml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+coverage.json
+htmlcov/
+.tox/
+.hypothesis/
+*.cover
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pytype/
+.pdm-python
+.pdm.toml
+
+# Virtual Environments
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.virtualenv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+.DS_Store
+*.sublime-*
+.ropeproject/
+.spyderproject
+.spyproject
+*.iml
+.project
+.pydevproject
+.settings/
+
+# Documentation
+docs/
+*.md
+!README.md
+LICENSE*
+CHANGELOG*
+AUTHORS*
+CONTRIBUTING*
+TODO*
+*.rst
+*.txt
+!requirements.txt
+!requirements-*.txt
+
+# Testing
+tests/
+test/
+*_test.py
+test_*.py
+pytest.ini
+tox.ini
+.nox/
+conftest.py
+.mutmut-cache
+*.hypothesis/
+
+# CI/CD
+.travis.yml
+.gitlab-ci.yml
+Jenkinsfile
+azure-pipelines.yml
+.circleci/
+.github/
+appveyor.yml
+.drone.yml
+codefresh.yml
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+docker/
+containers/
+
+# Kubernetes / Helm
+charts/
+*.yaml
+*.yml
+!docker-compose.yml
+k8s/
+kubernetes/
+helm/
+manifests/
+deployments/
+
+# Logs and databases
+*.log
+*.sql
+!init.sql
+*.sqlite
+*.sqlite3
+*.db
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary files
+tmp/
+temp/
+cache/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+.cache/
+
+# Security - Never include these
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+credentials/
+config.json
+!config.example.json
+settings.json
+!settings.example.json
+!postgresql.conf
+!redis.conf
+*.secret
+*.password
+*.token
+
+# Build artifacts
+node_modules/
+bower_components/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnpm-store/
+
+# OS files
+Thumbs.db
+Desktop.ini
+.directory
+.apple*
+.apdisk
+*.lnk
+
+# Project specific
+data/*.json
+data/*.db
+data/*.sqlite
+!data/.gitkeep
+screenshots/
+reports/
+output/
+artifacts/
+monitoring/
+!monitoring/.gitkeep
+
+# Development tools
+dev-tools/
+scripts/setup-*.sh
+scripts/test-*.sh
+!scripts/start.sh
+tools/
+utils/test*
+
+# Large files
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z
+*.iso
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.msi
+*.exe
+*.app
+
+# Media files (unless needed)
+*.mp4
+*.avi
+*.mov
+*.mp3
+*.wav
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.ico
+*.svg
+*.webp
+*.pdf
+!static/**/*
+
+# Performance data
+prometheus/
+grafana/
+metrics/
+benchmarks/
+
+# Backup files
+backup/
+backups/
+*.backup
+*.dump
+
+# Local configuration
+local/
+local.yml
+local.yaml
+local.json
+
+# Git hooks
+.husky/
+.git-hooks/
+pre-commit-config.yaml
+
+# Analysis results
+sonar-project.properties
+.sonarcloud.properties
+.scannerwork/
+
+# Package management
+poetry.lock
+Pipfile.lock
+requirements-dev.txt
+requirements-test.txt
+
+# Automation results
+automation_results.json
+*_results.json
+*_report.json
+test-results/
+
+# Archives
+archives/
+archive/
+
+# Logs
+*.log
+logs/
+log/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts
+build/
+dist/
+*.tar.gz
+*.zip
+
+# Docker related
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Charts and deployment
+charts/
+k8s/
+helm/
+
+# CI/CD
+.github/workflows/
+.gitlab-ci.yml
+Jenkinsfile
+
+# Environment files
+.env*
+!.env.example
+
+# Node.js (if present)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Python specific
+*.egg-info/
+.installed.cfg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Security
+secrets/
+*.key
+*.pem
+*.crt
+
+# Local development
+dev-tools/
+scripts/local/

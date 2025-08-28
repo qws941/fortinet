@@ -1,0 +1,101 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus 자체 모니터링
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Kong API Gateway 모니터링
+  - job_name: 'kong'
+    static_configs:
+      - targets: ['kong:8001']
+    metrics_path: '/metrics'
+
+  # MSA 서비스들 모니터링
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['auth-service:8081']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'fortimanager-service'
+    static_configs:
+      - targets: ['fortimanager-service:8082']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'itsm-service'
+    static_configs:
+      - targets: ['itsm-service:8083']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'monitoring-service'
+    static_configs:
+      - targets: ['monitoring-service:8084']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'security-service'
+    static_configs:
+      - targets: ['security-service:8085']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'analysis-service'
+    static_configs:
+      - targets: ['analysis-service:8086']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'config-service'
+    static_configs:
+      - targets: ['config-service:8087']
+    metrics_path: '/metrics'
+    scrape_interval: 60s
+
+  # 인프라 컴포넌트 모니터링
+  - job_name: 'consul'
+    static_configs:
+      - targets: ['consul:8500']
+    metrics_path: '/v1/agent/metrics'
+    params:
+      format: ['prometheus']
+
+  - job_name: 'rabbitmq'
+    static_configs:
+      - targets: ['rabbitmq:15692']
+    metrics_path: '/metrics'
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  # 데이터베이스 모니터링
+  - job_name: 'postgres-fortimanager'
+    static_configs:
+      - targets: ['postgres-exporter-fm:9187']
+
+  - job_name: 'postgres-itsm'
+    static_configs:
+      - targets: ['postgres-exporter-itsm:9187']
+
+  - job_name: 'postgres-analysis'
+    static_configs:
+      - targets: ['postgres-exporter-analysis:9187']
+
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongodb-exporter:9216']
+
+  - job_name: 'influxdb'
+    static_configs:
+      - targets: ['influxdb:8086']
+    metrics_path: '/metrics'

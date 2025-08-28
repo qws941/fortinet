@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+
+{% block title %}대시보드 - Nextrade Network Monitor{% endblock %}
+
+{% block head_extra %}
+<!-- Chart.js CDN as fallback -->
+<script src="{{ data.config.external_resources.chartjs_cdn if data.config else 'https://cdn.jsdelivr.net/npm/chart.js' }}"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">네트워크 대시보드</h1>
+    <p class="page-subtitle">실시간 네트워크 상태 및 성능 모니터링</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid grid-cols-4">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-server fa-lg"></i>
+        </div>
+        <div class="stat-value" id="active-devices">{{ data.stats.total_devices if data and data.stats else data.config.stats.total_devices }}</div>
+        <div class="stat-label">활성 장치</div>
+        <div class="stat-trend trend-up">
+            <i class="fas fa-arrow-up"></i> {{ data.config.stats.trend_device_increase if data.config else 12 }}%
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon stat-icon-success">
+            <i class="fas fa-globe fa-lg"></i>
+        </div>
+        <div class="stat-value" id="uptime">{{ data.config.stats.uptime_percentage if data.config else '99.8' }}%</div>
+        <div class="stat-label">가동률</div>
+        <div class="stat-trend trend-up">
+            <i class="fas fa-arrow-up"></i> {{ data.config.stats.trend_uptime_increase if data.config else 0.2 }}%
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon stat-icon-info">
+            <i class="fas fa-exchange-alt fa-lg"></i>
+        </div>
+        <div class="stat-value" id="network-traffic">{{ data.config.stats.network_traffic if data.config else '2.4 Gbps' }}</div>
+        <div class="stat-label">네트워크 트래픽</div>
+        <div class="stat-trend trend-down">
+            <i class="fas fa-arrow-down"></i> {{ data.config.stats.trend_traffic_decrease if data.config else 8 }}%
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon stat-icon-warning">
+            <i class="fas fa-exclamation-triangle fa-lg"></i>
+        </div>
+        <div class="stat-value" id="active-alerts">{{ data.config.stats.active_alerts if data.config else 3 }}</div>
+        <div class="stat-label">활성 알림</div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="grid grid-cols-3">
+    <!-- Network Performance Chart -->
+    <div class="card span-2">
+        <div class="card-header">
+            <h3 class="card-title">네트워크 성능</h3>
+            <div class="btn-group">
+                <button class="btn-time">1시간</button>
+                <button class="btn-time active">24시간</button>
+                <button class="btn-time">7일</button>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="performanceChart"></canvas>
+        </div>
+    </div>
+    
+    <!-- Top Devices -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">상위 장치 (트래픽)</h3>
+            <a href="#" class="link-accent">전체 보기</a>
+        </div>
+        <div class="device-list" id="top-devices-list">
+            <!-- 동적으로 로드됨 -->
+        </div>
+    </div>
+</div>
+
+<!-- FortiManager Management Section -->
+<div class="content-grid-3 mt-6">
+    <!-- FortiManager Status -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-server" style="color: #FF6B35;"></i>
+                FortiManager 상태
+            </h3>
+            <span class="badge-success" id="fortimanager-status">연결됨</span>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value" id="managed-devices-count">-</div>
+                <div class="stat-label">관리 장치</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="policy-packages-count">-</div>
+                <div class="stat-label">정책 패키지</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="adom-count">-</div>
+                <div class="stat-label">ADOM</div>
+            </div>
+        </div>
+        <div class="mt-3">
+            <button class="btn-primary btn-sm" onclick="refreshFortiManagerStatus()">
+                <i class="fas fa-sync-alt"></i> 상태 새로고침
+            </button>
+        </div>
+    </div>
+    
+    <!-- Policy Management -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-shield-alt" style="color: #4ECDC4;"></i>
+                정책 관리
+            </h3>
+        </div>
+        <div class="policy-summary" id="policy-summary">
+            <div class="policy-item">
+                <div class="policy-name">방화벽 정책</div>
+                <div class="policy-count" id="firewall-policies-count">로딩중...</div>
+            </div>
+            <div class="policy-item">
+                <div class="policy-name">주소 객체</div>
+                <div class="policy-count" id="address-objects-count">로딩중...</div>
+            </div>
+            <div class="policy-item">
+                <div class="policy-name">서비스 객체</div>
+                <div class="policy-count" id="service-objects-count">로딩중...</div>
+            </div>
+        </div>
+        <div class="mt-3">
+            <button class="btn-secondary btn-sm" onclick="openPolicyAnalysis()">
+                <i class="fas fa-route"></i> 경로 분석
+            </button>
+        </div>
+    </div>
+    
+    <!-- Recent Security Events -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-exclamation-triangle" style="color: #FF6B6B;"></i>
+                보안 이벤트
+            </h3>
+            <span class="badge-warning" id="security-events-count">0 건</span>
+        </div>
+        <div class="security-events-list" id="security-events-list">
+            <!-- 동적으로 로드됨 -->
+        </div>
+        <div class="mt-3">
+            <button class="btn-outline btn-sm" onclick="viewAllSecurityEvents()">
+                <i class="fas fa-list"></i> 전체 보기
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Row -->
+<div class="content-grid-2 mt-6">
+    <!-- Recent Alerts -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">최근 알림</h3>
+            <span class="badge-count pulse">3 활성</span>
+        </div>
+        <div class="alert-list" id="recent-alerts-list">
+            <!-- 동적으로 로드됨 -->
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">빠른 작업</h3>
+        </div>
+        <div class="quick-actions-grid">
+            <button class="quick-action-btn" onclick="openTrafficAnalysis()">
+                <i class="fas fa-brain quick-action-icon" style="color: #7C3AED;"></i>
+                <span>트래픽 분석</span>
+            </button>
+            
+            <button class="quick-action-btn" onclick="openPolicyOptimization()">
+                <i class="fas fa-magic quick-action-icon" style="color: var(--accent);"></i>
+                <span>정책 최적화</span>
+            </button>
+            
+            <button class="quick-action-btn" onclick="generateReport()">
+                <i class="fas fa-file-alt quick-action-icon" style="color: var(--success);"></i>
+                <span>리포트 생성</span>
+            </button>
+            
+            <button class="quick-action-btn" onclick="openSecurityDiagnostics()">
+                <i class="fas fa-shield-alt quick-action-icon" style="color: var(--warning);"></i>
+                <span>보안 진단</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- Socket.IO for real-time updates -->
+<script src="{{ data.config.external_resources.socketio_cdn if data.config else 'https://cdn.socket.io/4.5.4/socket.io.min.js' }}"></script>
+<!-- Dashboard real-time features -->
+<script src="{{ url_for('static', filename='js/dashboard-realtime.js') }}"></script>
+<script>
+// 페이지 로드 시 데이터 가져오기
+document.addEventListener('DOMContentLoaded', function() {
+    loadTopDevices();
+    loadRecentAlerts();
+});
+
+// 상위 장치 로드
+function loadTopDevices() {
+    fetch('/api/devices')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.devices && data.devices.connected_devices) {
+                const deviceList = document.getElementById('top-devices-list');
+                deviceList.innerHTML = '';
+                
+                // 상위 장치만 표시 (설정에서 가져옴)
+                const topLimit = {{ data.config.device_list.top_devices_limit if data.config else 5 }};
+                const devices = data.devices.connected_devices.slice(0, topLimit);
+                devices.forEach(device => {
+                    const bandwidth = device.bandwidth_in + device.bandwidth_out;
+                    const trend = Math.random() > 0.5 ? 'up' : 'down';
+                    const trendValue = Math.floor(Math.random() * {{ data.config.device_list.trend_max_percentage if data.config else 20 }});
+                    
+                    const html = `
+                        <div class="device-item">
+                            <div class="device-info">
+                                <div class="status-indicator status-${device.status}"></div>
+                                <div>
+                                    <div class="device-name truncate">${device.name}</div>
+                                    <div class="device-ip">${device.ip_address}</div>
+                                </div>
+                            </div>
+                            <div class="device-stats">
+                                <div class="device-value">${bandwidth} {{ data.config.device_list.bandwidth_display_unit if data.config else 'Mbps' }}</div>
+                                <div class="device-trend trend-${trend}">
+                                    ${trend === 'up' ? '↑' : '↓'} ${trendValue}%
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    deviceList.innerHTML += html;
+                });
+            }
+        })
+        .catch(error => console.error('Error loading devices:', error));
+}
+
+// 최근 알림 로드
+function loadRecentAlerts() {
+    const alertList = document.getElementById('recent-alerts-list');
+    
+    // 테스트 데이터로 알림 생성
+    const alerts = [
+        {
+            type: 'critical',
+            icon: 'exclamation-circle',
+            color: 'var(--danger)',
+            title: '높은 CPU 사용률',
+            description: 'FIREWALL-09에서 CPU 사용률이 85%를 초과했습니다.',
+            time: '5분 전'
+        },
+        {
+            type: 'warning',
+            icon: 'exclamation-triangle',
+            color: 'var(--warning)',
+            title: '메모리 사용량 경고',
+            description: 'SWITCH-11에서 메모리 사용률이 75%를 초과했습니다.',
+            time: '12분 전'
+        },
+        {
+            type: 'info',
+            icon: 'info-circle',
+            color: 'var(--info)',
+            title: '장치 연결 해제',
+            description: 'WORKSTATION-14가 네트워크에서 연결 해제되었습니다.',
+            time: '25분 전'
+        }
+    ];
+    
+    alertList.innerHTML = '';
+    alerts.forEach(alert => {
+        const html = `
+            <div class="alert-item alert-${alert.type}">
+                <i class="fas fa-${alert.icon} alert-icon" style="color: ${alert.color};"></i>
+                <div class="alert-content">
+                    <div class="alert-title">${alert.title}</div>
+                    <div class="alert-description">${alert.description}</div>
+                    <div class="alert-time">${alert.time}</div>
+                </div>
+            </div>
+        `;
+        alertList.innerHTML += html;
+    });
+}
+
+// Chart initialization
+window.addEventListener('load', function() {
+    const ctx = document.getElementById('performanceChart');
+    if (ctx) {
+        // Canvas 크기 강제 설정
+        ctx.style.width = '100%';
+        ctx.style.height = '300px';
+        
+        window.performanceChart = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+            datasets: [{
+                label: 'Inbound',
+                data: Array.from({length: 24}, () => Math.random() * 3 + 1),
+                borderColor: '#22c55e',
+                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                tension: 0.4,
+                fill: true
+            }, {
+                label: 'Outbound',
+                data: Array.from({length: 24}, () => Math.random() * 2 + 0.5),
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#94a3b8',
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(148, 163, 184, 0.1)'
+                    },
+                    ticks: {
+                        color: '#94a3b8'
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(148, 163, 184, 0.1)'
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        callback: function(value) {
+                            return value + ' Gbps';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    }
+});
+
+// 디버깅을 위한 콘솔 로그
+console.log('Dashboard loaded. Chart element:', document.getElementById('performanceChart'));
+</script>
+{% endblock %}

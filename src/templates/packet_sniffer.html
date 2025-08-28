@@ -1,0 +1,2309 @@
+{% extends "base.html" %}
+
+{% block title %}패킷 분석 - Nextrade Network Monitor{% endblock %}
+
+{% block head_extra %}
+<!-- All styles are now in the unified CSS system -->
+<style>
+    /* Packet details formatting */
+    .packet-details {
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        white-space: pre-wrap;
+        max-height: 400px;
+        overflow-y: auto;
+        background-color: var(--bg-secondary);
+        padding: 1rem;
+        border-radius: 0.25rem;
+        word-break: break-all;
+        unicode-bidi: plaintext;
+        line-height: 1.4;
+    }
+    
+    /* Fix text overflow issues */
+    .form-control, .form-select {
+        max-width: 100%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .card-title {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+    }
+    
+    .card-body {
+        overflow-x: auto;
+    }
+    
+    /* Option text styling */
+    select option {
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Responsive card adjustments */
+    @media (max-width: 768px) {
+        .card-title {
+            font-size: 1rem;
+        }
+        
+        .form-control, .form-select {
+            font-size: 0.9rem;
+        }
+    }
+    
+    /* Cytoscape legend styles */
+    .cytoscape-legend {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(255, 255, 255, 0.9);
+        border: 1px solid var(--border);
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: var(--shadow-md);
+        z-index: 10;
+        font-size: 12px;
+        max-width: 170px;
+    }
+    
+    .legend-title {
+        font-weight: bold;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 5px;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    
+    .legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        margin-right: 8px;
+    }
+    
+    .legend-color-line {
+        width: 24px;
+        height: 4px;
+        margin-right: 8px;
+        border-radius: 1px;
+    }
+    
+    .legend-label {
+        font-size: 11px;
+    }
+    
+    /* Payload preview */
+    .payload-preview {
+        max-height: 150px;
+        overflow-y: auto;
+        font-size: 11px;
+        background-color: var(--bg-secondary);
+        padding: 8px;
+        margin-top: 5px;
+        border-radius: 4px;
+        border: 1px solid var(--border);
+        font-family: 'Courier New', monospace;
+        white-space: pre-wrap;
+        word-break: break-all;
+        unicode-bidi: plaintext;
+        line-height: 1.3;
+    }
+    
+    /* Full Page Loader */
+    #full-page-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+    }
+    
+    #full-page-loader .spinner-container {
+        background-color: white;
+        padding: 30px;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Connection Status Indicator */
+    .connection-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+    
+    .connection-indicator .fas.fa-circle {
+        font-size: 0.75rem;
+        color: var(--warning);
+    }
+    
+    .connection-indicator.connected .fas.fa-circle {
+        color: var(--success);
+    }
+    
+    .connection-indicator.disconnected .fas.fa-circle {
+        color: var(--danger);
+    }
+    
+    /* Tooltip Enhancements */
+    .custom-tooltip {
+        position: relative;
+        display: inline-block;
+        cursor: help;
+    }
+    
+    .custom-tooltip .tooltip-text {
+        visibility: hidden;
+        width: 200px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .custom-tooltip:hover .tooltip-text {
+        visibility: visible;
+        opacity: 0.9;
+    }
+    
+    /* Filter examples badge */
+    .filter-example {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .filter-example:hover {
+        background-color: #0b5ed7;
+    }
+    
+    /* Fix dropdown toggle button alignment */
+    .dropdown-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+    }
+    
+    /* Fix form controls */
+    .form-control, .form-select {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+    }
+    
+    .form-control:focus, .form-select:focus {
+        background-color: var(--bg-secondary);
+        border-color: var(--primary);
+        color: var(--text-primary);
+        box-shadow: 0 0 0 0.25rem rgba(229, 0, 56, 0.25);
+    }
+    
+    /* Fix gap utility */
+    .gap-2 {
+        gap: 0.5rem;
+    }
+    
+    .d-flex {
+        display: flex;
+    }
+    
+    .flex-grow-1 {
+        flex-grow: 1;
+    }
+    
+    .me-1 {
+        margin-right: 0.25rem;
+    }
+    
+    /* Collapsible sections */
+    .collapsible-section {
+        transition: all 0.3s ease-in-out;
+        overflow: hidden;
+    }
+    
+    .collapsible-header {
+        cursor: pointer;
+    }
+    
+    .collapsible-header:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+    
+    /* Modal Size Adjustments */
+    .modal-xl {
+        max-width: 90%;
+    }
+    
+    /* Help button */
+    .help-btn {
+        cursor: pointer;
+        color: #6c757d;
+        transition: color 0.2s;
+    }
+    
+    .help-btn:hover {
+        color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="fas fa-network-wired"></i>
+        패킷 분석 <span class="badge" style="background-color: #6c757d; color: white; font-size: 0.6em;">미구현</span>
+    </h1>
+    <p class="page-description">실시간 패킷 캡처 및 네트워크 트래픽 분석</p>
+</div>
+
+<div class="container">
+    <!-- Error notification area -->
+    <div id="error-alert"></div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">
+                                <i class="fas fa-cog"></i>
+                                패킷 캡처 설정
+                            </h5>
+                            <!-- Connection Status Indicator -->
+                            <div class="button-group">
+                                <button type="button" class="button button-small button-outline" id="test-connection-btn">
+                                    <i class="fas fa-sync-alt"></i> 연결 테스트
+                                </button>
+                                <span id="connection-status-message" class="connection-indicator">
+                                    <i class="fas fa-circle"></i> 연결 확인 중...
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <form id="sniffer-form">
+                                <div class="form-group">
+                                    <label for="firewall-select">방화벽 선택</label>
+                                    <select class="form-control" id="firewall-select" required>
+                                            <option value="" selected disabled>방화벽을 선택하세요</option>
+                                            {% for device in devices %}
+                                            <option value="{{ device.id }}">{{ device.name }} ({{ device.ip }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    
+                                <div class="form-group">
+                                    <label for="interface-select">인터페이스</label>
+                                    <select class="form-control" id="interface-select" required>
+                                            <option value="" selected disabled>인터페이스를 선택하세요</option>
+                                            <option value="port1">port1 (DMZ)</option>
+                                            <option value="port2">port2 (내부망)</option>
+                                            <option value="port3">port3 (보안망)</option>
+                                            <option value="port4">port4 (외부망)</option>
+                                            <option value="any">모든 인터페이스</option>
+                                        </select>
+                                    </div>
+                                    
+                                <div class="form-group">
+                                    <label>필터 옵션</label>
+                                    <div class="filter-options">
+                                        <div class="filter-section">
+                                            <h6 class="filter-title">일반 필터</h6>
+                                            <div class="filter-buttons">
+                                                <button type="button" class="filter-option btn btn-sm btn-outline-primary" data-filter="host">특정 호스트</button>
+                                                <button type="button" class="filter-option btn btn-sm btn-outline-primary" data-filter="http">HTTP 트래픽</button>
+                                                <button type="button" class="filter-option btn btn-sm btn-outline-primary" data-filter="https">HTTPS 트래픽</button>
+                                                <button type="button" class="filter-option btn btn-sm btn-outline-primary" data-filter="dns">DNS 트래픽</button>
+                                                <button type="button" class="filter-option btn btn-sm btn-outline-primary" data-filter="icmp">ICMP (Ping)</button>
+                                            </div>
+                                        </div>
+                                        <div class="filter-section mt-3">
+                                            <h6 class="filter-title">고급 필터</h6>
+                                            <div class="filter-buttons">
+                                                <button type="button" class="filter-option btn btn-sm btn-outline-secondary" data-filter="syn">TCP SYN 패킷</button>
+                                                <button type="button" class="filter-option btn btn-sm btn-outline-secondary" data-filter="fin">TCP FIN 패킷</button>
+                                                <button type="button" class="filter-option btn btn-sm btn-outline-secondary" data-filter="between">호스트 간 통신</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="src-ip">출발지 IP</label>
+                                                <input type="text" class="form-control" id="src-ip" placeholder="예: {{ example_filters.src_ip }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="dst-ip">목적지 IP</label>
+                                                <input type="text" class="form-control" id="dst-ip" placeholder="예: 8.8.8.8">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                    
+                                <div class="form-group">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="port">포트</label>
+                                                <input type="text" class="form-control" id="port" placeholder="예: 80, 443">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="protocol">프로토콜</label>
+                                                <select class="form-control" id="protocol">
+                                                        <option value="any" selected>모든 프로토콜</option>
+                                                        <option value="tcp">TCP</option>
+                                                        <option value="udp">UDP</option>
+                                                        <option value="icmp">ICMP</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="filter-expression" class="form-label d-flex justify-content-between align-items-center">
+                                            필터 표현식 (고급)
+                                            <span class="help-btn" title="필터 도움말" data-bs-toggle="modal" data-bs-target="#filter-help-modal">
+                                                <i class="fas fa-question-circle"></i>
+                                            </span>
+                                        </label>
+                                        <div class="input-group mb-2">
+                                            <textarea class="form-control" id="filter-expression" rows="2" placeholder="예: host {{ example_filters.src_ip }} and tcp port 80"></textarea>
+                                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-list me-1"></i>필터 예시
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" id="filter-examples">
+                                                <li><h6 class="dropdown-header">일반 필터</h6></li>
+                                                <li><a class="dropdown-item filter-template" href="#" data-filter="host {{ example_filters.host }}">특정 호스트</a></li>
+                                                <li><a class="dropdown-item filter-template" href="#" data-filter="port 80">HTTP 트래픽</a></li>
+                                                <li><a class="dropdown-item filter-template" href="#" data-filter="port 443">HTTPS 트래픽</a></li>
+                                                <li><a class="dropdown-item filter-template" href="#" data-filter="port 53">DNS 트래픽</a></li>
+                                                <li><a class="dropdown-item filter-template" href="#" data-filter="icmp">ICMP (Ping)</a></li>
+                                                <li><h6 class="dropdown-header">고급 필터</h6></li>
+                                                <li><a class="dropdown-item filter-template" href="#" data-filter="tcp[13] & 2 != 0">TCP SYN 패킷</a></li>
+                                                <li><a class="dropdown-item filter-template" href="#" data-filter="tcp[13] & 1 != 0">TCP FIN 패킷</a></li>
+                                                <li><a class="dropdown-item filter-template" href="#" data-filter="{{ example_filters.host_to_host }}">호스트 간 통신</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">방화벽 패킷 스니퍼 필터 형식을 사용합니다. 빈 칸이면 모든 패킷이 캡처됩니다.</small>
+                                </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label for="max-packets" class="form-label">최대 패킷 수</label>
+                                                <input type="number" class="form-control" id="max-packets" value="100" min="1" max="1000">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="timeout" class="form-label">제한 시간 (초)</label>
+                                                <input type="number" class="form-control" id="timeout" value="30" min="5" max="300">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-primary flex-grow-1" id="start-capture">
+                                            <i class="fas fa-play me-1"></i>패킷 캡처 시작
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" id="settings-btn" title="캡처 설정" data-bs-toggle="modal" data-bs-target="#settings-modal">
+                                            <i class="fas fa-cog"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info" id="help-btn" title="도움말" data-bs-toggle="modal" data-bs-target="#help-modal">
+                                            <i class="fas fa-question-circle"></i>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-chart-line"></i>
+                                        캡처 상태
+                                    </h5>
+                                    <span id="capture-status" class="status-badge status-badge-secondary">대기 중</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="status-info">
+                                    <p class="text-center text-muted my-5">
+                                        <i class="fas fa-info-circle fa-3x mb-3"></i><br>
+                                        패킷 캡처를 시작하려면 왼쪽의 설정을 완료하고<br>
+                                        '패킷 캡처 시작' 버튼을 클릭하세요.
+                                    </p>
+                                </div>
+                                
+                                <div id="capture-progress" class="d-none">
+                                    <div class="mb-3">
+                                        <span id="captured-packets">0</span> / <span id="max-packets-display">100</span> 패킷 캡처됨
+                                        <div class="progress">
+                                            <div id="capture-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between">
+                                            <span>남은 시간: <span id="time-remaining">30</span>초</span>
+                                            <span>경과 시간: <span id="elapsed-time">0</span>초</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div id="time-progress-bar" class="progress-bar bg-info progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <div>
+                                            <i class="fas fa-arrow-down text-success"></i> 수신: <span id="rx-packets">0</span> 패킷
+                                            (<span id="rx-bytes">0</span> 바이트)
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-arrow-up text-danger"></i> 송신: <span id="tx-packets">0</span> 패킷
+                                            (<span id="tx-bytes">0</span> 바이트)
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <strong>주의:</strong> 패킷 캡처는 방화벽 성능에 영향을 줄 수 있습니다. 필요한 시간만 실행하세요.
+                                    </div>
+                                    
+                                    <div class="d-grid">
+                                        <button type="button" class="btn btn-danger" id="stop-capture">
+                                            <i class="fas fa-stop me-1"></i>캡처 중지
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div id="capture-complete" class="d-none">
+                                    <div class="alert alert-success mb-3">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        <strong>완료:</strong> 패킷 캡처가 성공적으로 완료되었습니다.
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <strong>캡처 요약:</strong>
+                                        <ul class="mt-2">
+                                            <li>총 캡처된 패킷: <span id="total-captured">0</span>개</li>
+                                            <li>총 데이터 크기: <span id="total-bytes">0</span> 바이트</li>
+                                            <li>캡처 시간: <span id="total-time">0</span>초</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2">
+                                        <button type="button" class="btn btn-primary" id="view-results">
+                                            <i class="fas fa-table me-1"></i>패킷 분석 결과 보기
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary" id="download-pcap">
+                                            <i class="fas fa-download me-1"></i>PCAP 파일 다운로드
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" id="new-capture">
+                                            <i class="fas fa-redo me-1"></i>새 캡처 시작
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="results-section" class="d-none">
+                    <div class="card shadow">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-table me-2"></i>패킷 분석 결과</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="nav nav-tabs mb-3" id="resultTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="packets-tab" data-bs-toggle="tab" data-bs-target="#packets" type="button" role="tab" aria-controls="packets" aria-selected="true">패킷 목록</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="conversations-tab" data-bs-toggle="tab" data-bs-target="#conversations" type="button" role="tab" aria-controls="conversations" aria-selected="false">대화 흐름</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="fortimanager-tab" data-bs-toggle="tab" data-bs-target="#fortimanager" type="button" role="tab" aria-controls="fortimanager" aria-selected="false">FortiManager 통신</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics" type="button" role="tab" aria-controls="statistics" aria-selected="false">통계</button>
+                                </li>
+                            </ul>
+                            
+                            <div class="tab-content" id="resultTabsContent">
+                                <div class="tab-pane fade show active" id="packets" role="tabpanel" aria-labelledby="packets-tab">
+                                    <div class="mb-3 d-flex justify-content-end">
+                                        <div class="btn-group">
+                                            <button id="export-btn" type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                                                <i class="fas fa-download me-1"></i> 내보내기
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item export-format-item" href="#" data-format="json">JSON 형식</a></li>
+                                                <li><a class="dropdown-item export-format-item" href="#" data-format="csv">CSV 형식</a></li>
+                                                <li><a class="dropdown-item export-format-item" href="#" data-format="pcap">PCAP 형식</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item" href="#" id="filter-btn"><i class="fas fa-filter me-1"></i> 필터링 옵션</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 필터링 패널 -->
+                                    <div id="filter-panel" class="card mb-3 d-none">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>패킷 필터링</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-2">
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="search-filter" class="form-label">텍스트 검색</label>
+                                                        <input type="text" class="form-control form-control-sm" id="search-filter" placeholder="검색할 내용 입력">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="protocol-filter" class="form-label">프로토콜</label>
+                                                        <select class="form-select form-select-sm" id="protocol-filter">
+                                                            <option value="">모든 프로토콜</option>
+                                                            <option value="tcp">TCP</option>
+                                                            <option value="udp">UDP</option>
+                                                            <option value="icmp">ICMP</option>
+                                                            <option value="http">HTTP</option>
+                                                            <option value="https">HTTPS</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="port-filter" class="form-label">포트 번호</label>
+                                                        <input type="text" class="form-control form-control-sm" id="port-filter" placeholder="예: 80, 443, 22">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row g-2 mt-2">
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="src-ip-filter" class="form-label">출발지 IP</label>
+                                                        <input type="text" class="form-control form-control-sm" id="src-ip-filter" placeholder="예: {{ example_filters.src_ip }}">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="dst-ip-filter" class="form-label">목적지 IP</label>
+                                                        <input type="text" class="form-control form-control-sm" id="dst-ip-filter" placeholder="예: 8.8.8.8">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="status-filter" class="form-label">상태</label>
+                                                        <select class="form-select form-select-sm" id="status-filter">
+                                                            <option value="">모든 상태</option>
+                                                            <option value="allowed">허용됨</option>
+                                                            <option value="blocked">차단됨</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <button type="button" class="btn btn-sm btn-primary" id="apply-filter">필터 적용</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-filter">필터 초기화</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="table-responsive">
+                                        <table id="packets-table" class="table table-sm table-hover table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th width="5%">번호</th>
+                                                    <th width="10%">시간</th>
+                                                    <th width="15%">출발지</th>
+                                                    <th width="15%">목적지</th>
+                                                    <th width="10%">프로토콜</th>
+                                                    <th width="7%">길이</th>
+                                                    <th width="23%">정보</th>
+                                                    <th width="15%">상태</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- 패킷 데이터는 JavaScript로 동적 생성 -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                
+                                <div class="tab-pane fade" id="conversations" role="tabpanel" aria-labelledby="conversations-tab">
+                                    <div class="table-responsive">
+                                        <table id="conversations-table" class="table table-sm table-hover table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>출발지</th>
+                                                    <th>목적지</th>
+                                                    <th>패킷 수</th>
+                                                    <th>바이트 수</th>
+                                                    <th>시작 시간</th>
+                                                    <th>종료 시간</th>
+                                                    <th>기간</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- 대화 흐름 데이터는 JavaScript로 동적 생성 -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                
+                                <div class="tab-pane fade" id="fortimanager" role="tabpanel" aria-labelledby="fortimanager-tab">
+                                    <div class="alert alert-primary mb-3">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>FortiManager 통신 분석:</strong> 방화벽 장치와 FortiManager 간의 통신 데이터를 분석하고 시각화합니다. (API 포트: 3791)
+                                    </div>
+                                    
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0"><i class="fas fa-project-diagram me-2"></i>FortiManager 트래픽 흐름도</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="fortimanager-flow-chart" style="width: 100%; height: 400px;"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card mb-3">
+                                                <div class="card-header bg-light">
+                                                    <h6 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>API 통신 요약</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between mb-3">
+                                                        <div>
+                                                            <i class="fas fa-arrow-down text-success"></i> 인바운드: <span id="fmg-inbound-count">0</span> 패킷
+                                                        </div>
+                                                        <div>
+                                                            <i class="fas fa-arrow-up text-danger"></i> 아웃바운드: <span id="fmg-outbound-count">0</span> 패킷
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm table-hover">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>통신 경로</th>
+                                                                    <th>패킷 수</th>
+                                                                    <th>프로토콜</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody id="fmg-ip-stats">
+                                                                <!-- FortiManager IP 통계는 JavaScript로 생성 -->
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="card mb-3">
+                                                <div class="card-header bg-light">
+                                                    <h6 class="mb-0"><i class="fas fa-code me-2"></i>API 호출 통계</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="fmg-api-methods-chart" style="height: 250px;"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0"><i class="fas fa-table me-2"></i>FortiManager API 호출 목록</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table id="fmg-api-calls-table" class="table table-sm table-hover table-striped">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>시간</th>
+                                                            <th>방향</th>
+                                                            <th>메서드</th>
+                                                            <th>매개변수</th>
+                                                            <th>상세 보기</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <!-- API 호출 데이터는 JavaScript로 동적 생성 -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="tab-pane fade" id="statistics" role="tabpanel" aria-labelledby="statistics-tab">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card mb-3">
+                                                <div class="card-header bg-light">
+                                                    <h6 class="mb-0">프로토콜 분포</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="protocol-chart-container" style="height: 300px;">
+                                                        <!-- 프로토콜 차트는 JavaScript로 생성 -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="card mb-3">
+                                                <div class="card-header bg-light">
+                                                    <h6 class="mb-0">패킷 크기 분포</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="size-chart-container" style="height: 300px;">
+                                                        <!-- 크기 차트는 JavaScript로 생성 -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h6 class="mb-0">상위 IP 주소</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h6>출발지 IP</h6>
+                                                    <table class="table table-sm">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>IP 주소</th>
+                                                                <th>패킷 수</th>
+                                                                <th>비율</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="src-ip-stats">
+                                                            <!-- 출발지 IP 통계는 JavaScript로 생성 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                
+                                                <div class="col-md-6">
+                                                    <h6>목적지 IP</h6>
+                                                    <table class="table table-sm">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>IP 주소</th>
+                                                                <th>패킷 수</th>
+                                                                <th>비율</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="dst-ip-stats">
+                                                            <!-- 목적지 IP 통계는 JavaScript로 생성 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 패킷 상세 정보 모달 -->
+<div class="modal fade" id="packetModal" tabindex="-1" aria-labelledby="packetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="packetModalLabel">패킷 상세 정보</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs mb-3" id="packetDetailTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab" aria-controls="summary" aria-selected="true">요약</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="headers-tab" data-bs-toggle="tab" data-bs-target="#headers" type="button" role="tab" aria-controls="headers" aria-selected="false">헤더</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="hex-tab" data-bs-toggle="tab" data-bs-target="#hex" type="button" role="tab" aria-controls="hex" aria-selected="false">Hex 데이터</button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="packetDetailTabsContent">
+                    <div class="tab-pane fade show active" id="summary" role="tabpanel" aria-labelledby="summary-tab">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped">
+                                <tr>
+                                    <th width="30%">패킷 번호</th>
+                                    <td id="packet-id"></td>
+                                </tr>
+                                <tr>
+                                    <th>캡처 시간</th>
+                                    <td id="packet-time"></td>
+                                </tr>
+                                <tr>
+                                    <th>출발지 IP:포트</th>
+                                    <td id="packet-src"></td>
+                                </tr>
+                                <tr>
+                                    <th>목적지 IP:포트</th>
+                                    <td id="packet-dst"></td>
+                                </tr>
+                                <tr>
+                                    <th>프로토콜</th>
+                                    <td id="packet-proto"></td>
+                                </tr>
+                                <tr>
+                                    <th>패킷 길이</th>
+                                    <td id="packet-len"></td>
+                                </tr>
+                                <tr>
+                                    <th>상태</th>
+                                    <td id="packet-status"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="headers" role="tabpanel" aria-labelledby="headers-tab">
+                        <div class="accordion" id="headersAccordion">
+                            <!-- 이더넷 헤더 -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="ethernetHeader">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEthernet" aria-expanded="true" aria-controls="collapseEthernet">
+                                        이더넷 헤더
+                                    </button>
+                                </h2>
+                                <div id="collapseEthernet" class="accordion-collapse collapse show" aria-labelledby="ethernetHeader">
+                                    <div class="accordion-body">
+                                        <table class="table table-sm table-striped">
+                                            <tr>
+                                                <th width="40%">출발지 MAC</th>
+                                                <td id="eth-src-mac"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>목적지 MAC</th>
+                                                <td id="eth-dst-mac"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>타입</th>
+                                                <td id="eth-type"></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- IP 헤더 -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="ipHeader">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIP" aria-expanded="true" aria-controls="collapseIP">
+                                        IP 헤더
+                                    </button>
+                                </h2>
+                                <div id="collapseIP" class="accordion-collapse collapse show" aria-labelledby="ipHeader">
+                                    <div class="accordion-body">
+                                        <table class="table table-sm table-striped">
+                                            <tr>
+                                                <th width="40%">버전</th>
+                                                <td id="ip-version"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>헤더 길이</th>
+                                                <td id="ip-header-len"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>DSCP/ECN</th>
+                                                <td id="ip-dscp-ecn"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>전체 길이</th>
+                                                <td id="ip-total-len"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>ID</th>
+                                                <td id="ip-id"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>플래그/단편화 오프셋</th>
+                                                <td id="ip-flags-frag"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>TTL</th>
+                                                <td id="ip-ttl"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>프로토콜</th>
+                                                <td id="ip-proto"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>체크섬</th>
+                                                <td id="ip-checksum"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>출발지 IP</th>
+                                                <td id="ip-src"></td>
+                                            </tr>
+                                            <tr>
+                                                <th>목적지 IP</th>
+                                                <td id="ip-dst"></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- TCP/UDP 헤더 -->
+                            <div class="accordion-item" id="tcp-udp-header">
+                                <h2 class="accordion-header" id="transportHeader">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTransport" aria-expanded="true" aria-controls="collapseTransport">
+                                        <span id="transport-header-title">TCP/UDP 헤더</span>
+                                    </button>
+                                </h2>
+                                <div id="collapseTransport" class="accordion-collapse collapse show" aria-labelledby="transportHeader">
+                                    <div class="accordion-body" id="transport-header-content">
+                                        <!-- Content will be dynamically set based on protocol -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="hex" role="tabpanel" aria-labelledby="hex-tab">
+                        <pre class="packet-details" id="packet-hex-dump"></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary">경로 분석</a>
+                <a href="{{ url_for('main.devices') }}" class="btn btn-info">장치 관리</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Help Modal -->
+<div class="modal fade" id="filter-help-modal" tabindex="-1" aria-labelledby="filter-help-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filter-help-modal-label">필터 표현식 도움말</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <h6>기본 필터 구문</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr class="table-light">
+                                    <th>표현식</th>
+                                    <th>예시</th>
+                                    <th>설명</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>host &lt;IP&gt;</code></td>
+                                    <td><code>host {{ example_filters.host }}</code></td>
+                                    <td>특정 IP 주소와 관련된 패킷 (출발지 또는 목적지)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>port &lt;번호&gt;</code></td>
+                                    <td><code>port 80</code></td>
+                                    <td>특정 포트와 관련된 패킷 (출발지 또는 목적지)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>src &lt;IP&gt;</code></td>
+                                    <td><code>src {{ example_filters.host }}</code></td>
+                                    <td>특정 출발지 IP와 관련된 패킷</td>
+                                </tr>
+                                <tr>
+                                    <td><code>dst &lt;IP&gt;</code></td>
+                                    <td><code>dst 192.168.1.1</code></td>
+                                    <td>특정 목적지 IP와 관련된 패킷</td>
+                                </tr>
+                                <tr>
+                                    <td><code>src port &lt;번호&gt;</code></td>
+                                    <td><code>src port 80</code></td>
+                                    <td>특정 출발지 포트와 관련된 패킷</td>
+                                </tr>
+                                <tr>
+                                    <td><code>dst port &lt;번호&gt;</code></td>
+                                    <td><code>dst port 80</code></td>
+                                    <td>특정 목적지 포트와 관련된 패킷</td>
+                                </tr>
+                                <tr>
+                                    <td><code>&lt;프로토콜&gt;</code></td>
+                                    <td><code>tcp</code>, <code>udp</code>, <code>icmp</code></td>
+                                    <td>특정 프로토콜을 사용하는 패킷</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6>논리 연산자</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr class="table-light">
+                                    <th>연산자</th>
+                                    <th>예시</th>
+                                    <th>설명</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>and</code></td>
+                                    <td><code>host 192.168.1.1 and port 80</code></td>
+                                    <td>두 표현식이 모두 일치해야 함</td>
+                                </tr>
+                                <tr>
+                                    <td><code>or</code></td>
+                                    <td><code>port 80 or port 443</code></td>
+                                    <td>두 표현식 중 하나라도 일치하면 함</td>
+                                </tr>
+                                <tr>
+                                    <td><code>not</code></td>
+                                    <td><code>not port 53</code></td>
+                                    <td>표현식이 일치하지 않아야 함</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <h6>고급 필터 예시</h6>
+                <pre class="bg-light p-3 border rounded"># TCP SYN 패킷 (연결 시작)
+tcp[13] & 2 != 0
+
+# TCP FIN 패킷 (연결 종료)
+tcp[13] & 1 != 0
+
+# HTTP 트래픽
+tcp port 80
+
+# 특정 서브넷에서 오는 모든 패킷
+net 192.168.1.0/24
+
+# 두 호스트 간의 트래픽
+host 192.168.1.1 and host 8.8.8.8</pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div class="modal fade" id="help-modal" tabindex="-1" aria-labelledby="help-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="help-modal-label">패킷 스니퍼 도움말</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> 패킷 스니퍼는 FortiGate 방화벽의 패킷 캡처 기능을 사용하여 네트워크 트래픽을 캡처하고 분석할 수 있는 도구입니다.
+                </div>
+                
+                <div class="accordion" id="helpAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                사용 방법
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne">
+                            <div class="accordion-body">
+                                <ol>
+                                    <li>왼쪽 패널에서 <strong>방화벽과 인터페이스</strong>를 선택합니다.</li>
+                                    <li>필요에 따라 <strong>필터 옵션</strong>을 지정하여 특정 트래픽만 캡처할 수 있습니다.</li>
+                                    <li>캡처할 <strong>최대 패킷 수</strong>와 <strong>제한 시간</strong>을 설정합니다.</li>
+                                    <li><strong>"패킷 캡처 시작"</strong> 버튼을 클릭하여 캡처를 시작합니다.</li>
+                                    <li>캡처가 진행되는 동안 오른쪽 패널에서 진행 현황을 확인할 수 있습니다.</li>
+                                    <li>캡처가 완료되면 캡처된 패킷 목록과 분석 결과를 확인할 수 있습니다.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                주의 사항
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo">
+                            <div class="accordion-body">
+                                <ul>
+                                    <li><strong>시스템 영향:</strong> 패킷 캡처는 방화벽 성능에 영향을 줄 수 있으며, 트래픽이 많은 상황에서는 시스템 부하가 발생할 수 있습니다.</li>
+                                    <li><strong>배포 환경:</strong> 실제 운영 환경에서는 주의해서 사용해야 하며, 가능하면 중요하지 않은 시간에 실행하는 것을 권장합니다.</li>
+                                    <li><strong>배터리 사용:</strong> 지속적인 패킷 캡처는 컴퓨터의 배터리를 빨리 소모할 수 있으므로, 충전기에 연결하는 것이 좋습니다.</li>
+                                    <li><strong>시간 제한:</strong> 캡처 시간을 적절히 제한하여 대량의 패킷이 저장되는 것을 방지해야 합니다.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingThree">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                문제 해결
+                            </button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree">
+                            <div class="accordion-body">
+                                <h6 class="mb-3">일반적인 문제 상황</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm">
+                                        <thead>
+                                            <tr class="table-light">
+                                                <th>문제</th>
+                                                <th>해결 방법</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>방화벽 연결 실패</td>
+                                                <td>
+                                                    <ul class="mb-0">
+                                                        <li>방화벽 API 연결 설정을 확인합니다.</li>
+                                                        <li>방화벽이 접근 가능한지 확인합니다.</li>
+                                                        <li>API 토큰이 유효한지 확인합니다.</li>
+                                                    </ul>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>패킷이 캡처되지 않음</td>
+                                                <td>
+                                                    <ul class="mb-0">
+                                                        <li>올바른 인터페이스를 선택했는지 확인합니다.</li>
+                                                        <li>필터 표현식이 올바른지 확인합니다.</li>
+                                                        <li>해당 인터페이스에 트래픽이 흐르고 있는지 확인합니다.</li>
+                                                    </ul>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>성능 문제</td>
+                                                <td>
+                                                    <ul class="mb-0">
+                                                        <li>캡처하는 패킷 수를 줄이거나 필터를 사용하여 필요한 패킷만 캡처합니다.</li>
+                                                        <li>제한 시간을 줄여서 캡처합니다.</li>
+                                                        <li>트래픽이 적은 시간에 테스트합니다.</li>
+                                                    </ul>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal fade" id="settings-modal" tabindex="-1" aria-labelledby="settings-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="settings-modal-label">캡처 설정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="auto-refresh-switch" checked>
+                    <label class="form-check-label" for="auto-refresh-switch">자동 새로고침 사용</label>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="refresh-interval" class="form-label">새로고침 주기 (초)</label>
+                    <input type="number" class="form-control" id="refresh-interval" value="3" min="1" max="60">
+                </div>
+                
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="sound-alerts-switch" checked>
+                    <label class="form-check-label" for="sound-alerts-switch">사운드 알림 사용</label>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <label for="max-display-packets" class="form-label">최대 표시 패킷 수</label>
+                    <input type="number" class="form-control" id="max-display-packets" value="1000" min="100" max="10000">
+                    <div class="form-text">많은 패킷을 표시하면 성능이 저하될 수 있습니다.</div>
+                </div>
+                
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="dark-mode-switch">
+                    <label class="form-check-label" for="dark-mode-switch">다크 모드</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" id="save-settings-btn" data-bs-dismiss="modal">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Bootstrap JS for dropdown functionality -->
+<script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
+<!-- DataTables JS -->
+<script src="{{ url_for("static", filename="vendor/datatables/jquery.dataTables.min.js") }}"></script>
+<script src="{{ url_for("static", filename="vendor/datatables/dataTables.bootstrap5.min.js") }}"></script>
+
+<!-- Chart.js -->
+<script src="{{ url_for("static", filename="vendor/chart.js/chart.umd.min.js") }}"></script>
+
+<!-- Socket.io for realtime updates -->
+<script src="{{ url_for("static", filename="vendor/socket.io/socket.io.min.js") }}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Constants for settings
+    const DEFAULT_SETTINGS = {
+        autoRefresh: true,
+        refreshInterval: 3,
+        soundAlerts: true,
+        maxDisplayPackets: 1000,
+        darkMode: false
+    };
+    
+    // Global variables
+    let captureInterval; // 캡처 상태 업데이트 인터벌
+    let elapsedTime = 0; // 경과 시간
+    let settings = loadSettings(); // Load user settings
+    let isConnectionTested = false; // Connection test flag
+    
+    // Initialize connection status
+    initializeConnectionStatus();
+    
+    // Setup filter template and example handlers
+    setupFilterTemplates();
+    
+    // Setup settings modal handlers
+    setupSettingsModal();
+    
+    // "패킷 캡처 시작" 버튼 이벤트
+    document.getElementById('start-capture').addEventListener('click', function() {
+        // 필수 필드 검증
+        const firewallSelect = document.getElementById('firewall-select');
+        const interfaceSelect = document.getElementById('interface-select');
+        
+        if (firewallSelect.value === "" || interfaceSelect.value === "") {
+            showError("방화벽과 인터페이스를 선택해주세요.");
+            return;
+        }
+        
+        // 캡처 상태 표시
+        document.getElementById('status-info').classList.add('d-none');
+        document.getElementById('capture-progress').classList.remove('d-none');
+        document.getElementById('capture-complete').classList.add('d-none');
+        document.getElementById('results-section').classList.add('d-none');
+        
+        // 캡처 상태 라벨 변경
+        document.getElementById('capture-status').textContent = "캡처 중";
+        document.getElementById('capture-status').classList.remove('bg-secondary');
+        document.getElementById('capture-status').classList.add('bg-success');
+        
+        // 최대 패킷 수 업데이트
+        const maxPackets = document.getElementById('max-packets').value;
+        document.getElementById('max-packets-display').textContent = maxPackets;
+        
+        // 타이머 초기화
+        const timeout = parseInt(document.getElementById('timeout').value);
+        document.getElementById('time-remaining').textContent = timeout;
+        elapsedTime = 0;
+        document.getElementById('elapsed-time').textContent = '0';
+        
+        // 로딩 표시
+        showLoading("패킷 캡처 시작 중...");
+        
+        // 캡처 상태 업데이트 시작
+        setTimeout(() => {
+            hideLoading();
+            startCaptureSimulation(maxPackets, timeout);
+        }, 1000);
+    });
+    
+    // "캡처 중지" 버튼 이벤트
+    document.getElementById('stop-capture').addEventListener('click', function() {
+        showLoading("패킷 캡처 중지 중...");
+        setTimeout(() => {
+            hideLoading();
+            stopCaptureSimulation();
+            showCaptureResults();
+        }, 1000);
+    });
+    
+    // "패킷 분석 결과 보기" 버튼 이벤트
+    document.getElementById('view-results').addEventListener('click', function() {
+        showLoading("결과 데이터 로드 중...");
+        setTimeout(() => {
+            hideLoading();
+            document.getElementById('results-section').classList.remove('d-none');
+            showDummyResults(); // 임시 데이터 표시
+        }, 1500);
+    });
+    
+    // "PCAP 파일 다운로드" 버튼 이벤트
+    document.getElementById('download-pcap').addEventListener('click', function() {
+        showLoading("패킷 캡처 파일 준비 중...");
+        setTimeout(() => {
+            hideLoading();
+            showNotification("다운로드 완료", "패킷 캡처 파일이 다운로드되었습니다.", "success");
+        }, 1500);
+    });
+    
+    // "새 캡처 시작" 버튼 이벤트
+    document.getElementById('new-capture').addEventListener('click', function() {
+        document.getElementById('status-info').classList.remove('d-none');
+        document.getElementById('capture-progress').classList.add('d-none');
+        document.getElementById('capture-complete').classList.add('d-none');
+        document.getElementById('results-section').classList.add('d-none');
+        
+        // 캡처 상태 라벨 초기화
+        document.getElementById('capture-status').textContent = "대기 중";
+        document.getElementById('capture-status').classList.remove('bg-success');
+        document.getElementById('capture-status').classList.add('bg-secondary');
+    });
+    
+    // 필터 버튼 이벤트
+    document.getElementById('filter-btn').addEventListener('click', function() {
+        const filterPanel = document.getElementById('filter-panel');
+        if (filterPanel.classList.contains('d-none')) {
+            filterPanel.classList.remove('d-none');
+        } else {
+            filterPanel.classList.add('d-none');
+        }
+    });
+    
+    // 필터 적용 버튼 이벤트
+    document.getElementById('apply-filter').addEventListener('click', function() {
+        showNotification("필터 적용됨", "패킷 목록에 필터가 적용되었습니다.", "info");
+    });
+    
+    // 필터 초기화 버튼 이벤트
+    document.getElementById('clear-filter').addEventListener('click', function() {
+        // 필터 입력 필드 초기화
+        document.getElementById('search-filter').value = '';
+        document.getElementById('protocol-filter').value = '';
+        document.getElementById('port-filter').value = '';
+        document.getElementById('src-ip-filter').value = '';
+        document.getElementById('dst-ip-filter').value = '';
+        document.getElementById('status-filter').value = '';
+        
+        showNotification("필터 초기화", "모든 필터가 초기화되었습니다.", "info");
+    });
+    
+    // 연결 테스트 버튼 이벤트
+    document.getElementById('test-connection-btn').addEventListener('click', function() {
+        testApiConnection();
+    });
+    
+    // 초기화 함수들
+    function initializeConnectionStatus() {
+        // 페이지 로드 후 자동으로 API 연결 상태 확인
+        setTimeout(() => {
+            testApiConnection();
+        }, 1000);
+    }
+    
+    // API 연결 테스트
+    function testApiConnection() {
+        const statusMessage = document.getElementById('connection-status-message');
+        
+        // 상태 표시 업데이트
+        statusMessage.className = 'connection-indicator';
+        statusMessage.innerHTML = '<i class="fas fa-circle"></i> 연결 확인 중...';
+        
+        // 비동기 테스트 시뮬레이션
+        setTimeout(() => {
+            // 50% 확률로 연결 성공/실패 (테스트용)
+            const isSuccess = Math.random() > 0.3;
+            
+            if (isSuccess) {
+                statusMessage.className = 'connection-indicator connected';
+                statusMessage.innerHTML = '<i class="fas fa-circle"></i> 연결됨';
+                isConnectionTested = true;
+            } else {
+                statusMessage.className = 'connection-indicator disconnected';
+                statusMessage.innerHTML = '<i class="fas fa-circle"></i> 연결 실패';
+                showError("API 연결에 실패했습니다. 설정을 확인하세요.");
+            }
+        }, 1500);
+    }
+    
+    // 필터 템플릿 핸들러 설정
+    function setupFilterTemplates() {
+        // 필터 템플릿 클릭 이벤트
+        document.querySelectorAll('.filter-template').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const filterExpr = this.getAttribute('data-filter');
+                const filterInput = document.getElementById('filter-expression');
+                filterInput.value = filterExpr;
+            });
+        });
+        
+        // 필터 예제 배지 클릭 이벤트
+        document.querySelectorAll('.filter-example').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const filterExpr = this.getAttribute('data-filter');
+                const filterInput = document.getElementById('filter-expression');
+                
+                // 이미 다른 필터가 있으면 AND로 연결
+                if (filterInput.value.trim()) {
+                    filterInput.value += ' and ' + filterExpr;
+                } else {
+                    filterInput.value = filterExpr;
+                }
+            });
+        });
+    }
+    
+    // 설정 모달 핸들러 설정
+    function setupSettingsModal() {
+        // 설정 데이터 로드
+        loadSettingsToModal();
+        
+        // 설정 저장 버튼 클릭 이벤트
+        document.getElementById('save-settings-btn').addEventListener('click', function() {
+            saveSettingsFromModal();
+        });
+        
+        // 다크 모드 전환 이벤트
+        document.getElementById('dark-mode-switch').addEventListener('change', function() {
+            toggleDarkMode(this.checked);
+        });
+    }
+    
+    // 설정 모달에 설정 데이터 로드
+    function loadSettingsToModal() {
+        document.getElementById('auto-refresh-switch').checked = settings.autoRefresh;
+        document.getElementById('refresh-interval').value = settings.refreshInterval;
+        document.getElementById('sound-alerts-switch').checked = settings.soundAlerts;
+        document.getElementById('max-display-packets').value = settings.maxDisplayPackets;
+        document.getElementById('dark-mode-switch').checked = settings.darkMode;
+        
+        // 다크 모드 적용 (설정에 따라)
+        if (settings.darkMode) {
+            toggleDarkMode(true);
+        }
+    }
+    
+    // 모달에서 설정 데이터 저장
+    function saveSettingsFromModal() {
+        settings = {
+            autoRefresh: document.getElementById('auto-refresh-switch').checked,
+            refreshInterval: parseInt(document.getElementById('refresh-interval').value) || 3,
+            soundAlerts: document.getElementById('sound-alerts-switch').checked,
+            maxDisplayPackets: parseInt(document.getElementById('max-display-packets').value) || 1000,
+            darkMode: document.getElementById('dark-mode-switch').checked
+        };
+        
+        // 설정 저장
+        saveSettings(settings);
+        
+        // 알림 표시
+        showNotification("설정 저장됨", "패킷 스니퍼 설정이 저장되었습니다.", "success");
+    }
+    
+    // 다크 모드 토글
+    function toggleDarkMode(enable) {
+        const htmlElement = document.documentElement;
+        
+        if (enable) {
+            htmlElement.setAttribute('data-bs-theme', 'dark');
+        } else {
+            htmlElement.removeAttribute('data-bs-theme');
+        }
+    }
+    
+    // 설정 로드
+    function loadSettings() {
+        try {
+            const storedSettings = localStorage.getItem('packetSnifferSettings');
+            return storedSettings ? JSON.parse(storedSettings) : DEFAULT_SETTINGS;
+        } catch (e) {
+            console.error('설정 로드 오류:', e);
+            return DEFAULT_SETTINGS;
+        }
+    }
+    
+    // 설정 저장
+    function saveSettings(newSettings) {
+        try {
+            localStorage.setItem('packetSnifferSettings', JSON.stringify(newSettings));
+        } catch (e) {
+            console.error('설정 저장 오류:', e);
+        }
+    }
+    
+    // 로딩 오버레이 표시
+    function showLoading(message) {
+        const loader = document.getElementById('full-page-loader');
+        const loaderMessage = document.getElementById('loader-message');
+        const loaderDetail = document.getElementById('loader-detail');
+        
+        if (loader && loaderMessage) {
+            loaderMessage.textContent = message || '로딩 중...';
+            loaderDetail.textContent = '잠시만 기다려주세요.';
+            loader.style.display = 'flex';
+        }
+    }
+    
+    // 로딩 오버레이 숨기기
+    function hideLoading() {
+        const loader = document.getElementById('full-page-loader');
+        if (loader) {
+            loader.style.display = 'none';
+        }
+    }
+    
+    // 오류 메시지 표시
+    function showError(message, title = '오류 발생') {
+        const errorAlert = document.getElementById('error-alert');
+        
+        if (errorAlert) {
+            errorAlert.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i> <strong>${title}:</strong> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            
+            // 5초 후 자동 제거
+            setTimeout(() => {
+                const alertElement = errorAlert.querySelector('.alert');
+                if (alertElement) {
+                    try {
+                        const bsAlert = new bootstrap.Alert(alertElement);
+                        bsAlert.close();
+                    } catch (e) {
+                        alertElement.style.display = 'none';
+                    }
+                }
+            }, 5000);
+        }
+        
+        // 소리 알림 (설정에 따라)
+        if (settings.soundAlerts) {
+            playAlertSound('error');
+        }
+    }
+    
+    // 알림 표시
+    function showNotification(title, message, type = 'info') {
+        // 토스트 컨테이너 확인 또는 생성
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '1060';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // 타입에 따른 아이콘 및 클래스
+        let iconClass = 'info-circle';
+        let bgClass = 'bg-info';
+        
+        if (type === 'success') {
+            iconClass = 'check-circle';
+            bgClass = 'bg-success';
+        } else if (type === 'error') {
+            iconClass = 'exclamation-circle';
+            bgClass = 'bg-danger';
+        } else if (type === 'warning') {
+            iconClass = 'exclamation-triangle';
+            bgClass = 'bg-warning';
+        }
+        
+        // 토스트 요소 생성
+        const toastId = 'toast-' + Date.now();
+        const toastElement = document.createElement('div');
+        toastElement.className = 'toast';
+        toastElement.setAttribute('role', 'alert');
+        toastElement.setAttribute('aria-live', 'assertive');
+        toastElement.setAttribute('aria-atomic', 'true');
+        toastElement.id = toastId;
+        
+        toastElement.innerHTML = `
+            <div class="toast-header ${bgClass} text-white">
+                <i class="fas fa-${iconClass} me-2"></i>
+                <strong class="me-auto">${title}</strong>
+                <small>${new Date().toLocaleTimeString()}</small>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        `;
+        
+        // 토스트 추가 및 표시
+        toastContainer.appendChild(toastElement);
+        
+        // Bootstrap Toast 인스턴스 생성 및 표시
+        const toast = new bootstrap.Toast(toastElement, {
+            autohide: true,
+            delay: 3000
+        });
+        toast.show();
+        
+        // 소리 알림 (설정에 따라)
+        if (settings.soundAlerts) {
+            playAlertSound(type);
+        }
+        
+        // 메모리 관리: 토스트 제거
+        setTimeout(() => {
+            if (toastElement && toastElement.parentNode) {
+                toastElement.parentNode.removeChild(toastElement);
+            }
+        }, 3500);
+    }
+    
+    // 알림 소리 재생
+    function playAlertSound(type) {
+        try {
+            // 소리 재생 시뮬레이션 (실제로는 오디오 파일 사용)
+            console.log(`소리 재생: ${type}`);
+        } catch (e) {
+            console.error('소리 재생 오류:', e);
+        }
+    }
+    
+    // 캡처 시뮬레이션 시작 (실제로는 FortiGate API 호출)
+    function startCaptureSimulation(maxPackets, timeout) {
+        let captured = 0;
+        let rxPackets = 0;
+        let txPackets = 0;
+        let rxBytes = 0;
+        let txBytes = 0;
+        const startTime = Date.now();
+        
+        // 프로그레스 바 초기화
+        document.getElementById('capture-progress-bar').style.width = '0%';
+        document.getElementById('time-progress-bar').style.width = '0%';
+        
+        // 캡처 상태 업데이트 인터벌
+        captureInterval = setInterval(function() {
+            // 경과 시간 업데이트
+            elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('elapsed-time').textContent = elapsedTime;
+            
+            // 남은 시간 업데이트
+            const remaining = Math.max(0, timeout - elapsedTime);
+            document.getElementById('time-remaining').textContent = remaining;
+            document.getElementById('time-progress-bar').style.width = ((elapsedTime / timeout) * 100) + '%';
+            
+            // 시뮬레이션: 랜덤으로 패킷 캡처 증가
+            const newPackets = Math.floor(Math.random() * 5) + 1;
+            const newCapture = Math.min(maxPackets, captured + newPackets);
+            const captureChange = newCapture - captured;
+            
+            if (captureChange > 0) {
+                captured = newCapture;
+                
+                // RX/TX 패킷 및 바이트 업데이트
+                const isRx = Math.random() > 0.5;
+                if (isRx) {
+                    rxPackets += captureChange;
+                    rxBytes += captureChange * (Math.floor(Math.random() * 1000) + 64);
+                } else {
+                    txPackets += captureChange;
+                    txBytes += captureChange * (Math.floor(Math.random() * 1000) + 64);
+                }
+                
+                // UI 업데이트
+                document.getElementById('captured-packets').textContent = captured;
+                document.getElementById('capture-progress-bar').style.width = ((captured / maxPackets) * 100) + '%';
+                document.getElementById('rx-packets').textContent = rxPackets;
+                document.getElementById('tx-packets').textContent = txPackets;
+                document.getElementById('rx-bytes').textContent = formatBytes(rxBytes);
+                document.getElementById('tx-bytes').textContent = formatBytes(txBytes);
+            }
+            
+            // 캡처 완료 체크
+            if (captured >= maxPackets || remaining <= 0) {
+                stopCaptureSimulation();
+                showCaptureResults(captured, rxBytes + txBytes, elapsedTime);
+            }
+        }, 500);
+    }
+    
+    // 캡처 시뮬레이션 중지
+    function stopCaptureSimulation() {
+        clearInterval(captureInterval);
+    }
+    
+    // 캡처 결과 표시
+    function showCaptureResults(totalPackets, totalBytes, totalTime) {
+        // 캡처 상태 표시
+        document.getElementById('status-info').classList.add('d-none');
+        document.getElementById('capture-progress').classList.add('d-none');
+        document.getElementById('capture-complete').classList.remove('d-none');
+        
+        // 캡처 상태 라벨 변경
+        document.getElementById('capture-status').textContent = "캡처 완료";
+        document.getElementById('capture-status').classList.remove('bg-success');
+        document.getElementById('capture-status').classList.add('bg-primary');
+        
+        // 결과 요약 업데이트
+        document.getElementById('total-captured').textContent = totalPackets || document.getElementById('captured-packets').textContent;
+        document.getElementById('total-bytes').textContent = formatBytes(totalBytes || (
+            parseInt(document.getElementById('rx-bytes').textContent) + parseInt(document.getElementById('tx-bytes').textContent)
+        ));
+        document.getElementById('total-time').textContent = totalTime || elapsedTime;
+        
+        // 완료 알림
+        showNotification("캡처 완료", `${totalPackets}개 패킷이 성공적으로 캡처되었습니다.`, "success");
+    }
+    
+    // 더미 결과 데이터 표시 (실제로는 API 응답 데이터 사용)
+    function showDummyResults() {
+        // 패킷 테이블 초기화
+        const packetsTable = $('#packets-table').DataTable({
+            responsive: true,
+            searching: true,
+            ordering: true,
+            data: generateDummyPackets(30),
+            columns: [
+                { data: 'id' },
+                { data: 'time' },
+                { data: 'src' },
+                { data: 'dst' },
+                { data: 'protocol' },
+                { data: 'length' },
+                { data: 'info' },
+                { 
+                    data: 'status',
+                    render: function(data) {
+                        if (data === 'allowed') {
+                            return '<span class="badge bg-success">허용됨</span>';
+                        } else if (data === 'blocked') {
+                            return '<span class="badge bg-danger">차단됨</span>';
+                        } else {
+                            return '<span class="badge bg-secondary">알 수 없음</span>';
+                        }
+                    }
+                }
+            ],
+            language: {
+                search: "검색:",
+                lengthMenu: "_MENU_ 개씩 보기",
+                info: "_TOTAL_ 개 중 _START_ - _END_ 표시",
+                infoEmpty: "표시할 패킷이 없습니다",
+                infoFiltered: "(총 _MAX_ 개 중 필터링됨)",
+                paginate: {
+                    first: "처음",
+                    last: "마지막",
+                    next: "다음",
+                    previous: "이전"
+                }
+            }
+        });
+        
+        // 패킷 행 클릭 이벤트
+        $('#packets-table tbody').on('click', 'tr', function() {
+            const data = packetsTable.row(this).data();
+            showPacketDetails(data);
+        });
+        
+        // 대화 테이블 초기화
+        const conversationsTable = $('#conversations-table').DataTable({
+            responsive: true,
+            searching: true,
+            ordering: true,
+            data: generateDummyConversations(10),
+            columns: [
+                { data: 'src' },
+                { data: 'dst' },
+                { data: 'packets' },
+                { data: 'bytes' },
+                { data: 'start' },
+                { data: 'end' },
+                { data: 'duration' }
+            ],
+            language: {
+                search: "검색:",
+                lengthMenu: "_MENU_ 개씩 보기",
+                info: "_TOTAL_ 개 중 _START_ - _END_ 표시",
+                infoEmpty: "표시할 대화가 없습니다",
+                infoFiltered: "(총 _MAX_ 개 중 필터링됨)",
+                paginate: {
+                    first: "처음",
+                    last: "마지막",
+                    next: "다음",
+                    previous: "이전"
+                }
+            }
+        });
+        
+        // 통계 탭 차트 생성
+        createProtocolChart();
+        createSizeChart();
+        createIPStats();
+        
+        // 내보내기 버튼 활성화
+        document.getElementById('export-btn').disabled = false;
+        
+        // 내보내기 형식 드롭다운 이벤트 처리
+        document.querySelectorAll('.export-format-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const format = this.getAttribute('data-format');
+                
+                showLoading(`${format.toUpperCase()} 형식으로 내보내는 중...`);
+                
+                setTimeout(() => {
+                    hideLoading();
+                    showNotification("내보내기 완료", `패킷 데이터가 ${format.toUpperCase()} 형식으로 내보내졌습니다.`, "success");
+                }, 1500);
+            });
+        });
+    }
+    
+    // 패킷 상세 정보 모달 표시
+    function showPacketDetails(packetData) {
+        // 기본 패킷 정보 설정
+        document.getElementById('packet-id').textContent = packetData.id;
+        document.getElementById('packet-time').textContent = packetData.time;
+        document.getElementById('packet-src').textContent = packetData.src;
+        document.getElementById('packet-dst').textContent = packetData.dst;
+        document.getElementById('packet-proto').textContent = packetData.protocol;
+        document.getElementById('packet-len').textContent = packetData.length + ' 바이트';
+        
+        // 패킷 상태 설정
+        let statusHtml = '';
+        if (packetData.status === 'allowed') {
+            statusHtml = '<span class="badge bg-success">허용됨</span>';
+        } else if (packetData.status === 'blocked') {
+            statusHtml = '<span class="badge bg-danger">차단됨</span>';
+        } else {
+            statusHtml = '<span class="badge bg-secondary">알 수 없음</span>';
+        }
+        document.getElementById('packet-status').innerHTML = statusHtml;
+        
+        // 이더넷 헤더 정보 설정
+        document.getElementById('eth-src-mac').textContent = generateMacAddress();
+        document.getElementById('eth-dst-mac').textContent = generateMacAddress();
+        document.getElementById('eth-type').textContent = '0x0800 (IPv4)';
+        
+        // IP 헤더 정보 설정
+        document.getElementById('ip-version').textContent = '4';
+        document.getElementById('ip-header-len').textContent = '20 바이트 (5 words)';
+        document.getElementById('ip-dscp-ecn').textContent = '0x00 (DSCP: CS0, ECN: Not-ECT)';
+        document.getElementById('ip-total-len').textContent = (parseInt(packetData.length) - 14) + ' 바이트';
+        document.getElementById('ip-id').textContent = '0x' + Math.floor(Math.random() * 65535).toString(16).padStart(4, '0');
+        document.getElementById('ip-flags-frag').textContent = '0x4000 (Don\'t Fragment)';
+        document.getElementById('ip-ttl').textContent = Math.floor(Math.random() * 64) + 1;
+        document.getElementById('ip-proto').textContent = packetData.protocol === 'TCP' ? '6 (TCP)' : 
+                                                         packetData.protocol === 'UDP' ? '17 (UDP)' : 
+                                                         packetData.protocol === 'ICMP' ? '1 (ICMP)' : 
+                                                         packetData.protocol;
+        document.getElementById('ip-checksum').textContent = '0x' + Math.floor(Math.random() * 65535).toString(16).padStart(4, '0');
+        document.getElementById('ip-src').textContent = packetData.src.split(':')[0];
+        document.getElementById('ip-dst').textContent = packetData.dst.split(':')[0];
+        
+        // 전송 계층 헤더 정보 설정 (TCP/UDP에 따라 다르게)
+        const transportHeaderTitle = document.getElementById('transport-header-title');
+        const transportHeaderContent = document.getElementById('transport-header-content');
+        const tcpUdpHeader = document.getElementById('tcp-udp-header');
+        
+        // TCP/UDP 헤더 섹션 표시
+        tcpUdpHeader.style.display = 'block';
+        
+        if (packetData.protocol === 'TCP') {
+            transportHeaderTitle.textContent = 'TCP 헤더';
+            const srcPort = packetData.src.split(':')[1] || '1024';
+            const dstPort = packetData.dst.split(':')[1] || '80';
+            
+            transportHeaderContent.innerHTML = `
+                <table class="table table-sm table-striped">
+                    <tr>
+                        <th width="40%">출발지 포트</th>
+                        <td>${srcPort}</td>
+                    </tr>
+                    <tr>
+                        <th>목적지 포트</th>
+                        <td>${dstPort}</td>
+                    </tr>
+                    <tr>
+                        <th>시퀀스 번호</th>
+                        <td>0x${Math.floor(Math.random() * 4294967296).toString(16).padStart(8, '0')}</td>
+                    </tr>
+                    <tr>
+                        <th>확인 번호</th>
+                        <td>0x${Math.floor(Math.random() * 4294967296).toString(16).padStart(8, '0')}</td>
+                    </tr>
+                    <tr>
+                        <th>헤더 길이</th>
+                        <td>20 바이트 (5 words)</td>
+                    </tr>
+                    <tr>
+                        <th>플래그</th>
+                        <td>0x${Math.floor(Math.random() * 64).toString(16).padStart(2, '0')} [SYN, ACK]</td>
+                    </tr>
+                    <tr>
+                        <th>윈도우 크기</th>
+                        <td>${Math.floor(Math.random() * 65535)}</td>
+                    </tr>
+                    <tr>
+                        <th>체크섬</th>
+                        <td>0x${Math.floor(Math.random() * 65535).toString(16).padStart(4, '0')}</td>
+                    </tr>
+                </table>
+            `;
+        } else if (packetData.protocol === 'UDP') {
+            transportHeaderTitle.textContent = 'UDP 헤더';
+            const srcPort = packetData.src.split(':')[1] || '1024';
+            const dstPort = packetData.dst.split(':')[1] || '53';
+            
+            transportHeaderContent.innerHTML = `
+                <table class="table table-sm table-striped">
+                    <tr>
+                        <th width="40%">출발지 포트</th>
+                        <td>${srcPort}</td>
+                    </tr>
+                    <tr>
+                        <th>목적지 포트</th>
+                        <td>${dstPort}</td>
+                    </tr>
+                    <tr>
+                        <th>길이</th>
+                        <td>${Math.floor(Math.random() * 1000) + 8} 바이트</td>
+                    </tr>
+                    <tr>
+                        <th>체크섬</th>
+                        <td>0x${Math.floor(Math.random() * 65535).toString(16).padStart(4, '0')}</td>
+                    </tr>
+                </table>
+            `;
+        } else {
+            // 다른 프로토콜(ICMP 등)은 표시하지 않음
+            tcpUdpHeader.style.display = 'none';
+        }
+        
+        // HEX 덤프 설정
+        document.getElementById('packet-hex-dump').textContent = generateHexDump(packetData.length);
+        
+        // 모달 표시
+        const packetModal = new bootstrap.Modal(document.getElementById('packetModal'));
+        packetModal.show();
+    }
+    
+    // 프로토콜 분포 차트 생성
+    function createProtocolChart() {
+        const ctx = document.createElement('canvas');
+        document.getElementById('protocol-chart-container').innerHTML = '';
+        document.getElementById('protocol-chart-container').appendChild(ctx);
+        
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['TCP', 'UDP', 'ICMP', 'DNS', 'HTTP/HTTPS', '기타'],
+                datasets: [{
+                    data: [45, 25, 10, 8, 7, 5],
+                    backgroundColor: [
+                        '#0050a0',
+                        '#0078d4',
+                        '#00aeef',
+                        '#28a745',
+                        '#dc3545',
+                        '#6c757d'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    },
+                    title: {
+                        display: true,
+                        text: '프로토콜별 패킷 분포'
+                    }
+                }
+            }
+        });
+    }
+    
+    // 패킷 크기 분포 차트 생성
+    function createSizeChart() {
+        const ctx = document.createElement('canvas');
+        document.getElementById('size-chart-container').innerHTML = '';
+        document.getElementById('size-chart-container').appendChild(ctx);
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['0-128', '129-256', '257-512', '513-1024', '1025-1518', '>1518'],
+                datasets: [{
+                    label: '패킷 수',
+                    data: [12, 19, 7, 15, 8, 3],
+                    backgroundColor: '#0078d4'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '패킷 크기 분포 (바이트)'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    // IP 통계 생성
+    function createIPStats() {
+        // 출발지 IP 통계
+        let srcIpHtml = '';
+        const srcIps = [
+            { ip: '192.168.1.10', count: 12, percentage: '40.0%' },
+            { ip: '192.168.1.11', count: 8, percentage: '26.7%' },
+            { ip: '192.168.1.12', count: 6, percentage: '20.0%' },
+            { ip: '192.168.1.13', count: 4, percentage: '13.3%' }
+        ];
+        
+        srcIps.forEach(function(ip) {
+            srcIpHtml += `
+                <tr>
+                    <td>${ip.ip}</td>
+                    <td>${ip.count}</td>
+                    <td>${ip.percentage}</td>
+                </tr>
+            `;
+        });
+        document.getElementById('src-ip-stats').innerHTML = srcIpHtml;
+        
+        // 목적지 IP 통계
+        let dstIpHtml = '';
+        const dstIps = [
+            { ip: '8.8.8.8', count: 10, percentage: '33.3%' },
+            { ip: '203.0.113.10', count: 8, percentage: '26.7%' },
+            { ip: '192.168.2.1', count: 7, percentage: '23.3%' },
+            { ip: '192.168.1.1', count: 5, percentage: '16.7%' }
+        ];
+        
+        dstIps.forEach(function(ip) {
+            dstIpHtml += `
+                <tr>
+                    <td>${ip.ip}</td>
+                    <td>${ip.count}</td>
+                    <td>${ip.percentage}</td>
+                </tr>
+            `;
+        });
+        document.getElementById('dst-ip-stats').innerHTML = dstIpHtml;
+    }
+    
+    // 더미 패킷 데이터 생성
+    function generateDummyPackets(count) {
+        const packets = [];
+        const protocols = ['TCP', 'UDP', 'ICMP', 'HTTP', 'HTTPS', 'DNS'];
+        const status = ['allowed', 'blocked', 'allowed', 'allowed']; // 75% 허용, 25% 차단
+        
+        for (let i = 1; i <= count; i++) {
+            const protocol = protocols[Math.floor(Math.random() * protocols.length)];
+            const srcPort = Math.floor(Math.random() * 65535) + 1;
+            const dstPort = protocol === 'HTTP' ? 80 : protocol === 'HTTPS' ? 443 : protocol === 'DNS' ? 53 : Math.floor(Math.random() * 65535) + 1;
+            
+            packets.push({
+                id: i,
+                time: new Date().toLocaleTimeString(),
+                src: `192.168.1.${Math.floor(Math.random() * 254) + 1}:${srcPort}`,
+                dst: `203.0.113.${Math.floor(Math.random() * 254) + 1}:${dstPort}`,
+                protocol: protocol,
+                length: Math.floor(Math.random() * 1400) + 64,
+                info: `${protocol} ${srcPort} → ${dstPort} ${protocol === 'TCP' ? '[SYN, ACK]' : ''}`,
+                status: status[Math.floor(Math.random() * status.length)]
+            });
+        }
+        
+        return packets;
+    }
+    
+    // 더미 대화 데이터 생성
+    function generateDummyConversations(count) {
+        const conversations = [];
+        
+        for (let i = 1; i <= count; i++) {
+            const src = `192.168.1.${Math.floor(Math.random() * 254) + 1}`;
+            const dst = `203.0.113.${Math.floor(Math.random() * 254) + 1}`;
+            const packetCount = Math.floor(Math.random() * 50) + 1;
+            const byteCount = packetCount * (Math.floor(Math.random() * 1000) + 64);
+            const startTime = new Date(Date.now() - Math.floor(Math.random() * 300000));
+            const duration = Math.floor(Math.random() * 300) + 1;
+            const endTime = new Date(startTime.getTime() + duration * 1000);
+            
+            conversations.push({
+                src: src,
+                dst: dst,
+                packets: packetCount,
+                bytes: formatBytes(byteCount),
+                start: startTime.toLocaleTimeString(),
+                end: endTime.toLocaleTimeString(),
+                duration: `${duration}초`
+            });
+        }
+        
+        return conversations;
+    }
+    
+    // 램덤 MAC 주소 생성
+    function generateMacAddress() {
+        const hexDigits = "0123456789ABCDEF";
+        let macAddress = "";
+        
+        for (let i = 0; i < 6; i++) {
+            macAddress += hexDigits.charAt(Math.floor(Math.random() * hexDigits.length));
+            macAddress += hexDigits.charAt(Math.floor(Math.random() * hexDigits.length));
+            if (i < 5) macAddress += ":";
+        }
+        
+        return macAddress;
+    }
+    
+    // 바이트 형식 변환 (1024 -> 1 KB)
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 Bytes';
+        
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+    
+    // HEX 덤프 생성
+    function generateHexDump(length) {
+        const hexChars = '0123456789ABCDEF';
+        let hexDump = '';
+        
+        const rows = Math.ceil(Math.min(length, 256) / 16);
+        
+        for (let i = 0; i < rows; i++) {
+            // 주소
+            hexDump += (i * 16).toString(16).padStart(8, '0') + '  ';
+            
+            // 16 바이트 HEX 코드
+            for (let j = 0; j < 16; j++) {
+                if (i * 16 + j < length) {
+                    hexDump += hexChars.charAt(Math.floor(Math.random() * 16)) + 
+                               hexChars.charAt(Math.floor(Math.random() * 16)) + ' ';
+                } else {
+                    hexDump += '   ';
+                }
+                
+                // 8바이트마다 공백 추가
+                if (j === 7) {
+                    hexDump += ' ';
+                }
+            }
+            
+            hexDump += ' |';
+            
+            // ASCII 표현
+            for (let j = 0; j < 16; j++) {
+                if (i * 16 + j < length) {
+                    // 랜덤 ASCII 코드 (32-126 사이의 출력 가능한 문자)
+                    const charCode = Math.floor(Math.random() * 95) + 32;
+                    hexDump += String.fromCharCode(charCode);
+                } else {
+                    hexDump += ' ';
+                }
+            }
+            
+            hexDump += '|\n';
+        }
+        
+        if (length > 256) {
+            hexDump += '\n... (처음 256 바이트만 표시됨) ...';
+        }
+        
+        return hexDump;
+    }
+});
+</script>
+
+<!-- 네트워크 상세 정보 모달 (FortiManager 네트워크 시각화용) -->
+<div class="modal fade" id="network-details-modal" tabindex="-1" aria-labelledby="networkDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <!-- 동적으로 채워짐 -->
+        </div>
+    </div>
+</div>
+{% endblock %}

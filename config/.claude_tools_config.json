@@ -1,0 +1,74 @@
+{
+  "mcp_tools": {
+    "code_quality": {
+      "python_linting": {
+        "tool": "bash",
+        "commands": {
+          "flake8": "flake8 src/ --max-line-length=120 --ignore=E203,W503",
+          "black": "black src/ --line-length=120",
+          "isort": "isort src/ --profile black"
+        }
+      },
+      "eslint_alternative": {
+        "note": "ESLint not applicable for Python project",
+        "python_equivalent": "flake8 + black + isort"
+      }
+    },
+    "testing": {
+      "framework": "pytest",
+      "commands": {
+        "run_all": "pytest tests/ -v",
+        "coverage": "pytest tests/ -v --cov=src --cov-report=html",
+        "markers": {
+          "unit": "pytest -m 'unit' -v",
+          "integration": "pytest -m 'integration' -v",
+          "not_slow": "pytest -m 'not slow' -v"
+        }
+      }
+    },
+    "development": {
+      "run_commands": {
+        "monolithic": "cd src && python main.py --web",
+        "mock_mode": "APP_MODE=test python src/main.py --web",
+        "msa_mode": "docker-compose -f docker-compose.msa.yml up -d"
+      }
+    },
+    "deployment": {
+      "gitops_pipeline": {
+        "trigger": "git add . && git commit -m 'deploy' && git push origin master",
+        "monitor": "gh run list --repo JCLEE94/fortinet --limit 3",
+        "health_check": "curl -s http://192.168.50.110:30777/api/health"
+      }
+    },
+    "code_runner": {
+      "python_execution": {
+        "tool": "mcp__code-runner__run-code",
+        "language": "python"
+      }
+    }
+  },
+  "git_hooks": {
+    "pre_commit": {
+      "enabled": false,
+      "commands": ["black src/", "isort src/", "flake8 src/"]
+    }
+  },
+  "ci_cd_detection": {
+    "github_actions": {
+      "workflow_file": ".github/workflows/gitops-pipeline.yml",
+      "status": "active",
+      "self_hosted_runner": true
+    },
+    "argocd": {
+      "url": "https://argo.jclee.me",
+      "application": "fortinet",
+      "sync_policy": "automated"
+    }
+  },
+  "environment_detection": {
+    "python_version": "3.10.12",
+    "target_version": "3.11",
+    "virtual_env": false,
+    "requirements_files": ["requirements.txt", "pyproject.toml"]
+  }
+}

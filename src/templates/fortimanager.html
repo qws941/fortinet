@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}FortiManager Dashboard - FortiGate Nextrade{% endblock %}
+
+{% block content %}
+<div class="content-area">
+    <div class="page-header">
+        <h1><i class="fas fa-shield-alt"></i> FortiManager Dashboard</h1>
+        <p class="page-description">FortiManager 중앙 관리 대시보드</p>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="card-header">
+                <h3>Managed Devices</h3>
+            </div>
+            <div class="card-body">
+                <div class="metric-value">12</div>
+                <div class="metric-label">Active Devices</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Security Policies</h3>
+            </div>
+            <div class="card-body">
+                <div class="metric-value">145</div>
+                <div class="metric-label">Total Policies</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Compliance Score</h3>
+            </div>
+            <div class="card-body">
+                <div class="metric-value">92%</div>
+                <div class="metric-label">Overall Compliance</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="quick-actions">
+        <a href="/fortimanager/devices" class="btn btn-primary">
+            <i class="fas fa-server"></i> Manage Devices
+        </a>
+        <a href="/fortimanager/policies" class="btn btn-secondary">
+            <i class="fas fa-shield-alt"></i> Security Policies
+        </a>
+        <a href="/fortimanager/compliance" class="btn btn-info">
+            <i class="fas fa-check-circle"></i> Compliance
+        </a>
+        <a href="/fortimanager/analytics" class="btn btn-warning">
+            <i class="fas fa-chart-bar"></i> Analytics
+        </a>
+    </div>
+</div>
+{% endblock %}

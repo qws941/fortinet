@@ -1,0 +1,58 @@
+# =============================================================================
+# FortiGate Redis Cache Service Dockerfile
+# =============================================================================
+
+FROM redis:7.2-alpine
+
+# Build arguments for versioning
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=v1.0.0
+
+# OCI Image Specification labels
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.authors="admin@jclee.me" \
+      org.opencontainers.image.url="https://fortinet.jclee.me" \
+      org.opencontainers.image.documentation="https://github.com/jclee/fortinet" \
+      org.opencontainers.image.source="https://github.com/jclee/fortinet" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="JC Lee" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.title="FortiGate Redis Cache" \
+      org.opencontainers.image.description="High-performance caching layer for FortiGate platform"
+
+# Environment setup
+ENV REDIS_PORT=6379 \
+    REDIS_MAXMEMORY=256mb \
+    REDIS_MAXMEMORY_POLICY=allkeys-lru \
+    REDIS_APPENDONLY=yes \
+    REDIS_SAVE="900 1 300 10 60 10000"
+
+# Create data directory (redis user already exists)
+RUN mkdir -p /data /var/log/redis && \
+    chown -R redis:redis /data /var/log/redis
+
+# Redis configuration
+COPY redis.conf /usr/local/etc/redis/redis.conf
+
+# Health check script
+RUN echo '#!/bin/sh' > /health.sh && \
+    echo 'redis-cli ping' >> /health.sh && \
+    chmod +x /health.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD /health.sh || exit 1
+
+# Volume for data persistence
+VOLUME ["/data"]
+
+# Expose Redis port
+EXPOSE 6379
+
+# Switch to redis user
+USER redis
+
+# Start Redis with custom config
+CMD ["redis-server", "/usr/local/etc/redis/redis.conf"]

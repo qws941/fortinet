@@ -1,0 +1,19 @@
+🚀 CI/CD Pipeline Test Push
+
+⏰ Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+🔄 Test ID: manual_push_test_$(date +%s)
+📋 Commit SHA: $(git rev-parse HEAD)
+
+✨ Testing Complete Pipeline:
+- GitHub Actions workflow execution
+- Docker image build and push to registry.jclee.me
+- ArgoCD automatic synchronization
+- Kubernetes deployment update
+
+🎯 Expected Flow:
+1. Git Push → GitHub Actions
+2. Build → registry.jclee.me/fortinet:latest
+3. ArgoCD Sync → Kubernetes Deploy
+4. Live at https://fortinet.jclee.me
+
+🚀 Manual Push Test Initiated!# 강제 재배포 2025. 07. 05. (토) 01:54:00 KST - 502 에러 해결 시도

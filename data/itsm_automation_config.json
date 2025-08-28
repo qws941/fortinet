@@ -1,0 +1,31 @@
+{
+  "itsm": {
+    "platform": "nextrade",
+    "base_url": "${ITSM_BASE_URL:https://itsm2.nxtd.co.kr}",
+    "username": "${ITSM_USERNAME:}",
+    "password": "${ITSM_PASSWORD:}",
+    "api_token": "${ITSM_API_TOKEN:}",
+    "poll_interval": "${ITSM_POLL_INTERVAL:300}",
+    "custom_headers": {
+      "User-Agent": "FortiGate-Nextrade-AutoDeploy/1.0"
+    }
+  },
+  "fortimanager": {
+    "enabled": "${FORTIMANAGER_ENABLED:true}",
+    "host": "${FORTIMANAGER_HOST:}",
+    "username": "${FORTIMANAGER_USERNAME:}",
+    "password": "${FORTIMANAGER_PASSWORD:}"
+  },
+  "automation": {
+    "auto_approve_low_risk": true,
+    "auto_approve_medium_risk": false,
+    "auto_approve_high_risk": false,
+    "require_business_justification": true,
+    "max_concurrent_deployments": "${MAX_CONCURRENT_DEPLOYMENTS:5}"
+  },
+  "notification": {
+    "enabled": true,
+    "webhook_url": "${NOTIFICATION_WEBHOOK_URL:}",
+    "email_notifications": true
+  }
+}

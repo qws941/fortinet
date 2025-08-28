@@ -1,0 +1,83 @@
+# =============================================================================
+# FortiGate Nextrade - Main Application Dockerfile
+# =============================================================================
+
+FROM python:3.11-slim
+
+# Build arguments for versioning
+ARG BUILD_DATE=""
+ARG VCS_REF=""  
+ARG VERSION="v1.0.0"
+
+# OCI Image Specification labels (place after other layers to reduce rebuilds)
+LABEL org.opencontainers.image.title="FortiGate Nextrade Platform" \
+      org.opencontainers.image.description="Enterprise network security monitoring and analysis platform" \
+      org.opencontainers.image.authors="admin@jclee.me" \
+      org.opencontainers.image.vendor="JC Lee" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.url="https://fortinet.jclee.me" \
+      org.opencontainers.image.documentation="https://github.com/jclee/fortinet" \
+      org.opencontainers.image.source="https://github.com/jclee/fortinet"
+
+# Environment setup
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/app/src \
+    APP_MODE=production \
+    WEB_APP_HOST=0.0.0.0 \
+    WEB_APP_PORT=7777 \
+    DATABASE_URL=postgresql://fortinet:fortinet123@postgresql:5432/fortinet_db \
+    REDIS_URL=redis://redis:6379/0
+
+# Install system dependencies
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+    gcc g++ curl netcat-openbsd \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app user
+RUN groupadd -r fortinet && \
+    useradd -r -g fortinet -m -s /bin/bash fortinet
+
+# Create directories
+RUN mkdir -p /app/src /app/data /app/logs /app/static /app/templates && \
+    chown -R fortinet:fortinet /app
+
+# Install Python dependencies
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir gunicorn gevent prometheus-client psycopg2-binary redis
+
+# Copy application
+COPY --chown=fortinet:fortinet . /app/
+
+# Compile Python bytecode
+RUN python -m compileall /app/src -b -qq || true
+
+# Set permissions
+RUN chmod -R 755 /app/src && \
+    chmod 777 /app/data /app/logs
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:7777/api/health || exit 1
+
+USER fortinet
+WORKDIR /app
+
+# Add version labels at the end for cache efficiency
+LABEL org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}"
+
+EXPOSE 7777
+
+# Copy startup script
+COPY --chown=fortinet:fortinet startup.sh /app/startup.sh
+RUN chmod +x /app/startup.sh
+
+CMD ["/app/startup.sh"]

@@ -1,0 +1,800 @@
+{
+  "scan_timestamp": "2025-08-20T15:35:44.624116",
+  "total_vulnerabilities": 78,
+  "severity_distribution": {
+    "critical": 0,
+    "high": 3,
+    "medium": 75,
+    "low": 0
+  },
+  "category_distribution": {
+    "missing_authentication": 60,
+    "weak_crypto": 15,
+    "unsafe_deserialization": 1,
+    "path_traversal": 2
+  },
+  "risk_level": "매우 높음",
+  "risk_score": 321,
+  "vulnerabilities": [
+    {
+      "file": "src/web_app.py",
+      "line": 180,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "        @csrf_protect\n>>>     @app.route(\"/analyze_path\", methods=[\"POST\"])\n        def analyze_path():\n            \"\"\"경로 분석 (레거시 호환성)\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/web_app.py",
+      "line": 195,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "        @csrf_protect\n>>>     @app.route(\"/api/firewall-policy/analyze\", methods=[\"POST\"])\n        def analyze_firewall_policy():\n            \"\"\"방화벽 정책 분석\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/web_app.py",
+      "line": 225,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "        @csrf_protect\n>>>     @app.route(\"/api/firewall-policy/create-ticket\", methods=[\"POST\"])\n        def create_firewall_ticket():\n            \"\"\"방화벽 정책 티켓 생성\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/web_app.py",
+      "line": 251,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "        @csrf_protect\n>>>     @app.route(\"/api/firewall-policy/zones\")\n        def get_firewall_zones():\n            \"\"\"방화벽 존 정보 조회\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/web_app.py",
+      "line": 180,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "        @csrf_protect\n>>>     @app.route(\"/analyze_path\", methods=[\"POST\"])\n        def analyze_path():\n            \"\"\"경로 분석 (레거시 호환성)\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/web_app.py",
+      "line": 195,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "        @csrf_protect\n>>>     @app.route(\"/api/firewall-policy/analyze\", methods=[\"POST\"])\n        def analyze_firewall_policy():\n            \"\"\"방화벽 정책 분석\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/web_app.py",
+      "line": 225,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "        @csrf_protect\n>>>     @app.route(\"/api/firewall-policy/create-ticket\", methods=[\"POST\"])\n        def create_firewall_ticket():\n            \"\"\"방화벽 정책 티켓 생성\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/web_app.py",
+      "line": 251,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "        @csrf_protect\n>>>     @app.route(\"/api/firewall-policy/zones\")\n        def get_firewall_zones():\n            \"\"\"방화벽 존 정보 조회\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/monitoring/realtime/websocket.py",
+      "line": 282,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "                        \"id\": random.randint(1000, 9999),\n>>>                     \"type\": random.choice([\"malware\", \"intrusion\", \"botnet\", \"spam\"]),\n                        \"severity\": random.choice([\"low\", \"medium\", \"high\", \"critical\"]),\n                        \"timestamp\": time.time() - random.randint(0, 3600),",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/monitoring/realtime/websocket.py",
+      "line": 283,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "                        \"type\": random.choice([\"malware\", \"intrusion\", \"botnet\", \"spam\"]),\n>>>                     \"severity\": random.choice([\"low\", \"medium\", \"high\", \"critical\"]),\n                        \"timestamp\": time.time() - random.randint(0, 3600),\n                        \"source_ip\": f\"192.168.{random.randint(1,254)}.{random.randint(1,254)}\",",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/monitoring/realtime/websocket.py",
+      "line": 286,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "                        \"source_ip\": f\"192.168.{random.randint(1,254)}.{random.randint(1,254)}\",\n>>>                     \"status\": random.choice([\"blocked\", \"monitored\", \"quarantined\"]),\n                    }\n                    for _ in range(random.randint(0, 5))",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/monitoring/realtime/alerts.py",
+      "line": 212,
+      "category": "unsafe_deserialization",
+      "severity": "high",
+      "description": "안전하지 않은 역직렬화",
+      "code_snippet": "                elif \"lambda\" in condition:\n>>>                 return eval(condition[\"lambda\"])(metrics)\n    \n            except Exception as e:",
+      "recommendation": "안전한 역직렬화 방법을 사용하세요",
+      "cwe_id": "CWE-502"
+    },
+    {
+      "file": "src/core/error_handler_advanced.py",
+      "line": 120,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "            error_str = f\"{self.category.value}_{self.message}_{datetime.utcnow()}\"\n>>>         return hashlib.md5(error_str.encode()).hexdigest()[:8].upper()\n    \n        def to_dict(self) -> Dict[str, Any]:",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 12,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/\")\n    def index():\n        \"\"\"홈페이지 - 원래 Nextrade 대시보드로 리다이렉트\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 18,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/policy-analysis\")\n    def policy_analysis():\n        \"\"\"FortiGate 정책 분석 페이지 (기존 index.html)\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 28,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/batch\")\n    def batch():\n        batch_examples = [",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 53,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/topology\")\n    def topology():\n        return render_template(\"topology.html\")",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 58,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/compliance\")\n    def compliance():\n        return render_template(\"compliance.html\")",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 63,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/logs\")\n    def logs_management():\n        \"\"\"로그 관리 페이지\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 69,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/logs/live\")\n    def live_logs():\n        \"\"\"실시간 로그 스트리밍 페이지\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 75,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/batch/results\")\n    def batch_results():\n        \"\"\"배치 분석 결과 페이지\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 92,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/devices\")\n    def devices():\n        \"\"\"장치 목록 페이지\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 103,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/packet_sniffer\")\n    def packet_sniffer():\n        # 예시 IP와 장치 정보를 환경변수에서 가져오거나 기본값 사용",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 142,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/settings\")\n    def settings():\n        # 설정 페이지",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 148,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/performance\")\n    def performance():\n        \"\"\"성능 메트릭 페이지\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 154,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/fortimanager\")\n    def fortimanager():\n        \"\"\"FortiManager 대시보드\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 160,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/fortimanager/devices\")\n    def fortimanager_devices():\n        \"\"\"FortiManager 장치 관리\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 166,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/fortimanager/policies\")\n    def fortimanager_policies():\n        \"\"\"FortiManager 정책 관리\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 172,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/fortimanager/compliance\")\n    def fortimanager_compliance():\n        \"\"\"FortiManager 컴플라이언스\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 178,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/fortimanager/analytics\")\n    def fortimanager_analytics():\n        \"\"\"FortiManager 분석\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 184,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/itsm/tickets\")\n    def itsm_tickets():\n        \"\"\"ITSM 티켓 관리\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 190,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/itsm/automation\")\n    def itsm_automation():\n        \"\"\"ITSM 자동화\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 196,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/itsm/policy-requests\")\n    def itsm_policy_requests():\n        \"\"\"ITSM 정책 요청\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 202,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/monitoring\")\n    def monitoring():\n        \"\"\"모니터링 페이지\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 273,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/text-overflow-test\")\n    def text_overflow_test():\n        # 텍스트 오버플로우 테스트를 위한 샘플 데이터",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 283,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/dashboard/modern\")\n    def dashboard_modern():\n        return render_template(\"dashboard_modern.html\")",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 288,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/dashboard\")\n    def dashboard():\n        \"\"\"대시보드 페이지\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 358,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/result\")\n    def result():\n        \"\"\"분석 결과 페이지\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 375,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/about\")\n    def about():\n        return render_template(\"about.html\")",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 380,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/policy-scenarios\")\n    def policy_scenarios():\n        \"\"\"정책 분석 시나리오 페이지\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 390,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/help\")\n    def help():\n        batch_examples = [",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/main_routes.py",
+      "line": 420,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @main_bp.route(\"/offline.html\")\n    def offline():\n        return render_template(\"offline.html\")",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/itsm_routes.py",
+      "line": 10,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @itsm_bp.route(\"/\")\n    def itsm():\n        return render_template(\"itsm.html\")",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/itsm_routes.py",
+      "line": 15,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @itsm_bp.route(\"/scraper\")\n    def itsm_scraper_page():\n        return render_template(\"itsm_scraper.html\")",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/websocket_routes.py",
+      "line": 194,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    # REST API endpoints for WebSocket status\n>>> @websocket_bp.route(\"/status\", methods=[\"GET\"])\n    def get_websocket_status():\n        \"\"\"Get WebSocket service status\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/websocket_routes.py",
+      "line": 206,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @websocket_bp.route(\"/metrics\", methods=[\"GET\"])\n    def get_metrics_api():\n        \"\"\"Get current metrics via REST API\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/websocket_routes.py",
+      "line": 224,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @websocket_bp.route(\"/alerts\", methods=[\"GET\"])\n    def get_alerts_api():\n        \"\"\"Get alerts via REST API\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/websocket_routes.py",
+      "line": 233,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @websocket_bp.route(\"/health\", methods=[\"GET\"])\n    def get_health_api():\n        \"\"\"Get health status via REST API\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/itsm_api_routes.py",
+      "line": 10,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @itsm_api_bp.route(\"/scrape-requests\", methods=[\"GET\"])\n    def scrape_itsm_requests():\n        \"\"\"ITSM에서 방화벽 요청 스크래핑\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/itsm_api_routes.py",
+      "line": 37,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @itsm_api_bp.route(\"/process-request\", methods=[\"POST\"])\n    def process_itsm_request():\n        \"\"\"ITSM 요청 처리\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/itsm_api_routes.py",
+      "line": 59,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @itsm_api_bp.route(\"/status/<request_id>\", methods=[\"GET\"])\n    def get_request_status(request_id):\n        \"\"\"요청 상태 조회\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/fortimanager_routes.py",
+      "line": 21,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @fortimanager_bp.route(\"/status\", methods=[\"GET\"])\n    def get_fortimanager_status():\n        \"\"\"FortiManager connection status - Real API implementation\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/fortimanager_routes.py",
+      "line": 54,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @fortimanager_bp.route(\"/policies\", methods=[\"POST\"])\n    def get_fortimanager_policies():\n        \"\"\"Get FortiManager policies\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/fortimanager_routes.py",
+      "line": 74,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @fortimanager_bp.route(\"/compliance\", methods=[\"GET\"])\n    def get_fortimanager_compliance():\n        \"\"\"Get FortiManager compliance status\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/fortimanager_routes.py",
+      "line": 94,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @fortimanager_bp.route(\"/analyze-packet-path\", methods=[\"POST\"])\n    def analyze_packet_path():\n        \"\"\"Analyze packet path through FortiManager - Real implementation\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/fortimanager_routes.py",
+      "line": 228,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @fortimanager_bp.route(\"/ai/hub-status\", methods=[\"GET\"])\n    def get_ai_hub_status():\n        \"\"\"Get status of AI-enhanced FortiManager hub\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/fortimanager/device_routes.py",
+      "line": 247,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    # Mock 관련 엔드포인트들\n>>> @device_bp.route(\"/mock/system-status\", methods=[\"GET\"])\n    def mock_system_status():\n        \"\"\"Mock 시스템 상태 (테스트용)\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/fortimanager/device_routes.py",
+      "line": 269,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @device_bp.route(\"/mock/interfaces\", methods=[\"GET\"])\n    def mock_interfaces():\n        \"\"\"Mock 인터페이스 정보 (테스트용)\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/api_modules/settings_routes.py",
+      "line": 15,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @settings_bp.route(\"/settings\", methods=[\"GET\"])\n    def get_settings():\n        \"\"\"설정 조회\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/api_modules/settings_routes.py",
+      "line": 37,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @settings_bp.route(\"/settings\", methods=[\"POST\"])\n    def update_settings():\n        \"\"\"설정 업데이트\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/api_modules/advanced_fortigate_routes.py",
+      "line": 122,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @advanced_fortigate_bp.route(\"/connection/status\", methods=[\"GET\"])\n    def get_connection_status():\n        \"\"\"API 연결 상태 조회\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/api_modules/advanced_fortigate_routes.py",
+      "line": 732,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @advanced_fortigate_bp.route(\"/validation/categories\", methods=[\"GET\"])\n    def get_validation_categories():\n        \"\"\"사용 가능한 검증 카테고리 목록 조회\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/api_modules/advanced_fortigate_routes.py",
+      "line": 751,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @advanced_fortigate_bp.route(\"/config\", methods=[\"GET\"])\n    def get_api_config():\n        \"\"\"현재 API 설정 조회\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/api_modules/advanced_fortigate_routes.py",
+      "line": 776,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @advanced_fortigate_bp.route(\"/config\", methods=[\"POST\"])\n    def update_api_config():\n        \"\"\"API 설정 업데이트\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/routes/api_modules/itsm_routes.py",
+      "line": 29,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "                        \"title\": f\"Issue #{i + 1}\",\n>>>                     \"status\": random.choice([\"open\", \"in_progress\", \"resolved\", \"closed\"]),\n                        \"priority\": random.choice([\"low\", \"medium\", \"high\", \"critical\"]),\n                        \"assignee\": f\"User{random.randint(1, 5)}\",",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/routes/api_modules/itsm_routes.py",
+      "line": 30,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "                        \"status\": random.choice([\"open\", \"in_progress\", \"resolved\", \"closed\"]),\n>>>                     \"priority\": random.choice([\"low\", \"medium\", \"high\", \"critical\"]),\n                        \"assignee\": f\"User{random.randint(1, 5)}\",\n                        \"created_at\": time.time() - (i * 3600),",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/routes/api_modules/logs_routes.py",
+      "line": 29,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "                        \"timestamp\": time.time() - (i * 60),\n>>>                     \"level\": random.choice([\"info\", \"warning\", \"error\", \"debug\"]),\n                        \"source\": random.choice([\"system\", \"application\", \"security\", \"network\"]),\n                        \"message\": f\"Log entry {i + 1}: System event occurred\",",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/routes/api_modules/logs_routes.py",
+      "line": 30,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "                        \"level\": random.choice([\"info\", \"warning\", \"error\", \"debug\"]),\n>>>                     \"source\": random.choice([\"system\", \"application\", \"security\", \"network\"]),\n                        \"message\": f\"Log entry {i + 1}: System event occurred\",\n                        \"details\": {",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/routes/api_modules/logs_routes.py",
+      "line": 34,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "                            \"pid\": random.randint(1000, 9999),\n>>>                         \"module\": random.choice([\"web\", \"api\", \"database\", \"cache\"]),\n                        },\n                    }",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/routes/api_modules/monitoring_routes.py",
+      "line": 98,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "                    \"id\": i,\n>>>                 \"level\": random.choice([\"info\", \"warning\", \"error\", \"critical\"]),\n                    \"message\": f\"Alert {i}: System event detected\",\n                    \"timestamp\": time.time() - random.randint(0, 3600),",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/routes/api_modules/monitoring_routes.py",
+      "line": 101,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "                    \"timestamp\": time.time() - random.randint(0, 3600),\n>>>                 \"source\": random.choice([\"system\", \"network\", \"security\", \"application\"]),\n                }\n                for i in range(1, random.randint(5, 15))",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/routes/api_modules/system_routes.py",
+      "line": 248,
+      "category": "missing_authentication",
+      "severity": "medium",
+      "description": "인증 누락 가능성",
+      "code_snippet": "    \n>>> @system_bp.route(\"/generate_token\", methods=[\"POST\"])\n    def generate_access_token():\n        \"\"\"API 액세스 토큰 생성\"\"\"",
+      "recommendation": "민감한 엔드포인트에 인증을 추가하세요",
+      "cwe_id": "CWE-306"
+    },
+    {
+      "file": "src/config/dashboard_defaults.py",
+      "line": 177,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "            \"labels\": labels,\n>>>         \"inbound_data\": [round(random.random() * 3 + 1, 2) for _ in range(hours)],\n            \"outbound_data\": [round(random.random() * 2 + 0.5, 2) for _ in range(hours)],\n        }",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/config/dashboard_defaults.py",
+      "line": 178,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "            \"inbound_data\": [round(random.random() * 3 + 1, 2) for _ in range(hours)],\n>>>         \"outbound_data\": [round(random.random() * 2 + 0.5, 2) for _ in range(hours)],\n        }\n    ",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/config/dashboard_defaults.py",
+      "line": 145,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "        for i in range(count):\n>>>         template = random.choice(ALERT_TEMPLATES)\n            device = random.choice(devices)\n    ",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/config/dashboard_defaults.py",
+      "line": 146,
+      "category": "weak_crypto",
+      "severity": "medium",
+      "description": "약한 암호화 알고리즘",
+      "code_snippet": "            template = random.choice(ALERT_TEMPLATES)\n>>>         device = random.choice(devices)\n    \n            # 시간을 무작위로 생성 (최근 2시간 내)",
+      "recommendation": "강력한 암호화 알고리즘을 사용하세요 (SHA-256, bcrypt 등)",
+      "cwe_id": "CWE-327"
+    },
+    {
+      "file": "src/security/ai_threat_detector.py",
+      "line": 147,
+      "category": "path_traversal",
+      "severity": "high",
+      "description": "경로 탐색 취약점",
+      "code_snippet": "            malicious_patterns = [\n>>>             \"../../\",  # Directory traversal\n                \"<script>\",  # XSS attempt\n                \"DROP TABLE\",  # SQL injection",
+      "recommendation": "입력 경로를 검증하고 제한하세요",
+      "cwe_id": "CWE-22"
+    },
+    {
+      "file": "src/security/ai_threat_detector.py",
+      "line": 147,
+      "category": "path_traversal",
+      "severity": "high",
+      "description": "경로 탐색 취약점",
+      "code_snippet": "            malicious_patterns = [\n>>>             \"../../\",  # Directory traversal\n                \"<script>\",  # XSS attempt\n                \"DROP TABLE\",  # SQL injection",
+      "recommendation": "입력 경로를 검증하고 제한하세요",
+      "cwe_id": "CWE-22"
+    }
+  ]
+}

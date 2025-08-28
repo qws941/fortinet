@@ -1,0 +1,66 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-${ENVIRONMENT}
+  namespace: argocd
+  labels:
+    app: monitoring
+    service-type: infrastructure
+    env: ${ENVIRONMENT}
+    managed-by: msa-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: fortinet-msa-project
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: "55.8.3"
+    helm:
+      values: |
+        prometheus:
+          prometheusSpec:
+            externalUrl: https://prometheus.${ENVIRONMENT}.jclee.me
+            retention: 30d
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: standard
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 50Gi
+        grafana:
+          ingress:
+            enabled: true
+            annotations:
+              kubernetes.io/ingress.class: "istio"
+            hosts:
+              - grafana.${ENVIRONMENT}.jclee.me
+            tls:
+              - secretName: grafana-${ENVIRONMENT}-tls
+                hosts:
+                  - grafana.${ENVIRONMENT}.jclee.me
+          adminPassword: admin
+          dashboardProviders:
+            dashboardproviders.yaml:
+              apiVersion: 1
+              providers:
+              - name: 'msa-dashboards'
+                folder: 'MSA'
+                type: file
+                options:
+                  path: /var/lib/grafana/dashboards/msa
+        alertmanager:
+          alertmanagerSpec:
+            externalUrl: https://alertmanager.${ENVIRONMENT}.jclee.me
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

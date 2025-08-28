@@ -1,0 +1,45 @@
+/* Pretendard 폰트 - 한글 & 영문 지원 */
+@font-face {
+  font-family: 'Pretendard';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Pretendard Light'), local('Pretendard-Light'),
+       url('./pretendard/Pretendard-Light.woff2') format('woff2');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Pretendard Regular'), local('Pretendard-Regular'),
+       url('./pretendard/Pretendard-Regular.woff2') format('woff2');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  font-style: normal;
+  font-weight: 500;
+  src: local('Pretendard Medium'), local('Pretendard-Medium'),
+       url('./pretendard/Pretendard-Medium.woff2') format('woff2');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Pretendard SemiBold'), local('Pretendard-SemiBold'),
+       url('./pretendard/Pretendard-SemiBold.woff2') format('woff2');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Pretendard Bold'), local('Pretendard-Bold'),
+       url('./pretendard/Pretendard-Bold.woff2') format('woff2');
+  font-display: swap;
+}

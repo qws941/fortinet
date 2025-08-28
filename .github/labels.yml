@@ -1,0 +1,13 @@
+# GitHub Labels Configuration
+
+- name: ci-failure
+  color: 'd73a4a'
+  description: CI/CD pipeline failure
+  
+- name: automated
+  color: '0075ca'
+  description: Automatically created by GitHub Actions
+  
+- name: bug
+  color: 'd73a4a'
+  description: Something isn't working

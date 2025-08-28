@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fortinet
+  labels:
+    app: fortinet
+    managed-by: argocd

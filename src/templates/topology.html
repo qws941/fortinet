@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+{% block title %}네트워크 토폴로지 - Nextrade Network Monitor{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/topology-enhanced.css') }}?v=1.1">
+<style>
+    #network-topology {
+        width: 100%;
+        height: 600px;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        background: var(--bg-secondary);
+        position: relative;
+    }
+    
+    .loading-spinner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+    
+    .loading-spinner::after {
+        content: "";
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: var(--accent);
+        animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topology-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-project-diagram"></i>
+            네트워크 토폴로지
+        </h1>
+        <p class="page-subtitle">실시간 네트워크 토폴로지 및 트래픽 플로우 분석</p>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <div class="control-group">
+            <label>
+                <i class="fas fa-layer-group"></i>
+                레이아웃
+            </label>
+            <select id="layoutSelect" class="control-select">
+                <option value="force">Force-Directed</option>
+                <option value="hierarchical">계층 구조</option>
+                <option value="circular">원형</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label>
+                <i class="fas fa-filter"></i>
+                장치 필터
+            </label>
+            <select id="filterSelect" class="control-select">
+                <option value="all">모든 장치</option>
+                <option value="fortigate">FortiGate만</option>
+                <option value="critical">중요 장치만</option>
+            </select>
+        </div>
+        
+        <div class="control-buttons">
+            <button id="refreshBtn" class="control-btn">
+                <i class="fas fa-sync-alt"></i>
+                새로고침
+            </button>
+            <button id="fitBtn" class="control-btn">
+                <i class="fas fa-compress"></i>
+                화면 맞춤
+            </button>
+            <button id="exportBtn" class="control-btn">
+                <i class="fas fa-download"></i>
+                내보내기
+            </button>
+        </div>
+    </div>
+
+    <!-- Topology Container -->
+    <div class="topology-container" id="topology-container">
+        <div id="network-topology">
+            <div class="loading-spinner" id="topology-loading">
+                <div style="margin-top: 60px; color: var(--text-secondary);">
+                    네트워크 토폴로지 로딩 중...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend-container">
+        <h4 class="legend-title">
+            <i class="fas fa-palette"></i>
+            범례
+        </h4>
+        <div class="legend-items">
+            <div class="legend-item">
+                <div class="legend-icon" style="background: var(--node-fortigate);"></div>
+                <span>FortiGate 방화벽</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon" style="background: var(--node-switch);"></div>
+                <span>네트워크 스위치</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon" style="background: var(--node-server);"></div>
+                <span>서버</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon" style="background: var(--node-client);"></div>
+                <span>클라이언트</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-icon" style="background: var(--node-external);"></div>
+                <span>외부 네트워크</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Information Panel -->
+    <div class="info-container">
+        <div class="info-card">
+            <h4 class="info-title">
+                <i class="fas fa-info-circle"></i>
+                선택된 장치 정보
+            </h4>
+            <div id="nodeInfo" class="info-content">
+                <p style="color: var(--text-muted);">장치를 클릭하여 상세 정보를 확인하세요</p>
+            </div>
+        </div>
+        
+        <div class="info-card">
+            <h4 class="info-title">
+                <i class="fas fa-chart-line"></i>
+                연결 정보
+            </h4>
+            <div id="edgeInfo" class="info-content">
+                <p style="color: var(--text-muted);">연결선을 클릭하여 트래픽 정보를 확인하세요</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Vis.js Network -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let network = null;
+    const container = document.getElementById('network-topology');
+    
+    // Network data storage
+    let networkNodes = new vis.DataSet();
+    let networkEdges = new vis.DataSet();
+    
+    // Initialize network data
+    function initializeNetwork() {
+        // Load topology data from API
+        loadTopologyData();
+    }
+    
+    // Load topology data from API
+    function loadTopologyData() {
+        const loadingSpinner = document.getElementById('topology-loading');
+        if (loadingSpinner) {
+            loadingSpinner.style.display = 'block';
+        }
+        
+        fetch('/api/fortimanager/topology')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Topology data loaded:', data);
+                updateNetworkData(data);
+            })
+            .catch(error => {
+                console.error('Failed to load topology data:', error);
+                showErrorMessage('토폴로지 데이터를 로드하는 중 오류가 발생했습니다.');
+            });
+    }
+    
+    // Update network with new data
+    function updateNetworkData(data) {
+        // Clear existing data
+        networkNodes.clear();
+        networkEdges.clear();
+        
+        // Process API response to vis.js format
+        if (data && data.devices) {
+            const nodes = data.devices.map(device => ({
+                id: device.id || device.hostname,
+                label: `${device.hostname}\n${device.ip}`,
+                group: getDeviceGroup(device.type),
+                level: getDeviceLevel(device.type),
+                status: device.status || 'online',
+                cpu: device.cpu_usage,
+                memory: device.memory_usage,
+                device_data: device
+            }));
+            
+            networkNodes.add(nodes);
+        }
+        
+        if (data && data.connections) {
+            const edges = data.connections.map(conn => ({
+                id: `${conn.from}_${conn.to}`,
+                from: conn.from,
+                to: conn.to,
+                label: conn.bandwidth || conn.label || '',
+                bandwidth: conn.bandwidth,
+                traffic: conn.traffic_usage,
+                status: conn.status || 'active'
+            }));
+            
+            networkEdges.add(edges);
+        }
+        
+        // Create/update network visualization
+        createNetworkVisualization();
+    }
+    
+    // Create network visualization
+    function createNetworkVisualization() {
+        const loadingSpinner = document.getElementById('topology-loading');
+        if (loadingSpinner) {
+            loadingSpinner.style.display = 'none';
+        }
+        
+        // Network options
+        const options = {
+            nodes: {
+                shape: 'box',
+                font: {
+                    size: 12,
+                    color: '#ffffff',
+                    face: 'Arial'
+                },
+                borderWidth: 2,
+                shadow: true
+            },
+            edges: {
+                width: 2,
+                shadow: true,
+                smooth: {
+                    type: 'continuous'
+                },
+                font: {
+                    size: 10,
+                    color: '#666666',
+                    strokeWidth: 3,
+                    strokeColor: '#ffffff'
+                }
+            },
+            groups: {
+                fortigate: {
+                    color: {
+                        background: '#E50038',
+                        border: '#B50027'
+                    },
+                    shape: 'diamond'
+                },
+                switch: {
+                    color: {
+                        background: '#3B82F6',
+                        border: '#2563EB'
+                    }
+                },
+                server: {
+                    color: {
+                        background: '#10B981',
+                        border: '#059669'
+                    }
+                },
+                client: {
+                    color: {
+                        background: '#F59E0B',
+                        border: '#D97706'
+                    },
+                    shape: 'ellipse'
+                },
+                external: {
+                    color: {
+                        background: '#8B5CF6',
+                        border: '#7C3AED'
+                    },
+                    shape: 'star'
+                }
+            },
+            layout: {
+                hierarchical: {
+                    enabled: true,
+                    direction: 'UD',
+                    sortMethod: 'directed',
+                    nodeSpacing: 150,
+                    levelSeparation: 200
+                }
+            },
+            physics: {
+                enabled: true,
+                stabilization: {
+                    iterations: 200
+                }
+            },
+            interaction: {
+                hover: true,
+                tooltipDelay: 200
+            }
+        };
+        
+        // Create network
+        network = new vis.Network(container, { nodes: networkNodes, edges: networkEdges }, options);
+        
+        // Event handlers
+        network.on('selectNode', function(params) {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                const node = networkNodes.get(nodeId);
+                displayNodeInfo(node);
+            }
+        });
+        
+        network.on('selectEdge', function(params) {
+            if (params.edges.length > 0) {
+                const edgeId = params.edges[0];
+                const edge = networkEdges.get(edgeId);
+                displayEdgeInfo(edge);
+            }
+        });
+        
+        // Control panel handlers
+        document.getElementById('layoutSelect').addEventListener('change', function(e) {
+            updateLayout(e.target.value);
+        });
+        
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            loadTopologyData();
+            if (network) {
+                network.fit();
+            }
+        });
+        
+        document.getElementById('fitBtn').addEventListener('click', function() {
+            network.fit();
+        });
+    }
+    
+    function displayNodeInfo(node) {
+        const infoDiv = document.getElementById('nodeInfo');
+        const deviceData = node.device_data || {};
+        const statusColor = node.status === 'online' ? 'var(--success)' : 
+                           node.status === 'warning' ? 'var(--warning)' : 'var(--danger)';
+        
+        infoDiv.innerHTML = `
+            <div><strong>장치명:</strong> ${node.label?.split('\n')[0] || node.id}</div>
+            <div><strong>IP 주소:</strong> ${node.label?.split('\n')[1] || 'N/A'}</div>
+            <div><strong>유형:</strong> ${node.group || 'unknown'}</div>
+            <div><strong>상태:</strong> <span style="color: ${statusColor};">${node.status || 'unknown'}</span></div>
+            ${node.cpu ? `<div><strong>CPU:</strong> ${node.cpu}%</div>` : ''}
+            ${node.memory ? `<div><strong>메모리:</strong> ${node.memory}%</div>` : ''}
+            ${deviceData.model ? `<div><strong>모델:</strong> ${deviceData.model}</div>` : ''}
+        `;
+    }
+    
+    function displayEdgeInfo(edge) {
+        const infoDiv = document.getElementById('edgeInfo');
+        const statusColor = edge.status === 'active' ? 'var(--success)' : 'var(--danger)';
+        
+        infoDiv.innerHTML = `
+            <div><strong>연결:</strong> ${edge.from} → ${edge.to}</div>
+            <div><strong>대역폭:</strong> ${edge.bandwidth || edge.label || 'N/A'}</div>
+            <div><strong>상태:</strong> <span style="color: ${statusColor};">${edge.status || 'unknown'}</span></div>
+            ${edge.traffic ? `<div><strong>트래픽:</strong> ${edge.traffic}%</div>` : ''}
+        `;
+    }
+    
+    function updateLayout(layoutType) {
+        let options = {};
+        
+        switch(layoutType) {
+            case 'hierarchical':
+                options = {
+                    layout: {
+                        hierarchical: {
+                            enabled: true,
+                            direction: 'UD'
+                        }
+                    }
+                };
+                break;
+            case 'circular':
+                options = {
+                    layout: {
+                        hierarchical: false
+                    }
+                };
+                // Manual circular layout would go here
+                break;
+            default:
+                options = {
+                    layout: {
+                        hierarchical: false
+                    }
+                };
+        }
+        
+        network.setOptions(options);
+    }
+    
+    // Helper functions
+    function getDeviceGroup(type) {
+        const typeMap = {
+            'fortigate': 'fortigate',
+            'firewall': 'fortigate',
+            'switch': 'switch',
+            'server': 'server',
+            'client': 'client',
+            'router': 'switch',
+            'external': 'external'
+        };
+        return typeMap[type?.toLowerCase()] || 'server';
+    }
+    
+    function getDeviceLevel(type) {
+        const levelMap = {
+            'external': -1,
+            'fortigate': 0,
+            'firewall': 0,
+            'switch': 1,
+            'router': 1,
+            'server': 2,
+            'client': 3
+        };
+        return levelMap[type?.toLowerCase()] || 2;
+    }
+    
+    function showErrorMessage(message) {
+        const loadingSpinner = document.getElementById('topology-loading');
+        if (loadingSpinner) {
+            loadingSpinner.style.display = 'none';
+        }
+        
+        container.innerHTML = `
+            <div style="padding: 2rem; text-align: center;">
+                <div style="margin-bottom: 1rem;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--warning);"></i>
+                </div>
+                <h3 style="color: var(--text-primary); margin-bottom: 1rem;">네트워크 토폴로지 로드 실패</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">${message}</p>
+                <button onclick="loadTopologyData()" class="btn btn-primary">
+                    <i class="fas fa-sync"></i> 다시 시도
+                </button>
+            </div>
+        `;
+    }
+    
+    // Initialize on load
+    if (typeof vis !== 'undefined') {
+        initializeNetwork();
+    } else {
+        // Fallback if vis.js fails to load
+        container.innerHTML = `
+            <div style="padding: 2rem; text-align: center;">
+                <h3>네트워크 토폴로지</h3>
+                <p>시각화 라이브러리를 로드하는 중 문제가 발생했습니다.</p>
+                <button onclick="location.reload()" class="btn btn-primary">
+                    <i class="fas fa-sync"></i> 새로고침
+                </button>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

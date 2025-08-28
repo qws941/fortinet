@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+
+{% block title %}장치 목록 - Nextrade Network Monitor{% endblock %}
+
+{% block head_extra %}
+<!-- Device-specific styles are now in the unified CSS system -->
+<script src="{{ url_for('static', filename='vendor/jquery.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/datatables/jquery.dataTables.min.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/datatables/dataTables.bootstrap5.min.css') }}">
+<script src="{{ url_for('static', filename='vendor/datatables/dataTables.bootstrap5.min.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="fas fa-server"></i>
+        연결된 장치 목록
+    </h1>
+    <p class="page-description">네트워크에 연결된 모든 장치 목록입니다. 장치를 클릭하여 상세 정보를 확인할 수 있습니다.</p>
+    <div id="test-mode-banner" class="alert alert-info mt-3" style="display: none;">
+        <i class="fas fa-info-circle"></i>
+        <strong>테스트 모드:</strong> <span id="test-mode-message"></span>
+    </div>
+</div>
+    
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">장치 관리</h3>
+        <div class="button-group">
+            <button class="button button-primary" id="refresh-devices">
+                <i class="fas fa-sync-alt"></i> {{ config.buttons.refresh if config else '새로고침' }}
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="button-group mb-4">
+            {% for filter in config.device_filters if config %}
+            <button type="button" class="filter-btn {% if filter.active %}active{% endif %}" data-filter="{{ filter.key }}">{{ filter.label }}</button>
+            {% endfor %}
+            {% if not config %}
+            <button type="button" class="filter-btn active" data-filter="all">모든 장치</button>
+            <button type="button" class="filter-btn" data-filter="firewall">방화벽</button>
+            <button type="button" class="filter-btn" data-filter="router">라우터</button>
+            <button type="button" class="filter-btn" data-filter="switch">스위치</button>
+            <button type="button" class="filter-btn" data-filter="client">클라이언트</button>
+            <button type="button" class="filter-btn" data-filter="server">서버</button>
+            {% endif %}
+        </div>
+        
+        <div class="mb-4">
+            <div class="search-box search-box-header">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" id="device-search" placeholder="{{ config.search.placeholder if config else '장치 검색 (이름, IP, MAC 등)' }}">
+            </div>
+        </div>
+            
+        <div class="table-responsive">
+            <table id="devices-table" class="table data-table table-enhanced">
+                <thead>
+                    <tr>
+                        <th class="{{ config.table_columns.type.class if config else 'table-col-xs' }}">{{ config.table_columns.type.header if config else '유형' }}</th>
+                        <th class="{{ config.table_columns.name.class if config else 'table-col-md' }}">{{ config.table_columns.name.header if config else '장치 이름' }}</th>
+                        <th class="{{ config.table_columns.ip.class if config else 'table-col-sm' }}">{{ config.table_columns.ip.header if config else 'IP 주소' }}</th>
+                        <th class="{{ config.table_columns.mac.class if config else 'table-col-sm' }}">{{ config.table_columns.mac.header if config else 'MAC 주소' }}</th>
+                        <th class="{{ config.table_columns.status.class if config else 'table-col-xs' }}">{{ config.table_columns.status.header if config else '상태' }}</th>
+                        <th class="{{ config.table_columns.zone.class if config else 'table-col-xs' }}">{{ config.table_columns.zone.header if config else 'Zone' }}</th>
+                        <th class="{{ config.table_columns.last_seen.class if config else 'table-col-sm' }}">{{ config.table_columns.last_seen.header if config else '마지막 활동' }}</th>
+                        <th class="{{ config.table_columns.actions.class if config else 'table-col-xs' }}">{{ config.table_columns.actions.header if config else '액션' }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- DataTables will populate this -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 장치 상세 정보 모달 -->
+<div class="modal" id="deviceModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">장치 상세 정보</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="device-details-loading" class="text-center p-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-2">장치 정보를 불러오는 중입니다...</p>
+                </div>
+                <div id="device-details-content" style="display: none;">
+                    <div class="content-grid-2">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">기본 정보</h6>
+                            </div>
+                            <div class="card-body">
+                            <table class="info-table">
+                                <tr>
+                                    <th>장치 이름</th>
+                                    <td id="detail-name"></td>
+                                </tr>
+                                <tr>
+                                    <th>유형</th>
+                                    <td id="detail-type"></td>
+                                </tr>
+                                <tr>
+                                    <th>모델</th>
+                                    <td id="detail-model"></td>
+                                </tr>
+                                <tr>
+                                    <th>펌웨어 버전</th>
+                                    <td id="detail-firmware"></td>
+                                </tr>
+                                <tr>
+                                    <th>시리얼 번호</th>
+                                    <td id="detail-serial"></td>
+                                </tr>
+                            </table>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">네트워크 정보</h6>
+                            </div>
+                            <div class="card-body">
+                            <table class="info-table">
+                                <tr>
+                                    <th>IP 주소</th>
+                                    <td id="detail-ip"></td>
+                                </tr>
+                                <tr>
+                                    <th>MAC 주소</th>
+                                    <td id="detail-mac"></td>
+                                </tr>
+                                <tr>
+                                    <th>네트워크 구간</th>
+                                    <td id="detail-zone"></td>
+                                </tr>
+                                <tr>
+                                    <th>연결 방식</th>
+                                    <td id="detail-connection"></td>
+                                </tr>
+                                <tr>
+                                    <th>상태</th>
+                                    <td id="detail-status"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    </div>
+                    
+                    <div class="card mt-3" id="interfaces-card">
+                        <div class="card-header">
+                            <h6 class="mb-0">인터페이스 정보</h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table" id="interfaces-table">
+                            <thead>
+                                <tr>
+                                    <th>이름</th>
+                                    <th>IP 주소</th>
+                                    <th>VLAN</th>
+                                    <th>Zone</th>
+                                    <th>상태</th>
+                                </tr>
+                            </thead>
+                            <tbody id="interfaces-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                    <div class="card mt-3" id="policy-card">
+                        <div class="card-header">
+                            <h6 class="mb-0">관련 정책</h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table" id="policy-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>이름</th>
+                                    <th>출발지</th>
+                                    <th>목적지</th>
+                                    <th>서비스</th>
+                                    <th>액션</th>
+                                </tr>
+                            </thead>
+                            <tbody id="policy-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="button button-outline" data-dismiss="modal">닫기</button>
+                <a href="{{ url_for('main.index') }}" class="button button-primary">경로 분석</a>
+                <a href="{{ url_for('main.packet_sniffer') }}" class="button button-secondary">패킷 스니퍼 실행</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 데이터 테이블 초기화
+    const devicesTable = $('#devices-table').DataTable({
+        responsive: true,
+        ordering: true,
+        language: {
+            search: "{{ config.datatable_language.search if config else '검색:' }}",
+            lengthMenu: "{{ config.datatable_language.lengthMenu if config else '_MENU_ 개씩 보기' }}",
+            info: "{{ config.datatable_language.info if config else '_TOTAL_ 개 중 _START_ - _END_ 표시' }}",
+            infoEmpty: "{{ config.datatable_language.infoEmpty if config else '표시할 데이터가 없습니다' }}",
+            infoFiltered: "{{ config.datatable_language.infoFiltered if config else '(총 _MAX_ 개 중 필터링됨)' }}",
+            paginate: {
+                first: "{{ config.datatable_language.paginate.first if config else '처음' }}",
+                last: "{{ config.datatable_language.paginate.last if config else '마지막' }}",
+                next: "{{ config.datatable_language.paginate.next if config else '다음' }}",
+                previous: "{{ config.datatable_language.paginate.previous if config else '이전' }}"
+            }
+        },
+        ajax: {
+            url: '{{ config.api_endpoints.devices_list if config else "/api/devices" }}',
+            dataSrc: function(json) {
+                if (json.success && json.devices) {
+                    const devices = [];
+                    
+                    // 테스트 모드 배너 표시
+                    if (json.test_mode) {
+                        document.getElementById('test-mode-banner').style.display = 'block';
+                        document.getElementById('test-mode-message').textContent = 
+                            json.test_mode_info || '{{ config.test_mode.banner_message if config else "현재 테스트 모드로 실행 중입니다. 실제 장비 연결 시 이 메시지가 사라집니다." }}';
+                    }
+                    
+                    // FortiGate 장치 처리
+                    if (json.devices.fortigate_devices) {
+                        json.devices.fortigate_devices.forEach(function(device) {
+                            devices.push({
+                                type: device.type || 'firewall',
+                                name: device.name || 'Unknown',
+                                ip: device.ip_address || device.ip || 'N/A',
+                                mac: device.mac_address || device.mac || 'N/A',
+                                status: device.status || 'offline',
+                                zone: device.zone || device.adom || 'FortiGate',
+                                last_seen: device.last_seen || 'N/A',
+                                id: device.id || device.name,
+                                is_dummy: device.is_dummy || false,
+                                dummy_info: device.dummy_info || '',
+                                location: device.location || ''
+                            });
+                        });
+                    }
+                    
+                    // 연결된 장치 처리
+                    if (json.devices.connected_devices) {
+                        json.devices.connected_devices.forEach(function(device) {
+                            devices.push({
+                                type: device.type || 'client',
+                                name: device.name || device.hostname || device.ip_address || 'Unknown',
+                                ip: device.ip_address || device.ip || 'N/A',
+                                mac: device.mac_address || device.mac || 'N/A',
+                                status: device.status || 'offline',
+                                zone: device.zone || 'Unknown',
+                                last_seen: device.last_seen || 'N/A',
+                                id: device.id || device.ip_address || device.ip,
+                                is_dummy: device.is_dummy || false,
+                                dummy_info: device.dummy_info || ''
+                            });
+                        });
+                    }
+                    
+                    return devices;
+                }
+                return [];
+            }
+        },
+        columns: [
+            { 
+                data: 'type',
+                render: function(data) {
+                    const icons = {
+                        'firewall': '<span class="device-type-badge firewall"><i class="fas fa-shield-alt"></i></span>',
+                        'router': '<span class="device-type-badge router"><i class="fas fa-route"></i></span>',
+                        'switch': '<span class="device-type-badge switch"><i class="fas fa-network-wired"></i></span>',
+                        'client': '<span class="device-type-badge client"><i class="fas fa-desktop"></i></span>',
+                        'server': '<span class="device-type-badge server"><i class="fas fa-server"></i></span>',
+                        'workstation': '<span class="device-type-badge client"><i class="fas fa-laptop"></i></span>'
+                    };
+                    return icons[data] || '<span class="device-type-badge"><i class="fas fa-question-circle"></i></span>';
+                }
+            },
+            { 
+                data: 'name', 
+                className: 'truncate',
+                render: function(data, type, row) {
+                    let nameHtml = data;
+                    if (row.is_dummy) {
+                        nameHtml += ' <span class="badge badge-info" title="' + row.dummy_info + '">테스트</span>';
+                    }
+                    if (row.location) {
+                        nameHtml += ' <small class="text-muted">(' + row.location + ')</small>';
+                    }
+                    return nameHtml;
+                }
+            },
+            { data: 'ip', className: 'device-ip' },
+            { data: 'mac', className: 'device-mac' },
+            { 
+                data: 'status',
+                render: function(data) {
+                    const badges = {
+                        'online': '<span class="status-badge status-badge-success">{{ config.status_badges.online.display if config else "온라인" }}</span>',
+                        'offline': '<span class="status-badge status-badge-danger">{{ config.status_badges.offline.display if config else "오프라인" }}</span>',
+                        'unknown': '<span class="status-badge status-badge-warning">{{ config.status_badges.unknown.display if config else "알 수 없음" }}</span>'
+                    };
+                    return badges[data] || badges['unknown'];
+                }
+            },
+            { data: 'zone', className: 'truncate' },
+            { data: 'last_seen' },
+            {
+                data: 'id',
+                render: function(data) {
+                    return '<button class="btn-action btn-view view-device" data-device-id="' + data + '"><i class="fas fa-eye"></i> {{ config.buttons.view_details if config else "상세" }}</button>';
+                }
+            }
+        ]
+    });
+    
+    // 장치 필터링
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            
+            // UI 업데이트
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('active', 'button-primary');
+                b.classList.add('button-outline');
+            });
+            this.classList.remove('button-outline');
+            this.classList.add('active', 'button-primary');
+            
+            // 데이터 필터링
+            if (filter === 'all') {
+                devicesTable.column(0).search('').draw();
+            } else {
+                devicesTable.column(0).search(filter).draw();
+            }
+        });
+    });
+    
+    // 검색 필드 커스텀 연결
+    document.getElementById('device-search').addEventListener('keyup', function() {
+        devicesTable.search(this.value).draw();
+    });
+    
+    // 모달 관련 함수
+    function showModal() {
+        document.getElementById('deviceModal').classList.add('show');
+    }
+    
+    function hideModal() {
+        document.getElementById('deviceModal').classList.remove('show');
+    }
+    
+    // 모달 닫기 버튼들
+    document.querySelectorAll('[data-dismiss="modal"]').forEach(btn => {
+        btn.addEventListener('click', hideModal);
+    });
+    
+    // 모달 바깥 클릭시 닫기
+    document.getElementById('deviceModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideModal();
+        }
+    });
+    
+    // 장치 상세 정보 모달 (동적 이벤트 바인딩)
+    $(document).on('click', '.view-device', function() {
+        const deviceId = $(this).data('device-id');
+        
+        // 모달 열기
+        showModal();
+        
+        // 로딩 표시
+        document.getElementById('device-details-loading').style.display = 'block';
+        document.getElementById('device-details-content').style.display = 'none';
+        
+        // 장치 정보 가져오기 (AJAX 호출)
+        $.ajax({
+            url: '/api/device/' + encodeURIComponent(deviceId),
+            method: 'GET',
+            success: function(response) {
+                if (response.success && response.device) {
+                    const deviceInfo = response.device;
+                    
+                    // 정보 표시
+                    let nameText = deviceInfo.name || 'Unknown';
+                    if (response.test_mode || deviceInfo.is_dummy) {
+                        nameText += ' (테스트 데이터)';
+                    }
+                    document.getElementById('detail-name').textContent = nameText;
+                    document.getElementById('detail-type').textContent = deviceInfo.type || 'Unknown';
+                    document.getElementById('detail-model').textContent = deviceInfo.model || 'N/A';
+                    document.getElementById('detail-firmware').textContent = deviceInfo.firmware_version || deviceInfo.firmware || deviceInfo.version || 'N/A';
+                    document.getElementById('detail-serial').textContent = deviceInfo.serial_number || deviceInfo.serial || 'N/A';
+                    document.getElementById('detail-ip').textContent = deviceInfo.ip_address || deviceInfo.ip || 'N/A';
+                    document.getElementById('detail-mac').textContent = deviceInfo.mac_address || deviceInfo.mac || 'N/A';
+                    document.getElementById('detail-zone').textContent = deviceInfo.zone || 'N/A';
+                    document.getElementById('detail-connection').textContent = deviceInfo.connection || deviceInfo.location || 'N/A';
+                    document.getElementById('detail-status').textContent = deviceInfo.status || 'Unknown';
+                    
+                    // 인터페이스 정보
+                    let interfacesHtml = '';
+                    if (deviceInfo.interfaces && Array.isArray(deviceInfo.interfaces)) {
+                        deviceInfo.interfaces.forEach(function(intf) {
+                            interfacesHtml += `
+                                <tr>
+                                    <td>${intf.name || 'N/A'}</td>
+                                    <td>${intf.ip || 'N/A'}</td>
+                                    <td>${intf.vlan || 'N/A'}</td>
+                                    <td>${intf.zone || 'N/A'}</td>
+                                    <td>${intf.status || 'N/A'}</td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        interfacesHtml = '<tr><td colspan="5" style="text-align: center;">인터페이스 정보가 없습니다.</td></tr>';
+                    }
+                    document.getElementById('interfaces-tbody').innerHTML = interfacesHtml;
+                    
+                    // 정책 정보
+                    let policiesHtml = '';
+                    if (deviceInfo.policies && Array.isArray(deviceInfo.policies)) {
+                        deviceInfo.policies.forEach(function(policy) {
+                            policiesHtml += `
+                                <tr>
+                                    <td>${policy.id || 'N/A'}</td>
+                                    <td>${policy.name || 'N/A'}</td>
+                                    <td>${policy.srcaddr || policy.src || 'N/A'}</td>
+                                    <td>${policy.dstaddr || policy.dst || 'N/A'}</td>
+                                    <td>${policy.service || 'N/A'}</td>
+                                    <td><span class="status-badge ${policy.action === 'accept' ? 'status-badge-success' : 'status-badge-danger'}">${policy.action || 'N/A'}</span></td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        policiesHtml = '<tr><td colspan="6" style="text-align: center;">정책 정보가 없습니다.</td></tr>';
+                    }
+                    document.getElementById('policy-tbody').innerHTML = policiesHtml;
+                    
+                    // 로딩 완료
+                    document.getElementById('device-details-loading').style.display = 'none';
+                    document.getElementById('device-details-content').style.display = 'block';
+                } else {
+                    // 오류 처리
+                    document.getElementById('device-details-loading').innerHTML = '<p style="color: #dc3545;">장치 정보를 가져오는데 실패했습니다.</p>';
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching device details:', error);
+                document.getElementById('device-details-loading').innerHTML = '<p style="color: #dc3545;">장치 정보를 가져오는데 실패했습니다: ' + error + '</p>';
+            }
+        });
+    });
+    
+    // 장치 목록 새로고침 버튼
+    document.getElementById('refresh-devices').addEventListener('click', function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>새로고침 중...';
+        
+        // 실제 API 호출로 테이블 새로고침
+        devicesTable.ajax.reload(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i> 새로고침';
+            
+            // 새로고침 성공 메시지
+            if (typeof toastr !== 'undefined') {
+                toastr.success('장치 목록이 새로고침되었습니다.');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

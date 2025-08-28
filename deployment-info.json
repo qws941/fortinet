@@ -1,0 +1,48 @@
+{
+  "timestamp": "2025-08-28T02:24:37Z",
+  "version": "1.0.0-311b792",
+  "git_commit": "311b792",
+  "registry": "registry.jclee.me",
+  "project": "fortinet",
+  "tag": "latest",
+  "deployment_status": "healthy",
+  "automation_completed": true,
+  "automation_system": "Real Automation System v11.1 (ThinkMCP 완전 통합)",
+  "health_check": {
+    "status": "healthy",
+    "endpoint": "http://localhost:7777/api/health",
+    "cpu_usage_percent": 22.75,
+    "memory_usage_percent": 32.76,
+    "disk_usage_percent": 68.67,
+    "uptime": "5 days 10 hours"
+  },
+  "services": {
+    "fortinet": {
+      "status": "healthy",
+      "image": "registry.jclee.me/fortinet/fortinet:latest",
+      "port": "7777"
+    },
+    "redis": {
+      "status": "healthy", 
+      "image": "redis:7.2-alpine",
+      "port": "6379"
+    }
+  },
+  "images": [
+    {
+      "service": "redis",
+      "image": "registry.jclee.me/fortinet-redis:latest",
+      "size": "40.9MB"
+    },
+    {
+      "service": "postgresql",
+      "image": "registry.jclee.me/fortinet-postgresql:latest",
+      "size": "300MB"
+    },
+    {
+      "service": "fortinet",
+      "image": "registry.jclee.me/fortinet:latest",
+      "size": "1.12GB"
+    }
+  ]
+}

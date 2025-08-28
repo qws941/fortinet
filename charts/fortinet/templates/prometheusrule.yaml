@@ -1,0 +1,102 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Chart.Name }}-alerts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    component: monitoring
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+  - name: fortinet.performance
+    interval: 30s
+    rules:
+    - alert: FortinetHighCPUUsage
+      expr: fortinet_cpu_usage_percent > 80
+      for: 5m
+      labels:
+        severity: warning
+        service: {{ .Chart.Name }}
+      annotations:
+        summary: "Fortinet High CPU Usage"
+        description: "CPU usage is above 80% for more than 5 minutes (current: {{ "{{ $value }}" }}%)"
+        
+    - alert: FortinetHighMemoryUsage  
+      expr: fortinet_memory_usage_percent > 85
+      for: 5m
+      labels:
+        severity: warning
+        service: {{ .Chart.Name }}
+      annotations:
+        summary: "Fortinet High Memory Usage"
+        description: "Memory usage is above 85% for more than 5 minutes (current: {{ "{{ $value }}" }}%)"
+        
+    - alert: FortinetHighDiskUsage
+      expr: fortinet_disk_usage_percent > 90
+      for: 10m
+      labels:
+        severity: critical
+        service: {{ .Chart.Name }}
+      annotations:
+        summary: "Fortinet Critical Disk Usage"
+        description: "Disk usage is above 90% for more than 10 minutes (current: {{ "{{ $value }}" }}%)"
+        
+  - name: fortinet.availability
+    interval: 30s
+    rules:
+    - alert: FortinetServiceDown
+      expr: up{job="{{ .Chart.Name }}"} == 0
+      for: 2m
+      labels:
+        severity: critical
+        service: {{ .Chart.Name }}
+      annotations:
+        summary: "Fortinet Service Down"
+        description: "Fortinet service has been down for more than 2 minutes"
+        
+    - alert: FortinetHighResponseTime
+      expr: fortinet_response_time_seconds > 1.0
+      for: 3m
+      labels:
+        severity: warning
+        service: {{ .Chart.Name }}
+      annotations:
+        summary: "Fortinet High Response Time"
+        description: "Response time is above 1 second for more than 3 minutes (current: {{ "{{ $value }}" }}s)"
+        
+    - alert: FortinetPodRestarts
+      expr: increase(kube_pod_container_status_restarts_total{pod=~"{{ .Chart.Name }}-.*"}[1h]) > 3
+      for: 1m
+      labels:
+        severity: warning
+        service: {{ .Chart.Name }}
+      annotations:
+        summary: "Fortinet Pod Frequent Restarts"
+        description: "Pod {{ "{{ $labels.pod }}" }} has restarted more than 3 times in the last hour"
+
+  - name: fortinet.security
+    interval: 60s
+    rules:
+    - alert: FortinetSecurityViolation
+      expr: fortinet_security_violations_total > 0
+      for: 1m
+      labels:
+        severity: critical
+        service: {{ .Chart.Name }}
+      annotations:
+        summary: "Fortinet Security Violation Detected"
+        description: "{{ "{{ $value }}" }} security violations detected in the last minute"
+        
+    - alert: FortinetAuthFailures
+      expr: rate(fortinet_auth_failures_total[5m]) > 0.1
+      for: 2m
+      labels:
+        severity: warning
+        service: {{ .Chart.Name }}
+      annotations:
+        summary: "Fortinet High Authentication Failures"
+        description: "High rate of authentication failures: {{ "{{ $value }}" }} per second"
+{{- end }}

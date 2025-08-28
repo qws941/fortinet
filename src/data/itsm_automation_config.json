@@ -1,0 +1,31 @@
+{
+  "itsm": {
+    "platform": "nextrade",
+    "base_url": "",
+    "username": "",
+    "password": "",
+    "api_token": "",
+    "poll_interval": 300,
+    "custom_headers": {
+      "User-Agent": "FortiGate-Nextrade-AutoDeploy/1.0"
+    }
+  },
+  "fortimanager": {
+    "enabled": true,
+    "host": "",
+    "username": "",
+    "password": ""
+  },
+  "automation": {
+    "auto_approve_low_risk": true,
+    "auto_approve_medium_risk": false,
+    "auto_approve_high_risk": false,
+    "require_business_justification": true,
+    "max_concurrent_deployments": 5
+  },
+  "notification": {
+    "enabled": true,
+    "webhook_url": "",
+    "email_notifications": true
+  }
+}

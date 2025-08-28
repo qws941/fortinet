@@ -1,0 +1,117 @@
+{
+    "git": {
+        "repository": "git@gitlab.company.com:fortinet/fortigate-nextrade.git",
+        "default_branch": "main",
+        "deploy_branches": ["main", "staging", "development", "lightweight-branch"]
+    },
+    "servers": {
+        "production": [
+            {
+                "name": "prod-main",
+                "host": "192.168.50.100",
+                "user": "admin",
+                "port": 22,
+                "deploy_path": "/opt/fortigate-nextrade",
+                "service_name": "fortigate-nextrade",
+                "environment": "production",
+                "backup_retention": 10
+            },
+            {
+                "name": "prod-backup",
+                "host": "192.168.50.101",
+                "user": "admin", 
+                "port": 22,
+                "deploy_path": "/opt/fortigate-nextrade",
+                "service_name": "fortigate-nextrade",
+                "environment": "production",
+                "backup_retention": 5
+            }
+        ],
+        "staging": [
+            {
+                "name": "staging-01",
+                "host": "192.168.50.110",
+                "user": "admin",
+                "port": 22,
+                "deploy_path": "/opt/fortigate-nextrade",
+                "service_name": "fortigate-nextrade",
+                "environment": "staging",
+                "backup_retention": 5
+            }
+        ],
+        "development": [
+            {
+                "name": "dev-01",
+                "host": "192.168.50.120",
+                "user": "developer",
+                "port": 22,
+                "deploy_path": "/home/developer/fortigate-nextrade",
+                "service_name": "fortigate-nextrade",
+                "environment": "development",
+                "backup_retention": 3
+            }
+        ]
+    },
+    "deployment": {
+        "backup_count": 5,
+        "timeout": 300,
+        "parallel": true,
+        "health_check_retry": 3,
+        "post_deploy_delay": 10,
+        "rollback_on_failure": true,
+        "pre_deploy_commands": [
+            "sudo systemctl stop fortigate-nextrade || true",
+            "docker stop fortigate-nextrade || true"
+        ],
+        "post_deploy_commands": [
+            "sudo systemctl start fortigate-nextrade || true",
+            "docker-compose up -d || true"
+        ]
+    },
+    "monitoring": {
+        "health_check_url": "http://localhost:7777/api/health",
+        "startup_timeout": 60,
+        "log_tail_lines": 100,
+        "slack_webhook": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "email_notifications": {
+            "enabled": false,
+            "smtp_server": "smtp.company.com",
+            "recipients": ["admin@company.com"]
+        }
+    },
+    "security": {
+        "ssh_key_path": "~/.ssh/fortigate_deploy",
+        "known_hosts_check": true,
+        "connection_timeout": 30,
+        "max_retries": 3
+    },
+    "environments": {
+        "production": {
+            "fortimanager_host": "192.168.50.31",
+            "fortimanager_port": 443,
+            "app_mode": "production",
+            "log_level": "INFO",
+            "debug": false,
+            "offline_mode": true,
+            "flask_env": "production"
+        },
+        "staging": {
+            "fortimanager_host": "192.168.50.32",
+            "fortimanager_port": 443,
+            "app_mode": "staging",
+            "log_level": "DEBUG",
+            "debug": true,
+            "offline_mode": false,
+            "flask_env": "staging"
+        },
+        "development": {
+            "fortimanager_host": "192.168.50.33",
+            "fortimanager_port": 443,
+            "app_mode": "development",
+            "log_level": "DEBUG",
+            "debug": true,
+            "offline_mode": false,
+            "flask_env": "development"
+        }
+    }
+}

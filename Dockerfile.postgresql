@@ -1,0 +1,67 @@
+# =============================================================================
+# FortiGate PostgreSQL Database Service Dockerfile
+# =============================================================================
+
+FROM postgres:15-alpine
+
+# Build arguments for versioning
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION=v1.0.0
+
+# OCI Image Specification labels
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.authors="admin@jclee.me" \
+      org.opencontainers.image.url="https://fortinet.jclee.me" \
+      org.opencontainers.image.documentation="https://github.com/jclee/fortinet" \
+      org.opencontainers.image.source="https://github.com/jclee/fortinet" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="JC Lee" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.title="FortiGate PostgreSQL Database" \
+      org.opencontainers.image.description="Enterprise database for FortiGate platform with schema optimization"
+
+# Environment setup
+ENV POSTGRES_USER=fortinet \
+    POSTGRES_PASSWORD=fortinet123 \
+    POSTGRES_DB=fortinet_db \
+    PGDATA=/var/lib/postgresql/data \
+    POSTGRES_INITDB_ARGS="--encoding=UTF8 --locale=en_US.utf8"
+
+# Install additional packages
+RUN apk add --no-cache \
+    curl \
+    ca-certificates \
+    postgresql-contrib
+
+# Create directories
+RUN mkdir -p /docker-entrypoint-initdb.d /var/lib/postgresql/data && \
+    chown -R postgres:postgres /var/lib/postgresql
+
+# Initialize database script
+COPY init.sql /docker-entrypoint-initdb.d/init.sql
+
+# PostgreSQL configuration
+COPY postgresql.conf /postgresql.conf
+
+# Health check script
+RUN echo '#!/bin/sh' > /health.sh && \
+    echo 'pg_isready -U fortinet -d fortinet_db' >> /health.sh && \
+    chmod +x /health.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+    CMD /health.sh || exit 1
+
+# Volume for data persistence
+VOLUME ["/var/lib/postgresql/data"]
+
+# Expose PostgreSQL port
+EXPOSE 5432
+
+# Run as postgres user
+USER postgres
+
+# Start PostgreSQL
+CMD ["postgres", "-c", "config_file=/postgresql.conf"]

@@ -1,0 +1,12 @@
+version: '3.0'
+project:
+  id: 'fortinet'
+  name: 'FortiGate Nextrade'
+fail:
+  cvss-severity:
+    - critical
+    - high
+    - medium
+security:
+  ignore-vulnerabilities: []
+  continue-on-vulnerability-error: false

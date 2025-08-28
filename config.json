@@ -1,0 +1,47 @@
+{
+  "app": {
+    "name": "FortiGate Nextrade",
+    "version": "1.0.0",
+    "environment": "production"
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 7777,
+    "debug": false
+  },
+  "fortimanager": {
+    "host": "localhost",
+    "port": 443,
+    "username": "admin",
+    "timeout": 30
+  },
+  "fortigate": {
+    "host": "localhost",
+    "port": 443,
+    "username": "admin",
+    "timeout": 30
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 30778,
+    "db": 0,
+    "timeout": 5
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/app.log",
+    "max_size": "10MB",
+    "backup_count": 5
+  },
+  "security": {
+    "csrf_enabled": true,
+    "session_timeout": 3600,
+    "max_content_length": "16MB"
+  },
+  "features": {
+    "offline_mode": false,
+    "mock_mode": false,
+    "auto_discovery": true,
+    "packet_capture": true
+  }
+}
