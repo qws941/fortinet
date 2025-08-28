@@ -111,9 +111,45 @@ kubectl get pods -n fortinet
 kubectl logs -l app=fortinet -n fortinet -f
 ```
 
+## Advanced Branch Strategy & GitOps (v1.3.0)
+
+### Git Flow Implementation
+The project now implements a complete Git Flow branching strategy:
+
+- **main**: Production releases (protected)
+- **develop**: Development integration (protected) 
+- **feature/***: New feature development
+- **release/***: Release preparation
+- **hotfix/***: Emergency production fixes
+
+### 10-Stage Advanced CI/CD Pipeline
+Automated via `.github/workflows/branch-strategy.yml`:
+
+1. **Code Quality & Security**: Black, isort, flake8, mypy, bandit, safety
+2. **Unit Tests & Coverage**: Parallel test execution with coverage reporting
+3. **Integration Tests**: MSA service communication validation
+4. **Docker Build & Scan**: Multi-stage builds with Trivy security scanning
+5. **Performance Tests**: Locust-based load testing
+6. **Environment Deployments**: Dev (develop), Staging (release/*), Production (main)
+7. **Hotfix Support**: Emergency deployment pipeline
+8. **Branch Cleanup**: Automated branch management
+9. **Security Compliance**: GDPR, license, secrets scanning
+10. **Metrics Collection**: CI/CD performance monitoring
+
+### Multi-Environment Strategy
+- **Development**: Auto-deploy from `develop` branch to `fortinet-dev` namespace
+- **Staging**: Auto-deploy from `release/*` branches with comprehensive testing
+- **Production**: Manual approval for `main` branch with ArgoCD GitOps
+
+### ArgoCD GitOps Integration
+- **Automatic Sync**: Changes trigger ArgoCD synchronization
+- **Rollback Capability**: Automated rollback on deployment failures
+- **Health Monitoring**: Continuous deployment health checks
+- **Multi-cluster Support**: Environment-specific Kubernetes clusters
+
 ## Commands Workflow
 
-The project supports Claude Code's intelligent automation commands for streamlined development and deployment. These commands integrate seamlessly with the existing FortiGate Nextrade development pipeline.
+The project supports Claude Code's intelligent automation commands enhanced with the new Git Flow strategy and advanced CI/CD pipeline. These commands integrate seamlessly with the existing FortiGate Nextrade development pipeline.
 
 ### Available Commands
 

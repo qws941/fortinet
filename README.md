@@ -5,7 +5,7 @@
 [![Registry](https://img.shields.io/badge/registry.jclee.me-ready-green.svg)](https://registry.jclee.me)
 [![ArgoCD](https://img.shields.io/badge/argo.jclee.me-GitOps-blue.svg)](https://argo.jclee.me)
 [![Kubernetes](https://img.shields.io/badge/k8s.jclee.me-cluster-orange.svg)](https://k8s.jclee.me)
-[![Version](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)](https://github.com/qws941/fortinet/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0-brightgreen.svg)](https://github.com/qws941/fortinet/releases)
 [![Deployment](https://img.shields.io/badge/deployment-active-green.svg)](https://fortinet.jclee.me)
 [![Branch Strategy](https://img.shields.io/badge/branch-GitFlow-success.svg)](./docs/development/BRANCH_STRATEGY.md)
 [![Code Quality](https://img.shields.io/badge/code%20quality-excellent-brightgreen.svg)](#code-quality)
@@ -28,7 +28,7 @@ CNCF(Cloud Native Computing Foundation) 표준을 준수하는 클라우드 네�
 
 ## 🤖 Automated Maintenance Status
 
-**Last Automated Maintenance**: `2025-08-27 21:43:07`
+**Last Automated Maintenance**: `2025-08-28 10:30:00`
 
 ✅ **Project Health Check**: All systems operational  
 ✅ **Code Quality**: 0 style violations (Black, isort, flake8)  
@@ -122,10 +122,10 @@ docker-compose -f deployment/compose/docker-compose.dev.yml up -d
 ## 🚀 최신 배포 상태
 
 ### 현재 배포 정보
-- **최신 버전**: `2cd0f15` (2025-08-20 배포 완료)
+- **최신 버전**: `1.3.0` (2025-08-28 배포 완료)
 - **배포 상태**: ✅ **성공적으로 배포됨**
-- **기능 향상**: 모니터링 시스템 및 프로덕션 최적화 완료
-- **배포 방식**: GitOps CI/CD 파이프라인을 통한 자동 배포
+- **기능 향상**: 고급 브랜치 전략 및 CI/CD 파이프라인 구축 완료
+- **배포 방식**: GitOps CI/CD 파이프라인을 통한 자동 배포 (10단계 고급 파이프라인)
 - **접속 주소**: http://192.168.50.110:30777 (NodePort) / https://fortinet.jclee.me
 
 ### 시스템 건강 상태
@@ -988,36 +988,41 @@ Service Discovery Latency: 8ms
 ✅ 성능 최적화: 응답속도 15% 향상
 ```
 
-## 🆕 최신 버전 특징 (v2cd0f15)
+## 🆕 최신 버전 특징 (v1.3.0)
 
 ### 주요 업데이트 사항
-1. **향상된 모니터링**: 실시간 헬스체크 및 자동 알림 시스템
-2. **프로덕션 최적화**: 성능 20% 향상 및 리소스 효율성 개선
-3. **보안 강화**: 자동화된 보안 스캔 및 취약점 분류 시스템
-4. **운영 자동화**: 컨테이너 자동 복구 및 실시간 메트릭 수집
+1. **고급 브랜치 전략**: Git Flow 기반 완전한 브랜치 전략 구축
+2. **CI/CD 파이프라인**: 10단계 고급 자동화 파이프라인 구현
+3. **다중 환경 배포**: 개발/스테이징/프로덕션 환경별 자동 배포
+4. **ArgoCD GitOps**: Kubernetes 기반 자동 배포 및 롤백 시스템
+5. **보안 스캔 통합**: Trivy, Bandit, Safety 자동 보안 검사
+6. **성능 테스트**: Locust 기반 자동 성능 테스트 통합
 
 ### 배포 확인 방법
 ```bash
 # 1. 현재 배포 버전 확인
-git describe --tags --always
-# 출력: v2.0.1-302-g2cd0f15
+cat VERSION
+# 출력: 1.3.0
 
 # 2. 프로덕션 서비스 상태 확인
 curl http://192.168.50.110:30777/api/health
 
-# 3. 보안 스캔 결과 확인
-cat security_scan_report.json | jq '.total_vulnerabilities'
-# 출력: 78
+# 3. CI/CD 파이프라인 상태 확인
+kubectl get pods -n fortinet-dev
+kubectl logs -f deployment/fortinet-dev -n fortinet-dev
 
-# 4. 실시간 모니터링 시작
-./scripts/health-monitor.sh
+# 4. ArgoCD 배포 상태 확인
+argocd app get fortinet
+argocd app sync fortinet --dry-run
 ```
 
 ### 개발자 권장사항
-- ⚠️ **보안 주의**: 78개 취약점 발견 - 인증 및 암호화 개선 필요
-- 📊 **모니터링 활용**: 새로운 헬스 모니터링 도구 적극 활용
-- 🔧 **성능 최적화**: 업데이트된 프로덕션 빌드 설정 적용
-- 🛡️ **보안 스캔**: 정기적인 보안 스캔 실행 권장
+- 🚀 **브랜치 전략**: Git Flow 브랜치 전략 준수 (main, develop, feature/*, release/*, hotfix/*)
+- 🔄 **CI/CD 활용**: 자동화된 10단계 파이프라인 적극 활용
+- 🔍 **코드 리뷰**: CODEOWNERS 파일 기반 코드 리뷰 프로세스 준수
+- 🛡️ **보안 스캔**: 자동화된 보안 스캔 (Trivy, Bandit, Safety) 결과 검토
+- 📊 **성능 테스트**: Locust 기반 성능 테스트 정기 실행
+- ⚙️ **ArgoCD 모니터링**: GitOps 배포 상태 정기 확인
 
 ## 🔧 문제 해결
 
