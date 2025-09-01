@@ -179,7 +179,7 @@ services:
   fortinet:
     build:
       context: .
-      dockerfile: ${DOCKERFILE:-Dockerfile.production}
+      dockerfile: ${DOCKERFILE:-Dockerfile}
       args:
         BUILD_DATE: "${BUILD_DATE}"
         VCS_REF: "${VCS_REF}"
@@ -266,6 +266,15 @@ services:
       - PYTHONPATH=/app/src
       - PYTHONDONTWRITEBYTECODE=${PYTHON_DONT_WRITE_BYTECODE:-1}
       - PYTHONUNBUFFERED=${PYTHON_UNBUFFERED:-1}
+      
+      # GitOps Configuration
+      - IMMUTABLE_TAG=${IMMUTABLE_TAG:-v1.3.0}
+      - GIT_SHA=${GIT_SHA:-$(git rev-parse HEAD 2>/dev/null || echo "unknown")}
+      - GIT_BRANCH=${GIT_BRANCH:-$(git branch --show-current 2>/dev/null || echo "unknown")}
+      - GIT_COMMIT=${GIT_COMMIT:-$(git rev-parse HEAD 2>/dev/null || echo "unknown")}
+      - BUILD_TIMESTAMP=${BUILD_TIMESTAMP:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}
+      - VERSION=${VERSION:-v1.3.0}
+      - REGISTRY_URL=${REGISTRY_URL:-registry.jclee.me}
     
     volumes:
       - ${DATA_VOLUME_TYPE:-fortinet-data}:${DATA_MOUNT_PATH:-/app/data}:${DATA_MOUNT_OPTIONS:-rw}

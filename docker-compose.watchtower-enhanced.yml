@@ -1,0 +1,187 @@
+# =============================================================================
+# FortiGate Nextrade - Enhanced Watchtower Configuration
+# 강화된 Watchtower 라벨 및 설정
+# =============================================================================
+
+version: '3.8'
+
+networks:
+  fortinet-network:
+    external: true
+
+services:
+  # Enhanced Redis with Watchtower optimizations
+  redis:
+    extends:
+      file: docker-compose-separated.yml
+      service: redis
+    labels:
+      # Watchtower 기본 설정
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.scope=fortinet"
+      - "com.centurylinklabs.watchtower.monitor-only=false"
+      
+      # 업데이트 전략
+      - "com.centurylinklabs.watchtower.poll-interval=300"  # 5분마다 체크
+      - "com.centurylinklabs.watchtower.stop-timeout=30s"
+      - "com.centurylinklabs.watchtower.stop-signal=SIGTERM"
+      
+      # 생명주기 훅
+      - "com.centurylinklabs.watchtower.lifecycle.pre-update-timeout=30s"
+      - "com.centurylinklabs.watchtower.lifecycle.post-update-timeout=60s"
+      - "com.centurylinklabs.watchtower.lifecycle.pre-update=redis-cli BGSAVE"
+      - "com.centurylinklabs.watchtower.lifecycle.post-update=redis-cli ping"
+      
+      # 알림 설정
+      - "com.centurylinklabs.watchtower.notification.template={{.Message}}"
+      - "com.centurylinklabs.watchtower.notification.skip=false"
+      
+      # 롤백 설정
+      - "com.centurylinklabs.watchtower.rollback.enable=true"
+      - "com.centurylinklabs.watchtower.rollback.on-failure=true"
+      
+      # 메타데이터
+      - "fortinet.service.type=redis"
+      - "fortinet.service.port=7777"
+      - "fortinet.service.priority=1"
+      - "fortinet.deployment.strategy=recreate"
+
+  # Enhanced PostgreSQL with Watchtower optimizations
+  postgresql:
+    extends:
+      file: docker-compose-separated.yml
+      service: postgresql
+    labels:
+      # Watchtower 기본 설정
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.scope=fortinet"
+      - "com.centurylinklabs.watchtower.monitor-only=false"
+      
+      # 업데이트 전략
+      - "com.centurylinklabs.watchtower.poll-interval=300"
+      - "com.centurylinklabs.watchtower.stop-timeout=60s"
+      - "com.centurylinklabs.watchtower.stop-signal=SIGTERM"
+      
+      # 생명주기 훅
+      - "com.centurylinklabs.watchtower.lifecycle.pre-update-timeout=60s"
+      - "com.centurylinklabs.watchtower.lifecycle.post-update-timeout=120s"
+      - "com.centurylinklabs.watchtower.lifecycle.pre-update=pg_ctl stop -m fast"
+      - "com.centurylinklabs.watchtower.lifecycle.post-update=pg_isready -U fortinet -d fortinet_db"
+      
+      # 알림 설정
+      - "com.centurylinklabs.watchtower.notification.template={{.Message}}"
+      - "com.centurylinklabs.watchtower.notification.skip=false"
+      
+      # 롤백 설정
+      - "com.centurylinklabs.watchtower.rollback.enable=true"
+      - "com.centurylinklabs.watchtower.rollback.on-failure=true"
+      
+      # 메타데이터
+      - "fortinet.service.type=postgresql"
+      - "fortinet.service.port=7778"
+      - "fortinet.service.priority=2"
+      - "fortinet.deployment.strategy=rolling"
+
+  # Enhanced Fortinet App with Watchtower optimizations
+  fortinet:
+    extends:
+      file: docker-compose-separated.yml
+      service: fortinet
+    labels:
+      # Watchtower 기본 설정
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.scope=fortinet"
+      - "com.centurylinklabs.watchtower.monitor-only=false"
+      
+      # 업데이트 전략
+      - "com.centurylinklabs.watchtower.poll-interval=300"
+      - "com.centurylinklabs.watchtower.stop-timeout=45s"
+      - "com.centurylinklabs.watchtower.stop-signal=SIGTERM"
+      
+      # 생명주기 훅
+      - "com.centurylinklabs.watchtower.lifecycle.pre-update-timeout=30s"
+      - "com.centurylinklabs.watchtower.lifecycle.post-update-timeout=120s"
+      - "com.centurylinklabs.watchtower.lifecycle.pre-update=curl -f http://localhost:7777/api/health"
+      - "com.centurylinklabs.watchtower.lifecycle.post-update=curl -f http://localhost:7777/api/health"
+      
+      # 의존성 설정
+      - "com.centurylinklabs.watchtower.depends-on=redis,postgresql"
+      
+      # 알림 설정
+      - "com.centurylinklabs.watchtower.notification.template=FortiGate App: {{.Message}}"
+      - "com.centurylinklabs.watchtower.notification.skip=false"
+      
+      # 롤백 설정
+      - "com.centurylinklabs.watchtower.rollback.enable=true"
+      - "com.centurylinklabs.watchtower.rollback.on-failure=true"
+      - "com.centurylinklabs.watchtower.rollback.timeout=300s"
+      
+      # 메타데이터
+      - "fortinet.service.type=application"
+      - "fortinet.service.port=7779"
+      - "fortinet.service.priority=3"
+      - "fortinet.deployment.strategy=blue-green"
+      
+      # Traefik 라벨 (기존 유지)
+      - "traefik.enable=true"
+      - "traefik.http.routers.fortinet.rule=Host(`fortinet.jclee.me`)"
+      - "traefik.http.routers.fortinet.entrypoints=websecure"
+      - "traefik.http.routers.fortinet.tls.certresolver=letsencrypt"
+      - "traefik.http.services.fortinet.loadbalancer.server.port=7777"
+
+  # Watchtower 컨테이너 자체 설정
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: fortinet-watchtower
+    hostname: fortinet-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      # 기본 설정
+      - WATCHTOWER_SCOPE=fortinet
+      - WATCHTOWER_POLL_INTERVAL=300          # 5분마다 체크
+      - WATCHTOWER_CLEANUP=true               # 오래된 이미지 정리
+      - WATCHTOWER_INCLUDE_RESTARTING=true    # 재시작 중인 컨테이너도 포함
+      - WATCHTOWER_INCLUDE_STOPPED=false      # 중지된 컨테이너는 제외
+      
+      # 롤링 업데이트 설정
+      - WATCHTOWER_ROLLING_RESTART=true       # 순차적 재시작
+      - WATCHTOWER_TIMEOUT=300s               # 컨테이너 중지 타임아웃
+      - WATCHTOWER_LIFECYCLE_HOOKS=true       # 생명주기 훅 활성화
+      
+      # 로깅 설정
+      - WATCHTOWER_LOG_LEVEL=info
+      - WATCHTOWER_LOG_FORMAT=text
+      - WATCHTOWER_DEBUG=false
+      
+      # 알림 설정 (선택사항 - Slack, Discord 등)
+      # - WATCHTOWER_NOTIFICATION_URL=slack://token@channel
+      # - WATCHTOWER_NOTIFICATION_TEMPLATE={{range .}}{{.Message}}{{println}}{{end}}
+      
+      # 보안 설정
+      - WATCHTOWER_NO_PULL=false             # 이미지 풀 허용
+      - WATCHTOWER_RUN_ONCE=false            # 지속적 모니터링
+      - WATCHTOWER_MONITOR_ONLY=false        # 실제 업데이트 수행
+      
+      # Registry 인증 (필요시)
+      - REPO_USER=admin
+      - REPO_PASS=${REGISTRY_PASSWORD}
+      
+    command: >
+      --scope fortinet
+      --interval 300
+      --cleanup
+      --enable-lifecycle-hooks
+      --rolling-restart
+      --log-level info
+    labels:
+      # Watchtower 자체는 모니터링에서 제외
+      - "com.centurylinklabs.watchtower.enable=false"
+      - "traefik.enable=false"
+      
+      # 메타데이터
+      - "fortinet.service.type=watchtower"
+      - "fortinet.service.description=Container update automation"

@@ -201,11 +201,32 @@ class RedisCacheBackend(CacheBackend):
             return False
 
         try:
+            # Flask Response 객체 처리
+            from flask import Response
+            if isinstance(value, Response):
+                # Response 객체에서 JSON 데이터 추출
+                if value.is_json:
+                    value = value.get_json()
+                else:
+                    # JSON이 아닌 경우 텍스트로 처리
+                    value = value.get_data(as_text=True)
+            
             data = orjson.dumps(value)
             if ttl > 0:
                 return self.redis_client.setex(key, ttl, data)
             else:
                 return self.redis_client.set(key, data)
+        except ImportError:
+            # Flask가 설치되지 않은 경우 일반 처리
+            try:
+                data = orjson.dumps(value)
+                if ttl > 0:
+                    return self.redis_client.setex(key, ttl, data)
+                else:
+                    return self.redis_client.set(key, data)
+            except Exception as e:
+                logger.error(f"Redis SET 오류: {e}")
+                return False
         except Exception as e:
             logger.error(f"Redis SET 오류: {e}")
             return False
@@ -440,9 +461,17 @@ def cached(ttl: int = 300, key_prefix: str = "cache"):
             cache_key = cache_manager.generate_cache_key(f"{key_prefix}:{func.__name__}", *args, **kwargs)
 
             # 캐시에서 조회
-            result = cache_manager.get(cache_key)
-            if result is not None:
-                return result
+            cached_data = cache_manager.get(cache_key)
+            if cached_data is not None:
+                # Flask Response 객체로 다시 변환이 필요한 경우
+                try:
+                    from flask import jsonify, Response
+                    # 함수 이름이 API 엔드포인트인 경우 jsonify로 반환
+                    if isinstance(cached_data, dict) and func.__name__.endswith('_check'):
+                        return jsonify(cached_data)
+                    return cached_data
+                except ImportError:
+                    return cached_data
 
             # 함수 실행 및 캐시 저장
             result = func(*args, **kwargs)
