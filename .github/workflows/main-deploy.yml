@@ -7,13 +7,25 @@ name: Main Deploy Pipeline
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, develop]
     paths-ignore:
       - '**.md'
       - 'docs/**'
       - '.gitignore'
       - 'LICENSE'
+  pull_request:
+    branches: [main, master, develop]
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
   schedule:
     # Weekly security scan at 2 AM UTC Sunday
     - cron: '0 2 * * 0'
