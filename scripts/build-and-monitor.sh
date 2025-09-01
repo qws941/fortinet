@@ -138,12 +138,11 @@ run_redis_container() {
     docker stop fortinet-redis-$REDIS_PORT 2>/dev/null || true
     docker rm fortinet-redis-$REDIS_PORT 2>/dev/null || true
     
-    # 새 컨테이너 실행
+    # 새 컨테이너 실행 (볼륨 마운트 제거)
     if docker run -d \
         --name fortinet-redis-$REDIS_PORT \
         --restart unless-stopped \
         -p $REDIS_PORT:6379 \
-        -v redis-data-$REDIS_PORT:/data \
         -e REDIS_PORT=6379 \
         -e REDIS_MAXMEMORY=256mb \
         --label "com.centurylinklabs.watchtower.enable=true" \
@@ -174,12 +173,11 @@ run_postgresql_container() {
     docker stop fortinet-postgresql-$POSTGRESQL_PORT 2>/dev/null || true
     docker rm fortinet-postgresql-$POSTGRESQL_PORT 2>/dev/null || true
     
-    # 새 컨테이너 실행
+    # 새 컨테이너 실행 (볼륨 마운트 제거)
     if docker run -d \
         --name fortinet-postgresql-$POSTGRESQL_PORT \
         --restart unless-stopped \
         -p $POSTGRESQL_PORT:5432 \
-        -v postgresql-data-$POSTGRESQL_PORT:/var/lib/postgresql/data \
         -e POSTGRES_USER=fortinet \
         -e POSTGRES_PASSWORD=fortinet123 \
         -e POSTGRES_DB=fortinet_db \
@@ -211,13 +209,11 @@ run_fortinet_container() {
     docker stop fortinet-app-$FORTINET_PORT 2>/dev/null || true
     docker rm fortinet-app-$FORTINET_PORT 2>/dev/null || true
     
-    # 새 컨테이너 실행
+    # 새 컨테이너 실행 (볼륨 마운트 제거)
     if docker run -d \
         --name fortinet-app-$FORTINET_PORT \
         --restart unless-stopped \
         -p $FORTINET_PORT:7777 \
-        -v fortinet-logs-$FORTINET_PORT:/app/logs \
-        -v $(pwd)/data:/app/data:ro \
         -e APP_MODE=production \
         -e WEB_APP_HOST=0.0.0.0 \
         -e WEB_APP_PORT=7777 \
