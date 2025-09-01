@@ -448,25 +448,23 @@ jobs:
         echo "🔄 Creating GitOps commit..."
         
         # Create commit message
-        cat > commit_message.txt << EOF
-deploy: update container to ${IMAGE_TAG}
-
-🔧 Deployment Details:
-- Images: registry.jclee.me/fortinet-redis:${IMAGE_TAG}
-- Images: registry.jclee.me/fortinet-postgresql:${IMAGE_TAG}
-- Images: registry.jclee.me/fortinet:${IMAGE_TAG}
-- Version: ${BUILD_VERSION}
-- Build Date: ${BUILD_DATE}
-- Git SHA: ${{ github.sha }}
-- Build Number: ${{ github.run_number }}
-
-🎯 Changes:
-- Updated Helm chart to v${CHART_VERSION}
-- Multi-service deployment with Watchtower
-- Enhanced registry.jclee.me integration
-
-[skip ci]
-EOF
+        echo "deploy: update container to ${IMAGE_TAG}" > commit_message.txt
+        echo "" >> commit_message.txt
+        echo "🔧 Deployment Details:" >> commit_message.txt
+        echo "- Images: registry.jclee.me/fortinet-redis:${IMAGE_TAG}" >> commit_message.txt
+        echo "- Images: registry.jclee.me/fortinet-postgresql:${IMAGE_TAG}" >> commit_message.txt
+        echo "- Images: registry.jclee.me/fortinet:${IMAGE_TAG}" >> commit_message.txt
+        echo "- Version: ${BUILD_VERSION}" >> commit_message.txt
+        echo "- Build Date: ${BUILD_DATE}" >> commit_message.txt
+        echo "- Git SHA: ${{ github.sha }}" >> commit_message.txt
+        echo "- Build Number: ${{ github.run_number }}" >> commit_message.txt
+        echo "" >> commit_message.txt
+        echo "🎯 Changes:" >> commit_message.txt
+        echo "- Updated Helm chart to v${CHART_VERSION}" >> commit_message.txt
+        echo "- Multi-service deployment with Watchtower" >> commit_message.txt
+        echo "- Enhanced registry.jclee.me integration" >> commit_message.txt
+        echo "" >> commit_message.txt
+        echo "[skip ci]" >> commit_message.txt
         
         # Stage changes
         git add charts/fortinet/
@@ -485,26 +483,7 @@ EOF
         
         sleep 20
         
-        SYNC_PAYLOAD=$(cat << 'JSON_EOF'
-{
-  "prune": true,
-  "dryRun": false,
-  "strategy": {
-    "hook": {
-      "force": true
-    },
-    "apply": {
-      "force": true
-    }
-  },
-  "syncOptions": [
-    "CreateNamespace=true",
-    "PrunePropagationPolicy=foreground",
-    "Replace=true"
-  ]
-}
-JSON_EOF
-)
+        SYNC_PAYLOAD='{"prune":true,"dryRun":false,"strategy":{"hook":{"force":true},"apply":{"force":true}}}'
         
         for i in {1..3}; do
           echo "ArgoCD sync attempt $i/3..."
