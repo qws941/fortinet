@@ -10,10 +10,10 @@ ENV POSTGRES_USER=fortinet
 ENV POSTGRES_PASSWORD=fortinet123
 
 # PostgreSQL 설정 파일 복사
-COPY ../config/postgresql.conf /etc/postgresql/postgresql.conf
+COPY postgresql.conf /etc/postgresql/postgresql.conf
 
 # 초기화 스크립트 복사
-COPY ../config/init.sql /docker-entrypoint-initdb.d/
+COPY init.sql /docker-entrypoint-initdb.d/
 
 # 포트 노출
 EXPOSE 5432

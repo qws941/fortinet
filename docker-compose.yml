@@ -20,6 +20,7 @@ services:
       - REDIS_PORT=6379
       - DATABASE_URL=postgresql://fortinet:fortinet123@fortinet-pg:5432/fortinet
       - PYTHONPATH=/app/src
+      - SECRET_KEY=fortinet-secret-key-2024
     volumes:
       - app-data:/app/data
       - app-logs:/app/logs
