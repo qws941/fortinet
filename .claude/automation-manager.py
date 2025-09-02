@@ -285,7 +285,10 @@ class AutomationWorkflowManager:
             
             subprocess.run(['git', 'add', '.'], check=True)
             subprocess.run(['git', 'commit', '-m', commit_message], check=True)
-            subprocess.run(['git', 'push', 'origin', 'main'], check=True)
+            # 현재 브랜치로 푸시
+            current_branch = subprocess.run(['git', 'branch', '--show-current'], 
+                                           capture_output=True, text=True, check=True).stdout.strip()
+            subprocess.run(['git', 'push', 'origin', current_branch], check=True)
             
             logger.info("    ✅ Git 푸시 완료")
             return True
