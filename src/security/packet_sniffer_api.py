@@ -11,8 +11,10 @@ from typing import Any, Callable, Dict, List, Optional
 
 from .packet_sniffer.base_sniffer import SnifferConfig
 from .packet_sniffer.device_manager import DeviceManager
-from .packet_sniffer.packet_capturer import CaptureFilter, create_packet_capturer
-from .packet_sniffer.session_manager import create_capture_session, get_session_manager
+from .packet_sniffer.packet_capturer import (CaptureFilter,
+                                             create_packet_capturer)
+from .packet_sniffer.session_manager import (create_capture_session,
+                                             get_session_manager)
 
 # 분석기들 - 선택적 import (의존성 문제가 있을 수 있음)
 try:
@@ -134,7 +136,9 @@ class PacketSnifferAPI:
             self.logger.error(f"인터페이스 목록 조회 실패: {e}")
             return []
 
-    def start_capture_session(self, params: Dict[str, Any], callback: Optional[Callable] = None) -> Dict[str, Any]:
+    def start_capture_session(
+        self, params: Dict[str, Any], callback: Optional[Callable] = None
+    ) -> Dict[str, Any]:
         """
         캡처 세션 시작 (Legacy 호환성)
 
@@ -182,7 +186,9 @@ class PacketSnifferAPI:
 
             # 캡처 시작
             interface = params.get("interface", "any")
-            if self.packet_capturer.start_capture_session(session_id, capture_filter, interface):
+            if self.packet_capturer.start_capture_session(
+                session_id, capture_filter, interface
+            ):
                 # Legacy 호환성을 위한 상태 업데이트
                 self.active_sessions[session_id] = True
                 self.packet_queues[session_id] = queue.Queue()
@@ -365,7 +371,9 @@ class PacketSnifferAPI:
             self.logger.error(f"모든 패킷 조회 실패: {e}")
             return []
 
-    def filter_packets(self, packets: List[Dict[str, Any]], filter_criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def filter_packets(
+        self, packets: List[Dict[str, Any]], filter_criteria: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """패킷 필터링"""
         try:
             return self.packet_capturer.filter_packets(packets, filter_criteria)
@@ -386,7 +394,9 @@ class PacketSnifferAPI:
 
             # 프로토콜 분석
             if self.protocol_analyzer:
-                analysis_result["protocol_analysis"] = self.protocol_analyzer.analyze_packet(packet)
+                analysis_result[
+                    "protocol_analysis"
+                ] = self.protocol_analyzer.analyze_packet(packet)
 
             # HTTP 분석
             if (
@@ -394,7 +404,9 @@ class PacketSnifferAPI:
                 and packet.get("protocol", "").upper() == "TCP"
                 and packet.get("dst_port") in [80, 8080]
             ):
-                analysis_result["http_analysis"] = self.http_analyzer.analyze_packet(packet)
+                analysis_result["http_analysis"] = self.http_analyzer.analyze_packet(
+                    packet
+                )
 
             # TLS 분석
             if (
@@ -402,7 +414,9 @@ class PacketSnifferAPI:
                 and packet.get("protocol", "").upper() == "TCP"
                 and packet.get("dst_port") in [443, 8443]
             ):
-                analysis_result["tls_analysis"] = self.tls_analyzer.analyze_packet(packet)
+                analysis_result["tls_analysis"] = self.tls_analyzer.analyze_packet(
+                    packet
+                )
 
             return analysis_result
 
@@ -458,7 +472,9 @@ class PacketSnifferAPI:
                             reverse=True,
                         )[:10]
                     ),
-                    "top_connections": dict(sorted(ip_pairs.items(), key=lambda x: x[1], reverse=True)[:10]),
+                    "top_connections": dict(
+                        sorted(ip_pairs.items(), key=lambda x: x[1], reverse=True)[:10]
+                    ),
                 },
             }
 
@@ -468,7 +484,9 @@ class PacketSnifferAPI:
 
     # ========== 내보내기 메서드들 ==========
 
-    def export_session_data(self, session_id: str, export_format: str = "json") -> Dict[str, Any]:
+    def export_session_data(
+        self, session_id: str, export_format: str = "json"
+    ) -> Dict[str, Any]:
         """세션 데이터 내보내기"""
         try:
             export_data = self.packet_capturer.export_capture_data(session_id)
@@ -575,7 +593,9 @@ class PacketSnifferAPI:
 
 
 # 편의 함수들
-def create_packet_sniffer_api(fortigate_client=None, faz_client=None, fmg_client=None) -> PacketSnifferAPI:
+def create_packet_sniffer_api(
+    fortigate_client=None, faz_client=None, fmg_client=None
+) -> PacketSnifferAPI:
     """패킷 스니퍼 API 생성 편의 함수"""
     return PacketSnifferAPI(fortigate_client, faz_client, fmg_client)
 

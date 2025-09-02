@@ -203,6 +203,7 @@ class RedisCacheBackend(CacheBackend):
         try:
             # Flask Response 객체 처리
             from flask import Response
+
             if isinstance(value, Response):
                 # Response 객체에서 JSON 데이터 추출
                 if value.is_json:
@@ -210,7 +211,7 @@ class RedisCacheBackend(CacheBackend):
                 else:
                     # JSON이 아닌 경우 텍스트로 처리
                     value = value.get_data(as_text=True)
-            
+
             data = orjson.dumps(value)
             if ttl > 0:
                 return self.redis_client.setex(key, ttl, data)
@@ -329,7 +330,9 @@ class UnifiedCacheManager:
 
         # 메모리 백엔드 (항상 마지막에 추가 - fallback)
         if self.config["memory"]["enabled"]:
-            memory_backend = MemoryCacheBackend(max_size=self.config["memory"]["max_size"])
+            memory_backend = MemoryCacheBackend(
+                max_size=self.config["memory"]["max_size"]
+            )
             self.backends.append(memory_backend)
             self.memory_cache = memory_backend
 
@@ -417,7 +420,9 @@ class UnifiedCacheManager:
     def get_stats(self) -> Dict:
         """캐시 통계 반환"""
         total_requests = self.stats["hits"] + self.stats["misses"]
-        hit_rate = (self.stats["hits"] / total_requests * 100) if total_requests > 0 else 0
+        hit_rate = (
+            (self.stats["hits"] / total_requests * 100) if total_requests > 0 else 0
+        )
 
         return {
             **self.stats,
@@ -458,16 +463,21 @@ def cached(ttl: int = 300, key_prefix: str = "cache"):
             cache_manager = get_cache_manager()
 
             # 캐시 키 생성
-            cache_key = cache_manager.generate_cache_key(f"{key_prefix}:{func.__name__}", *args, **kwargs)
+            cache_key = cache_manager.generate_cache_key(
+                f"{key_prefix}:{func.__name__}", *args, **kwargs
+            )
 
             # 캐시에서 조회
             cached_data = cache_manager.get(cache_key)
             if cached_data is not None:
                 # Flask Response 객체로 다시 변환이 필요한 경우
                 try:
-                    from flask import jsonify, Response
+                    from flask import Response, jsonify
+
                     # 함수 이름이 API 엔드포인트인 경우 jsonify로 반환
-                    if isinstance(cached_data, dict) and func.__name__.endswith('_check'):
+                    if isinstance(cached_data, dict) and func.__name__.endswith(
+                        "_check"
+                    ):
                         return jsonify(cached_data)
                     return cached_data
                 except ImportError:

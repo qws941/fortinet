@@ -80,7 +80,9 @@ class FortiGateAPIValidator:
         self.test_config.update(config)
         logger.info(f"Test configuration updated: {config}")
 
-    async def run_all_validations(self, test_categories: List[str] = None) -> Dict[str, Any]:
+    async def run_all_validations(
+        self, test_categories: List[str] = None
+    ) -> Dict[str, Any]:
         """
         모든 검증 테스트 실행
 
@@ -294,7 +296,11 @@ class FortiGateAPIValidator:
                         status="pass",
                         severity=ValidationSeverity.INFO,
                         message="API key authentication successful",
-                        details={"fortigate_version": status.get("results", {}).get("version")},
+                        details={
+                            "fortigate_version": status.get("results", {}).get(
+                                "version"
+                            )
+                        },
                         execution_time=execution_time,
                     )
                 )
@@ -443,7 +449,11 @@ class FortiGateAPIValidator:
                             status="pass",
                             severity=ValidationSeverity.INFO,
                             message=f"{test_name} query successful",
-                            details={"response_keys": list(result.keys()) if isinstance(result, dict) else None},
+                            details={
+                                "response_keys": list(result.keys())
+                                if isinstance(result, dict)
+                                else None
+                            },
                         )
                     )
                 else:
@@ -588,10 +598,14 @@ class FortiGateAPIValidator:
             results = await asyncio.gather(*tasks, return_exceptions=True)
             execution_time = time.time() - start_time
 
-            successful_requests = sum(1 for r in results if not isinstance(r, Exception))
+            successful_requests = sum(
+                1 for r in results if not isinstance(r, Exception)
+            )
             failed_requests = request_count - successful_requests
 
-            throughput = successful_requests / execution_time if execution_time > 0 else 0
+            throughput = (
+                successful_requests / execution_time if execution_time > 0 else 0
+            )
 
             if successful_requests >= request_count * 0.8:  # 80% 성공률
                 status = "pass"
@@ -652,8 +666,12 @@ class FortiGateAPIValidator:
             # SSL 인증서 정보 확인
             context = ssl.create_default_context()
 
-            with socket.create_connection((self.api_client.host, self.api_client.port), timeout=10) as sock:
-                with context.wrap_socket(sock, server_hostname=self.api_client.host) as ssock:
+            with socket.create_connection(
+                (self.api_client.host, self.api_client.port), timeout=10
+            ) as sock:
+                with context.wrap_socket(
+                    sock, server_hostname=self.api_client.host
+                ) as ssock:
                     cert = ssock.getpeercert()
                     cipher = ssock.cipher()
 
@@ -726,7 +744,9 @@ class FortiGateAPIValidator:
 
             # API 키 강도 검사
             if len(api_key) >= 32:
-                security_checks.append(("api_key_length", "pass", "API key length adequate"))
+                security_checks.append(
+                    ("api_key_length", "pass", "API key length adequate")
+                )
             else:
                 security_checks.append(("api_key_length", "fail", "API key too short"))
 
@@ -736,18 +756,26 @@ class FortiGateAPIValidator:
                 and any(c.islower() for c in api_key)
                 and any(c.isdigit() for c in api_key)
             ):
-                security_checks.append(("api_key_complexity", "pass", "API key has mixed case and digits"))
+                security_checks.append(
+                    ("api_key_complexity", "pass", "API key has mixed case and digits")
+                )
             else:
-                security_checks.append(("api_key_complexity", "warning", "API key lacks complexity"))
+                security_checks.append(
+                    ("api_key_complexity", "warning", "API key lacks complexity")
+                )
 
         # 세션 보안 확인
         if hasattr(self.api_client, "session") and self.api_client.session:
             headers = self.api_client.session.headers
 
             if "Authorization" in headers:
-                security_checks.append(("authorization_header", "pass", "Authorization header present"))
+                security_checks.append(
+                    ("authorization_header", "pass", "Authorization header present")
+                )
             else:
-                security_checks.append(("authorization_header", "fail", "No authorization header"))
+                security_checks.append(
+                    ("authorization_header", "fail", "No authorization header")
+                )
 
         execution_time = time.time() - start_time
 
@@ -793,7 +821,9 @@ class FortiGateAPIValidator:
             execution_time = time.time() - start_time
 
             if isinstance(threats, list):
-                high_severity_threats = [t for t in threats if t.get("severity") in ["high", "critical"]]
+                high_severity_threats = [
+                    t for t in threats if t.get("severity") in ["high", "critical"]
+                ]
 
                 if len(high_severity_threats) == 0:
                     status = "pass"
@@ -802,11 +832,15 @@ class FortiGateAPIValidator:
                 elif len(high_severity_threats) < 10:
                     status = "pass"
                     severity = ValidationSeverity.WARNING
-                    message = f"{len(high_severity_threats)} high-severity threats detected"
+                    message = (
+                        f"{len(high_severity_threats)} high-severity threats detected"
+                    )
                 else:
                     status = "fail"
                     severity = ValidationSeverity.ERROR
-                    message = f"High number of severe threats: {len(high_severity_threats)}"
+                    message = (
+                        f"High number of severe threats: {len(high_severity_threats)}"
+                    )
 
                 self._add_result(
                     ValidationResult(
@@ -817,7 +851,9 @@ class FortiGateAPIValidator:
                         details={
                             "total_threats": len(threats),
                             "high_severity_threats": len(high_severity_threats),
-                            "threat_types": list(set(t.get("threat_type", "unknown") for t in threats)),
+                            "threat_types": list(
+                                set(t.get("threat_type", "unknown") for t in threats)
+                            ),
                         },
                         execution_time=execution_time,
                     )
@@ -867,8 +903,12 @@ class FortiGateAPIValidator:
             execution_time = time.time() - start_time
 
             vpn_features = {
-                "ipsec_tunnels": len(ipsec_tunnels) if isinstance(ipsec_tunnels, list) else 0,
-                "ssl_vpn_enabled": bool(ssl_vpn_settings.get("status") == "enable") if ssl_vpn_settings else False,
+                "ipsec_tunnels": len(ipsec_tunnels)
+                if isinstance(ipsec_tunnels, list)
+                else 0,
+                "ssl_vpn_enabled": bool(ssl_vpn_settings.get("status") == "enable")
+                if ssl_vpn_settings
+                else False,
             }
 
             if vpn_features["ipsec_tunnels"] > 0 or vpn_features["ssl_vpn_enabled"]:
@@ -912,14 +952,20 @@ class FortiGateAPIValidator:
         for profile_type in profile_types:
             try:
                 profiles = await self.api_client.get_security_profiles(profile_type)
-                profile_results[profile_type] = len(profiles) if isinstance(profiles, list) else 0
+                profile_results[profile_type] = (
+                    len(profiles) if isinstance(profiles, list) else 0
+                )
             except Exception as e:
                 profile_results[profile_type] = f"error: {str(e)}"
 
         execution_time = time.time() - start_time
 
         # 결과 분석
-        available_profiles = sum(count for count in profile_results.values() if isinstance(count, int) and count > 0)
+        available_profiles = sum(
+            count
+            for count in profile_results.values()
+            if isinstance(count, int) and count > 0
+        )
 
         if available_profiles > 0:
             status = "pass"
@@ -988,7 +1034,9 @@ class FortiGateAPIValidator:
 
         try:
             # 트래픽 패턴 분석 (짧은 시간 범위로 테스트)
-            analysis = await self.api_client.analyze_traffic_patterns(time_range=600)  # 10분
+            analysis = await self.api_client.analyze_traffic_patterns(
+                time_range=600
+            )  # 10분
 
             execution_time = time.time() - start_time
 
@@ -1012,7 +1060,10 @@ class FortiGateAPIValidator:
                         status=status,
                         severity=severity,
                         message=message,
-                        details={"total_sessions": session_count, "analysis_keys": list(analysis.keys())},
+                        details={
+                            "total_sessions": session_count,
+                            "analysis_keys": list(analysis.keys()),
+                        },
                         execution_time=execution_time,
                     )
                 )
@@ -1058,7 +1109,9 @@ class FortiGateAPIValidator:
                 log_count += 1
 
             # 5초 동안만 스트리밍 테스트
-            stream_task = asyncio.create_task(self.api_client.stream_logs("traffic", log_callback, interval=1))
+            stream_task = asyncio.create_task(
+                self.api_client.stream_logs("traffic", log_callback, interval=1)
+            )
 
             await asyncio.sleep(5)
             stream_task.cancel()
@@ -1077,7 +1130,9 @@ class FortiGateAPIValidator:
             else:
                 status = "pass"
                 severity = ValidationSeverity.WARNING
-                message = "Log streaming functional but no logs received (may be normal)"
+                message = (
+                    "Log streaming functional but no logs received (may be normal)"
+                )
 
             self._add_result(
                 ValidationResult(
@@ -1133,7 +1188,11 @@ class FortiGateAPIValidator:
                         status=status,
                         severity=severity,
                         message=message,
-                        details={"stats_keys": list(stats1.keys()) if isinstance(stats1, dict) else None},
+                        details={
+                            "stats_keys": list(stats1.keys())
+                            if isinstance(stats1, dict)
+                            else None
+                        },
                         execution_time=execution_time,
                     )
                 )
@@ -1164,7 +1223,9 @@ class FortiGateAPIValidator:
     def _add_result(self, result: ValidationResult):
         """검증 결과 추가"""
         self.results.append(result)
-        logger.debug(f"Test result: {result.test_name} - {result.status} - {result.message}")
+        logger.debug(
+            f"Test result: {result.test_name} - {result.status} - {result.message}"
+        )
 
     def _generate_summary(self, total_time: float) -> Dict[str, Any]:
         """검증 결과 요약 생성"""
@@ -1176,7 +1237,9 @@ class FortiGateAPIValidator:
         # 심각도별 집계
         severity_counts = {}
         for severity in ValidationSeverity:
-            severity_counts[severity.value] = sum(1 for r in self.results if r.severity == severity)
+            severity_counts[severity.value] = sum(
+                1 for r in self.results if r.severity == severity
+            )
 
         # 성공률 계산
         success_rate = (passed_tests / total_tests * 100) if total_tests > 0 else 0
@@ -1200,7 +1263,9 @@ class FortiGateAPIValidator:
             "success_rate": round(success_rate, 1),
             "severity_breakdown": severity_counts,
             "total_execution_time": round(total_time, 2),
-            "average_test_time": round(total_time / total_tests, 3) if total_tests > 0 else 0,
+            "average_test_time": round(total_time / total_tests, 3)
+            if total_tests > 0
+            else 0,
         }
 
     def _result_to_dict(self, result: ValidationResult) -> Dict[str, Any]:
@@ -1239,7 +1304,9 @@ class FortiGateAPIValidator:
 
 
 async def validate_fortigate_api(
-    api_client: AdvancedFortiGateAPI, test_categories: List[str] = None, save_results: str = None
+    api_client: AdvancedFortiGateAPI,
+    test_categories: List[str] = None,
+    save_results: str = None,
 ) -> Dict[str, Any]:
     """
     FortiGate API 유효성 검사 실행
@@ -1308,18 +1375,32 @@ def create_test_report(validation_results: Dict[str, Any]) -> str:
             )
 
     # 경고가 있는 테스트
-    warning_results = [r for r in results if r["status"] == "pass" and r["severity"] == "warning"]
+    warning_results = [
+        r for r in results if r["status"] == "pass" and r["severity"] == "warning"
+    ]
     if warning_results:
         report_lines.extend(["WARNINGS:", "-" * 20])
 
         for result in warning_results:
-            report_lines.extend([f"  ⚠️  {result['test_name']}", f"     {result['message']}", ""])
+            report_lines.extend(
+                [f"  ⚠️  {result['test_name']}", f"     {result['message']}", ""]
+            )
 
     # 성공한 테스트 (요약만)
-    passed_results = [r for r in results if r["status"] == "pass" and r["severity"] != "warning"]
+    passed_results = [
+        r for r in results if r["status"] == "pass" and r["severity"] != "warning"
+    ]
     if passed_results:
-        report_lines.extend([f"PASSED TESTS: {len(passed_results)} tests passed successfully", ""])
+        report_lines.extend(
+            [f"PASSED TESTS: {len(passed_results)} tests passed successfully", ""]
+        )
 
-    report_lines.extend(["=" * 60, f"Report generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", "=" * 60])
+    report_lines.extend(
+        [
+            "=" * 60,
+            f"Report generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            "=" * 60,
+        ]
+    )
 
     return "\n".join(report_lines)

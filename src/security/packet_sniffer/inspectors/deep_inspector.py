@@ -62,15 +62,31 @@ class DeepInspector:
 
             # 프로토콜별 심층 분석
             if protocol == "HTTP":
-                inspection_result["protocol_analysis"] = self._analyze_http_packet(packet, payload)
-            elif protocol == "TCP" and (packet.get("dst_port") == 443 or packet.get("src_port") == 443):
-                inspection_result["protocol_analysis"] = self._analyze_tls_packet(packet, payload)
-            elif protocol == "UDP" and (packet.get("dst_port") == 53 or packet.get("src_port") == 53):
-                inspection_result["protocol_analysis"] = self._analyze_dns_packet(packet, payload)
+                inspection_result["protocol_analysis"] = self._analyze_http_packet(
+                    packet, payload
+                )
+            elif protocol == "TCP" and (
+                packet.get("dst_port") == 443 or packet.get("src_port") == 443
+            ):
+                inspection_result["protocol_analysis"] = self._analyze_tls_packet(
+                    packet, payload
+                )
+            elif protocol == "UDP" and (
+                packet.get("dst_port") == 53 or packet.get("src_port") == 53
+            ):
+                inspection_result["protocol_analysis"] = self._analyze_dns_packet(
+                    packet, payload
+                )
             elif protocol == "ICMP":
-                inspection_result["protocol_analysis"] = self._analyze_icmp_packet(packet, payload)
-            elif protocol == "TCP" and (packet.get("dst_port") == 22 or packet.get("src_port") == 22):
-                inspection_result["protocol_analysis"] = self._analyze_ssh_packet(packet, payload)
+                inspection_result["protocol_analysis"] = self._analyze_icmp_packet(
+                    packet, payload
+                )
+            elif protocol == "TCP" and (
+                packet.get("dst_port") == 22 or packet.get("src_port") == 22
+            ):
+                inspection_result["protocol_analysis"] = self._analyze_ssh_packet(
+                    packet, payload
+                )
 
             # 보안 위협 탐지
             threats = self._detect_security_threats(packet, payload)
@@ -104,7 +120,9 @@ class DeepInspector:
                 "timestamp": packet.get("timestamp", datetime.now().isoformat()),
             }
 
-    def _analyze_http_packet(self, packet: Dict[str, Any], payload: bytes) -> Dict[str, Any]:
+    def _analyze_http_packet(
+        self, packet: Dict[str, Any], payload: bytes
+    ) -> Dict[str, Any]:
         """HTTP 패킷 심층 분석"""
         try:
             payload_str = payload.decode("utf-8", errors="ignore")
@@ -123,7 +141,9 @@ class DeepInspector:
             }
 
             # HTTP 요청 분석
-            if payload_str.startswith(("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS")):
+            if payload_str.startswith(
+                ("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS")
+            ):
                 lines = payload_str.split("\r\n")
                 if lines:
                     # 첫 번째 줄에서 메서드와 URL 추출
@@ -146,7 +166,9 @@ class DeepInspector:
 
                             # 의심스러운 헤더 탐지
                             if self._is_suspicious_header(header, value):
-                                analysis["suspicious_headers"].append({"header": header, "value": value})
+                                analysis["suspicious_headers"].append(
+                                    {"header": header, "value": value}
+                                )
 
             # HTTP 응답 분석
             elif payload_str.startswith("HTTP/"):
@@ -199,7 +221,11 @@ class DeepInspector:
                 import os
 
                 normalized_url = os.path.normpath(url)
-                if ".." in normalized_url or normalized_url.startswith("/etc/") or "\\" in url:
+                if (
+                    ".." in normalized_url
+                    or normalized_url.startswith("/etc/")
+                    or "\\" in url
+                ):
                     analysis["directory_traversal_attempt"] = True
 
             return analysis
@@ -208,7 +234,9 @@ class DeepInspector:
             logger.error(f"HTTP 패킷 분석 오류: {e}")
             return {"error": str(e)}
 
-    def _analyze_tls_packet(self, packet: Dict[str, Any], payload: bytes) -> Dict[str, Any]:
+    def _analyze_tls_packet(
+        self, packet: Dict[str, Any], payload: bytes
+    ) -> Dict[str, Any]:
         """TLS/SSL 패킷 심층 분석"""
         try:
             analysis = {
@@ -240,7 +268,9 @@ class DeepInspector:
                     0x0304: "TLS 1.3",
                     0x0300: "SSL 3.0",
                 }
-                analysis["tls_version"] = version_map.get(version, f"Unknown (0x{version:04x})")
+                analysis["tls_version"] = version_map.get(
+                    version, f"Unknown (0x{version:04x})"
+                )
 
                 # 구버전 SSL/TLS는 취약함
                 if version <= 0x0301:
@@ -265,7 +295,9 @@ class DeepInspector:
                         16: "Client Key Exchange",
                         20: "Finished",
                     }
-                    analysis["handshake_type"] = handshake_types.get(handshake_type, f"Unknown ({handshake_type})")
+                    analysis["handshake_type"] = handshake_types.get(
+                        handshake_type, f"Unknown ({handshake_type})"
+                    )
 
                     # Client Hello에서 SNI 추출
                     if handshake_type == 1:
@@ -289,7 +321,9 @@ class DeepInspector:
             logger.error(f"TLS 패킷 분석 오류: {e}")
             return {"error": str(e)}
 
-    def _analyze_dns_packet(self, packet: Dict[str, Any], payload: bytes) -> Dict[str, Any]:
+    def _analyze_dns_packet(
+        self, packet: Dict[str, Any], payload: bytes
+    ) -> Dict[str, Any]:
         """DNS 패킷 심층 분석"""
         try:
             analysis = {
@@ -360,7 +394,9 @@ class DeepInspector:
             logger.error(f"DNS 패킷 분석 오류: {e}")
             return {"error": str(e)}
 
-    def _analyze_icmp_packet(self, packet: Dict[str, Any], payload: bytes) -> Dict[str, Any]:
+    def _analyze_icmp_packet(
+        self, packet: Dict[str, Any], payload: bytes
+    ) -> Dict[str, Any]:
         """ICMP 패킷 심층 분석"""
         try:
             analysis = {
@@ -399,7 +435,9 @@ class DeepInspector:
             logger.error(f"ICMP 패킷 분석 오류: {e}")
             return {"error": str(e)}
 
-    def _analyze_ssh_packet(self, packet: Dict[str, Any], payload: bytes) -> Dict[str, Any]:
+    def _analyze_ssh_packet(
+        self, packet: Dict[str, Any], payload: bytes
+    ) -> Dict[str, Any]:
         """SSH 패킷 심층 분석"""
         try:
             analysis = {
@@ -435,7 +473,9 @@ class DeepInspector:
             logger.error(f"SSH 패킷 분석 오류: {e}")
             return {"error": str(e)}
 
-    def _detect_security_threats(self, packet: Dict[str, Any], payload: bytes) -> List[Dict[str, Any]]:
+    def _detect_security_threats(
+        self, packet: Dict[str, Any], payload: bytes
+    ) -> List[Dict[str, Any]]:
         """보안 위협 탐지"""
         threats = []
 
@@ -516,7 +556,9 @@ class DeepInspector:
 
         return threats
 
-    def _detect_suspicious_patterns(self, packet: Dict[str, Any], payload: bytes) -> List[Dict[str, Any]]:
+    def _detect_suspicious_patterns(
+        self, packet: Dict[str, Any], payload: bytes
+    ) -> List[Dict[str, Any]]:
         """의심스러운 패턴 탐지"""
         patterns = []
 
@@ -548,7 +590,10 @@ class DeepInspector:
             # 의심스러운 URL 패턴
             suspicious_urls = re.findall(r"https?://[^\s]+", payload_str)
             for url in suspicious_urls:
-                if any(domain in url.lower() for domain in ["bit.ly", "tinyurl", "short.link"]):
+                if any(
+                    domain in url.lower()
+                    for domain in ["bit.ly", "tinyurl", "short.link"]
+                ):
                     patterns.append(
                         {
                             "type": "suspicious_url",
@@ -578,7 +623,9 @@ class DeepInspector:
                 try:
                     text = payload.decode("utf-8", errors="ignore")
                     printable_chars = sum(1 for c in text if c.isprintable())
-                    analysis["printable_ratio"] = printable_chars / len(text) if text else 0
+                    analysis["printable_ratio"] = (
+                        printable_chars / len(text) if text else 0
+                    )
                 except Exception:
                     analysis["printable_ratio"] = 0
 
@@ -592,7 +639,9 @@ class DeepInspector:
             logger.error(f"페이로드 분석 오류: {e}")
             return {"error": str(e)}
 
-    def _detect_malware_indicators(self, packet: Dict[str, Any], payload: bytes) -> List[Dict[str, Any]]:
+    def _detect_malware_indicators(
+        self, packet: Dict[str, Any], payload: bytes
+    ) -> List[Dict[str, Any]]:
         """멀웨어 지표 탐지"""
         indicators = []
 
@@ -742,7 +791,9 @@ class DeepInspector:
                 if offset + length + 1 > len(question_data):
                     break
 
-                part = question_data[offset + 1 : offset + 1 + length].decode("utf-8", errors="ignore")
+                part = question_data[offset + 1 : offset + 1 + length].decode(
+                    "utf-8", errors="ignore"
+                )
                 domain_parts.append(part)
                 offset += length + 1
 

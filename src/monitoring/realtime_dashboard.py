@@ -79,7 +79,9 @@ class RealtimeMetricsCollector:
                 with self._lock:
                     for key, value in metrics_data.items():
                         if key != "timestamp" and key in self.metrics:
-                            self.metrics[key].append({"timestamp": timestamp, "value": value})
+                            self.metrics[key].append(
+                                {"timestamp": timestamp, "value": value}
+                            )
 
                 # Check for alerts
                 self._check_alerts(metrics_data)
@@ -227,7 +229,10 @@ class RealtimeMetricsCollector:
                 if values:
                     snapshot[key] = values[-1]
                 else:
-                    snapshot[key] = {"timestamp": datetime.now().isoformat(), "value": 0}
+                    snapshot[key] = {
+                        "timestamp": datetime.now().isoformat(),
+                        "value": 0,
+                    }
             return snapshot
 
     def get_historical_metrics(self, metric_type: str, limit: int = 50) -> List[Dict]:
@@ -263,7 +268,9 @@ class DashboardWebSocketHandler:
     async def handle_connection(self, websocket, path):
         """Handle new WebSocket connection"""
         self.clients.add(websocket)
-        logger.info(f"New WebSocket client connected. Total clients: {len(self.clients)}")
+        logger.info(
+            f"New WebSocket client connected. Total clients: {len(self.clients)}"
+        )
 
         try:
             # Send initial data
@@ -277,7 +284,9 @@ class DashboardWebSocketHandler:
             logger.error(f"WebSocket error: {e}")
         finally:
             self.clients.remove(websocket)
-            logger.info(f"WebSocket client disconnected. Remaining clients: {len(self.clients)}")
+            logger.info(
+                f"WebSocket client disconnected. Remaining clients: {len(self.clients)}"
+            )
 
     async def send_initial_data(self, websocket):
         """Send initial dashboard data to new client"""
@@ -309,8 +318,14 @@ class DashboardWebSocketHandler:
                 # Client requesting historical data
                 metric_type = data.get("metric")
                 limit = data.get("limit", 50)
-                historical = self.metrics_collector.get_historical_metrics(metric_type, limit)
-                response = {"type": "historical", "metric": metric_type, "data": historical}
+                historical = self.metrics_collector.get_historical_metrics(
+                    metric_type, limit
+                )
+                response = {
+                    "type": "historical",
+                    "metric": metric_type,
+                    "data": historical,
+                }
                 await websocket.send(json.dumps(response))
 
             elif msg_type == "ping":
@@ -322,7 +337,11 @@ class DashboardWebSocketHandler:
 
     async def send_metrics_update(self, websocket, metrics: List[str]):
         """Send specific metrics update to client"""
-        update_data = {"type": "update", "timestamp": datetime.now().isoformat(), "metrics": {}}
+        update_data = {
+            "type": "update",
+            "timestamp": datetime.now().isoformat(),
+            "metrics": {},
+        }
 
         for metric in metrics:
             if metric in self.metrics_collector.metrics:
@@ -379,7 +398,16 @@ class EnhancedMonitoringDashboard:
             "refresh_rate": 1000,  # ms
             "max_data_points": 100,
             "alert_retention": 50,
-            "metrics_enabled": ["cpu", "memory", "network", "disk", "connections", "errors", "throughput", "latency"],
+            "metrics_enabled": [
+                "cpu",
+                "memory",
+                "network",
+                "disk",
+                "connections",
+                "errors",
+                "throughput",
+                "latency",
+            ],
         }
 
     def start(self):
@@ -439,4 +467,9 @@ class EnhancedMonitoringDashboard:
         else:
             status = "critical"
 
-        return {"status": status, "score": health_score, "metrics": metrics, "timestamp": datetime.now().isoformat()}
+        return {
+            "status": status,
+            "score": health_score,
+            "metrics": metrics,
+            "timestamp": datetime.now().isoformat(),
+        }

@@ -28,7 +28,13 @@ class ThreatLevel(Enum):
 class ThreatPattern:
     """Represents a detected threat pattern"""
 
-    def __init__(self, pattern_type: str, confidence: float, indicators: List[str], metadata: Dict[str, Any]):
+    def __init__(
+        self,
+        pattern_type: str,
+        confidence: float,
+        indicators: List[str],
+        metadata: Dict[str, Any],
+    ):
         self.pattern_type = pattern_type
         self.confidence = confidence
         self.indicators = indicators
@@ -260,7 +266,9 @@ class AIThreatDetector:
                         {
                             "source": source,
                             "threat_count": len(group_threats),
-                            "attack_types": list(set(t.pattern_type for t in group_threats)),
+                            "attack_types": list(
+                                set(t.pattern_type for t in group_threats)
+                            ),
                         },
                     )
                 )
@@ -269,9 +277,16 @@ class AIThreatDetector:
 
         return correlated
 
-    def _generate_intelligence(self, threats: List[ThreatPattern], packets: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _generate_intelligence(
+        self, threats: List[ThreatPattern], packets: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Generate threat intelligence from detected threats"""
-        intelligence = {"threat_summary": {}, "attack_vectors": [], "targeted_assets": [], "recommendations": []}
+        intelligence = {
+            "threat_summary": {},
+            "attack_vectors": [],
+            "targeted_assets": [],
+            "recommendations": [],
+        }
 
         if not threats:
             intelligence["threat_summary"] = {"status": "clean", "risk": "low"}
@@ -284,7 +299,9 @@ class AIThreatDetector:
 
         intelligence["threat_summary"] = {
             "status": "threats_detected",
-            "risk": "high" if any(t.threat_level == ThreatLevel.CRITICAL for t in threats) else "medium",
+            "risk": "high"
+            if any(t.threat_level == ThreatLevel.CRITICAL for t in threats)
+            else "medium",
             "dominant_threat": max(threat_types, key=threat_types.get),
         }
 
@@ -331,10 +348,14 @@ class AIThreatDetector:
             recommendations.append("Update antivirus signatures and enable sandboxing")
 
         if "exfiltration" in str(threat_types):
-            recommendations.append("Implement DLP policies and monitor outbound traffic")
+            recommendations.append(
+                "Implement DLP policies and monitor outbound traffic"
+            )
 
         if any(t.threat_level == ThreatLevel.CRITICAL for t in threats):
-            recommendations.append("IMMEDIATE ACTION: Isolate affected systems and investigate")
+            recommendations.append(
+                "IMMEDIATE ACTION: Isolate affected systems and investigate"
+            )
 
         return recommendations
 
@@ -369,7 +390,9 @@ class AIThreatDetector:
     class DDOSDetector:
         """DDoS attack detection model"""
 
-        async def detect(self, packets: List[Dict[str, Any]], analyses: List[Dict[str, Any]]) -> List[ThreatPattern]:
+        async def detect(
+            self, packets: List[Dict[str, Any]], analyses: List[Dict[str, Any]]
+        ) -> List[ThreatPattern]:
             """Detect DDoS patterns"""
             threats = []
 
@@ -407,7 +430,9 @@ class AIThreatDetector:
     class IntrusionDetector:
         """Intrusion detection model"""
 
-        async def detect(self, packets: List[Dict[str, Any]], analyses: List[Dict[str, Any]]) -> List[ThreatPattern]:
+        async def detect(
+            self, packets: List[Dict[str, Any]], analyses: List[Dict[str, Any]]
+        ) -> List[ThreatPattern]:
             """Detect intrusion attempts"""
             threats = []
 
@@ -447,7 +472,9 @@ class AIThreatDetector:
     class MalwareDetector:
         """Malware detection model"""
 
-        async def detect(self, packets: List[Dict[str, Any]], analyses: List[Dict[str, Any]]) -> List[ThreatPattern]:
+        async def detect(
+            self, packets: List[Dict[str, Any]], analyses: List[Dict[str, Any]]
+        ) -> List[ThreatPattern]:
             """Detect malware patterns"""
             threats = []
 
@@ -476,7 +503,9 @@ class AIThreatDetector:
     class DataExfiltrationDetector:
         """Data exfiltration detection model"""
 
-        async def detect(self, packets: List[Dict[str, Any]], analyses: List[Dict[str, Any]]) -> List[ThreatPattern]:
+        async def detect(
+            self, packets: List[Dict[str, Any]], analyses: List[Dict[str, Any]]
+        ) -> List[ThreatPattern]:
             """Detect data exfiltration attempts"""
             threats = []
 

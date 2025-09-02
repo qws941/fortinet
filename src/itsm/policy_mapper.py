@@ -107,7 +107,9 @@ class PolicyMapper:
             },
         }
 
-    def map_itsm_to_fortigate_policy(self, itsm_request: Dict[str, Any]) -> Dict[str, Any]:
+    def map_itsm_to_fortigate_policy(
+        self, itsm_request: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         ITSM 요청을 FortiGate 정책으로 매핑
 
@@ -132,11 +134,17 @@ class PolicyMapper:
             destination_networks = self._normalize_ip_address(destination_ip)
 
             # 네트워크 존 결정
-            source_zone = self._determine_zone(source_networks[0] if source_networks else "")
-            destination_zone = self._determine_zone(destination_networks[0] if destination_networks else "")
+            source_zone = self._determine_zone(
+                source_networks[0] if source_networks else ""
+            )
+            destination_zone = self._determine_zone(
+                destination_networks[0] if destination_networks else ""
+            )
 
             # 적절한 FortiGate 장비 선택
-            target_fortigates = self._select_target_fortigates(source_zone, destination_zone)
+            target_fortigates = self._select_target_fortigates(
+                source_zone, destination_zone
+            )
 
             # 포트 및 서비스 정보 처리
             service_info = self._process_service_info(port, protocol)
@@ -165,17 +173,23 @@ class PolicyMapper:
                     "destination_zone": destination_zone,
                     "traffic_flow": f"{source_zone} -> {destination_zone}",
                     "service_analysis": service_info,
-                    "security_impact": self._assess_security_impact(source_zone, destination_zone, service_info),
+                    "security_impact": self._assess_security_impact(
+                        source_zone, destination_zone, service_info
+                    ),
                 },
                 "fortigate_policies": fortigate_policies,
-                "implementation_order": self._determine_implementation_order(fortigate_policies),
+                "implementation_order": self._determine_implementation_order(
+                    fortigate_policies
+                ),
                 "validation_tests": self._generate_validation_tests(
                     source_networks, destination_networks, service_info
                 ),
                 "rollback_plan": self._generate_rollback_plan(fortigate_policies),
             }
 
-            logger.info(f"ITSM 요청 {itsm_request.get('request_id')} 매핑 완료: {len(fortigate_policies)}개 정책 생성")
+            logger.info(
+                f"ITSM 요청 {itsm_request.get('request_id')} 매핑 완료: {len(fortigate_policies)}개 정책 생성"
+            )
             return mapping_result
 
         except Exception as e:
@@ -239,7 +253,9 @@ class PolicyMapper:
         except ValueError:
             return "unknown"
 
-    def _select_target_fortigates(self, source_zone: str, destination_zone: str) -> List[str]:
+    def _select_target_fortigates(
+        self, source_zone: str, destination_zone: str
+    ) -> List[str]:
         """트래픽 플로우에 따른 대상 FortiGate 선택"""
         target_fortigates = []
 
@@ -259,13 +275,18 @@ class PolicyMapper:
         elif source_zone == destination_zone:
             # 같은 존 내 트래픽
             zone_firewalls = [
-                fw_id for fw_id, fw_info in self.fortigate_devices.items() if source_zone in fw_info["zones"]
+                fw_id
+                for fw_id, fw_info in self.fortigate_devices.items()
+                if source_zone in fw_info["zones"]
             ]
             target_fortigates = zone_firewalls[:1]  # 첫 번째 방화벽만
         else:
             # 기본: 모든 관련 방화벽
             for fw_id, fw_info in self.fortigate_devices.items():
-                if source_zone in fw_info["zones"] or destination_zone in fw_info["zones"]:
+                if (
+                    source_zone in fw_info["zones"]
+                    or destination_zone in fw_info["zones"]
+                ):
                     target_fortigates.append(fw_id)
 
         return target_fortigates or ["FW-01"]  # 기본값
@@ -295,7 +316,9 @@ class PolicyMapper:
                 try:
                     start_port, end_port = map(int, port_item.split("-"))
                     service_info["ports"].append(f"{start_port}-{end_port}")
-                    service_info["service_names"].append(f"PORT_{start_port}_{end_port}")
+                    service_info["service_names"].append(
+                        f"PORT_{start_port}_{end_port}"
+                    )
                 except ValueError:
                     logger.warning(f"유효하지 않은 포트 범위: {port_item}")
             else:
@@ -306,7 +329,9 @@ class PolicyMapper:
 
                     # 알려진 서비스 확인
                     if port_num in self.service_mapping:
-                        service_info["service_names"].append(self.service_mapping[port_num]["name"])
+                        service_info["service_names"].append(
+                            self.service_mapping[port_num]["name"]
+                        )
                     else:
                         service_info["service_names"].append(f"PORT_{port_num}")
 
@@ -335,15 +360,25 @@ class PolicyMapper:
         policy_name = f"ITSM_{request_id}_{source_zone}_to_{destination_zone}"
 
         # FortiGate 존 매핑
-        src_zone = self.network_zones.get(source_zone, {}).get("fortigate_zone", source_zone)
-        dst_zone = self.network_zones.get(destination_zone, {}).get("fortigate_zone", destination_zone)
+        src_zone = self.network_zones.get(source_zone, {}).get(
+            "fortigate_zone", source_zone
+        )
+        dst_zone = self.network_zones.get(destination_zone, {}).get(
+            "fortigate_zone", destination_zone
+        )
 
         # 주소 객체 생성
-        src_addresses = self._create_address_objects(source_networks, f"{policy_name}_SRC")
-        dst_addresses = self._create_address_objects(destination_networks, f"{policy_name}_DST")
+        src_addresses = self._create_address_objects(
+            source_networks, f"{policy_name}_SRC"
+        )
+        dst_addresses = self._create_address_objects(
+            destination_networks, f"{policy_name}_DST"
+        )
 
         # 서비스 객체 생성
-        service_objects = self._create_service_objects(service_info, f"{policy_name}_SVC")
+        service_objects = self._create_service_objects(
+            service_info, f"{policy_name}_SVC"
+        )
 
         # FortiGate CLI 명령 생성
         cli_commands = self._generate_cli_commands(
@@ -380,17 +415,23 @@ class PolicyMapper:
 
         return fortigate_policy
 
-    def _create_address_objects(self, networks: List[str], prefix: str) -> List[Dict[str, str]]:
+    def _create_address_objects(
+        self, networks: List[str], prefix: str
+    ) -> List[Dict[str, str]]:
         """주소 객체 생성"""
         address_objects = []
 
         for i, network in enumerate(networks):
             addr_name = f"{prefix}_{i + 1}" if len(networks) > 1 else prefix
-            address_objects.append({"name": addr_name, "subnet": network, "type": "subnet"})
+            address_objects.append(
+                {"name": addr_name, "subnet": network, "type": "subnet"}
+            )
 
         return address_objects
 
-    def _create_service_objects(self, service_info: Dict, prefix: str) -> List[Dict[str, Any]]:
+    def _create_service_objects(
+        self, service_info: Dict, prefix: str
+    ) -> List[Dict[str, Any]]:
         """서비스 객체 생성"""
         service_objects = []
 
@@ -468,14 +509,18 @@ class PolicyMapper:
 
         return commands
 
-    def _determine_nat_requirement(self, source_zone: str, destination_zone: str) -> bool:
+    def _determine_nat_requirement(
+        self, source_zone: str, destination_zone: str
+    ) -> bool:
         """NAT 필요성 결정"""
         # 내부에서 외부로 나가는 트래픽은 NAT 필요
         if source_zone in ["internal", "branch"] and destination_zone == "external":
             return True
         return False
 
-    def _assess_security_impact(self, source_zone: str, destination_zone: str, service_info: Dict) -> Dict[str, Any]:
+    def _assess_security_impact(
+        self, source_zone: str, destination_zone: str, service_info: Dict
+    ) -> Dict[str, Any]:
         """보안 영향 평가"""
         impact = {
             "risk_level": "medium",
@@ -504,7 +549,9 @@ class PolicyMapper:
 
         return impact
 
-    def _determine_implementation_order(self, policies: List[Dict]) -> List[Dict[str, Any]]:
+    def _determine_implementation_order(
+        self, policies: List[Dict]
+    ) -> List[Dict[str, Any]]:
         """구현 순서 결정"""
         implementation_order = []
 

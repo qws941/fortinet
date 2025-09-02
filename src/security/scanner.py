@@ -43,7 +43,9 @@ class SecurityScanner:
         """Run full security scan"""
         return self._scanner.run_full_security_scan()
 
-    def auto_fix_vulnerabilities(self, scan_result: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def auto_fix_vulnerabilities(
+        self, scan_result: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Auto-fix detected vulnerabilities"""
         return self._scanner.auto_fix_vulnerabilities(scan_result)
 
@@ -68,7 +70,9 @@ class SecurityScanner:
         """Delegate unknown attributes to the modular scanner"""
         if hasattr(self._scanner, name):
             return getattr(self._scanner, name)
-        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{name}'"
+        )
 
 
 # Factory function for backward compatibility

@@ -10,13 +10,9 @@ from utils.api_utils import ConnectionTestMixin
 from utils.unified_logger import get_logger
 
 from .base_api_client import BaseApiClient, RealtimeMonitoringMixin
-from .fortimanager import (
-    AdvancedFeaturesMixin,
-    AuthConnectionMixin,
-    DeviceManagementMixin,
-    PolicyManagementMixin,
-    TaskManagementMixin,
-)
+from .fortimanager import (AdvancedFeaturesMixin, AuthConnectionMixin,
+                           DeviceManagementMixin, PolicyManagementMixin,
+                           TaskManagementMixin)
 
 
 class FortiManagerAPIClient(
@@ -151,7 +147,9 @@ class FortiManagerAPIClient(
     def get_adom_list(self) -> List[Dict[str, Any]]:
         """Get list of ADOMs (Administrative Domains)"""
         try:
-            success, data = self._make_api_request(method="get", url="/dvmdb/adom", timeout=10)
+            success, data = self._make_api_request(
+                method="get", url="/dvmdb/adom", timeout=10
+            )
             if success and isinstance(data, list):
                 return data
             return []
@@ -163,9 +161,16 @@ class FortiManagerAPIClient(
         """Get FortiManager version information"""
         try:
             if self.OFFLINE_MODE:
-                return {"version": "7.0.0", "build": "mock-build", "mode": "test", "platform": "mock-platform"}
+                return {
+                    "version": "7.0.0",
+                    "build": "mock-build",
+                    "mode": "test",
+                    "platform": "mock-platform",
+                }
 
-            success, data = self._make_api_request(method="get", url="/sys/status", timeout=10)
+            success, data = self._make_api_request(
+                method="get", url="/sys/status", timeout=10
+            )
             if success and isinstance(data, dict):
                 return data
             return {"version": "unknown", "mode": "production"}
@@ -182,7 +187,9 @@ class FortiManagerAPIClient(
             if self.host:
                 return self.host
 
-            success, data = self._make_api_request(method="get", url="/sys/status", timeout=10)
+            success, data = self._make_api_request(
+                method="get", url="/sys/status", timeout=10
+            )
             if success and isinstance(data, dict):
                 return data.get("hostname", self.host or "unknown")
             return self.host or "unknown"

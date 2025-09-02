@@ -18,7 +18,9 @@ class ComplianceReportGenerator:
     def __init__(self, rule_manager: ComplianceRuleManager):
         self.rule_manager = rule_manager
 
-    def generate_compliance_report(self, check_results: List[ComplianceCheckResult]) -> Dict[str, Any]:
+    def generate_compliance_report(
+        self, check_results: List[ComplianceCheckResult]
+    ) -> Dict[str, Any]:
         """Generate comprehensive compliance report"""
 
         if not check_results:
@@ -26,10 +28,16 @@ class ComplianceReportGenerator:
 
         # Calculate overall metrics
         total_checks = len(check_results)
-        passed_checks = len([r for r in check_results if r.status == ComplianceStatus.PASS])
-        failed_checks = len([r for r in check_results if r.status == ComplianceStatus.FAIL])
+        passed_checks = len(
+            [r for r in check_results if r.status == ComplianceStatus.PASS]
+        )
+        failed_checks = len(
+            [r for r in check_results if r.status == ComplianceStatus.FAIL]
+        )
 
-        compliance_score = (passed_checks / total_checks * 100) if total_checks > 0 else 0
+        compliance_score = (
+            (passed_checks / total_checks * 100) if total_checks > 0 else 0
+        )
 
         # Group results by various dimensions
         by_device = self._group_by_device(check_results)
@@ -39,7 +47,10 @@ class ComplianceReportGenerator:
 
         # Get critical failures
         critical_failures = [
-            r for r in check_results if r.status == ComplianceStatus.FAIL and r.severity == ComplianceSeverity.CRITICAL
+            r
+            for r in check_results
+            if r.status == ComplianceStatus.FAIL
+            and r.severity == ComplianceSeverity.CRITICAL
         ]
 
         # Generate recommendations
@@ -71,7 +82,9 @@ class ComplianceReportGenerator:
             "compliance_trends": self._calculate_trends(check_results),
         }
 
-    def generate_device_report(self, device: str, check_results: List[ComplianceCheckResult]) -> Dict[str, Any]:
+    def generate_device_report(
+        self, device: str, check_results: List[ComplianceCheckResult]
+    ) -> Dict[str, Any]:
         """Generate device-specific compliance report"""
 
         device_results = [r for r in check_results if r.device == device]
@@ -133,7 +146,9 @@ class ComplianceReportGenerator:
             },
         }
 
-    def generate_dashboard_data(self, check_results: List[ComplianceCheckResult], hours: int = 24) -> Dict[str, Any]:
+    def generate_dashboard_data(
+        self, check_results: List[ComplianceCheckResult], hours: int = 24
+    ) -> Dict[str, Any]:
         """Generate dashboard data for compliance monitoring"""
 
         cutoff = datetime.now() - timedelta(hours=hours)
@@ -158,7 +173,9 @@ class ComplianceReportGenerator:
 
             # Severity counts (only for failures)
             if result.status == ComplianceStatus.FAIL:
-                by_severity[result.severity.value] = by_severity.get(result.severity.value, 0) + 1
+                by_severity[result.severity.value] = (
+                    by_severity.get(result.severity.value, 0) + 1
+                )
 
             # Category counts
             rule = self.rule_manager.get_rule(result.rule_id)
@@ -194,23 +211,32 @@ class ComplianceReportGenerator:
         # Calculate compliance scores
         for device_data in by_device.values():
             if device_data["total"] > 0:
-                device_data["compliance_score"] = round((device_data["passed"] / device_data["total"]) * 100, 2)
+                device_data["compliance_score"] = round(
+                    (device_data["passed"] / device_data["total"]) * 100, 2
+                )
             else:
                 device_data["compliance_score"] = 0
 
         for category_data in by_category.values():
             if category_data["total"] > 0:
-                category_data["compliance_score"] = round((category_data["passed"] / category_data["total"]) * 100, 2)
+                category_data["compliance_score"] = round(
+                    (category_data["passed"] / category_data["total"]) * 100, 2
+                )
             else:
                 category_data["compliance_score"] = 0
 
         # Recent critical issues
         critical_issues = [
-            r for r in recent_results if r.status == ComplianceStatus.FAIL and r.severity == ComplianceSeverity.CRITICAL
+            r
+            for r in recent_results
+            if r.status == ComplianceStatus.FAIL
+            and r.severity == ComplianceSeverity.CRITICAL
         ]
 
         # Overall compliance score
-        overall_score = (by_status["pass"] / total_checks * 100) if total_checks > 0 else 0
+        overall_score = (
+            (by_status["pass"] / total_checks * 100) if total_checks > 0 else 0
+        )
 
         return {
             "dashboard_data": {
@@ -255,13 +281,17 @@ class ComplianceReportGenerator:
         # Calculate compliance scores
         for device_data in by_device.values():
             if device_data["total"] > 0:
-                device_data["compliance_score"] = round((device_data["passed"] / device_data["total"]) * 100, 2)
+                device_data["compliance_score"] = round(
+                    (device_data["passed"] / device_data["total"]) * 100, 2
+                )
             else:
                 device_data["compliance_score"] = 0
 
         return by_device
 
-    def _group_by_category(self, results: List[ComplianceCheckResult]) -> Dict[str, Dict]:
+    def _group_by_category(
+        self, results: List[ComplianceCheckResult]
+    ) -> Dict[str, Dict]:
         """Group results by category"""
 
         by_category = {}
@@ -287,7 +317,9 @@ class ComplianceReportGenerator:
 
         return by_category
 
-    def _group_by_severity(self, results: List[ComplianceCheckResult]) -> Dict[str, int]:
+    def _group_by_severity(
+        self, results: List[ComplianceCheckResult]
+    ) -> Dict[str, int]:
         """Group failed results by severity"""
 
         by_severity = {}
@@ -298,7 +330,9 @@ class ComplianceReportGenerator:
 
         return by_severity
 
-    def _group_by_framework(self, results: List[ComplianceCheckResult]) -> Dict[str, Dict]:
+    def _group_by_framework(
+        self, results: List[ComplianceCheckResult]
+    ) -> Dict[str, Dict]:
         """Group results by compliance framework"""
 
         by_framework = {}
@@ -322,7 +356,9 @@ class ComplianceReportGenerator:
 
         return by_framework
 
-    def _generate_recommendations(self, results: List[ComplianceCheckResult]) -> List[Dict[str, Any]]:
+    def _generate_recommendations(
+        self, results: List[ComplianceCheckResult]
+    ) -> List[Dict[str, Any]]:
         """Generate recommendations based on compliance results"""
 
         recommendations = []
@@ -361,7 +397,9 @@ class ComplianceReportGenerator:
 
         return recommendations
 
-    def _calculate_priority(self, severity: ComplianceSeverity, failure_count: int) -> int:
+    def _calculate_priority(
+        self, severity: ComplianceSeverity, failure_count: int
+    ) -> int:
         """Calculate recommendation priority"""
 
         severity_weights = {
@@ -410,7 +448,9 @@ class ComplianceReportGenerator:
             "data_points": len(trend_data),
         }
 
-    def _calculate_hourly_trends(self, results: List[ComplianceCheckResult], hours: int) -> List[Dict]:
+    def _calculate_hourly_trends(
+        self, results: List[ComplianceCheckResult], hours: int
+    ) -> List[Dict]:
         """Calculate hourly trends for dashboard"""
 
         hourly_scores = []
@@ -423,7 +463,9 @@ class ComplianceReportGenerator:
             hour_results = [r for r in results if hour_start <= r.timestamp < hour_end]
 
             if hour_results:
-                passed = len([r for r in hour_results if r.status == ComplianceStatus.PASS])
+                passed = len(
+                    [r for r in hour_results if r.status == ComplianceStatus.PASS]
+                )
                 total = len(hour_results)
                 score = (passed / total * 100) if total > 0 else 0
             else:
@@ -440,7 +482,9 @@ class ComplianceReportGenerator:
 
         return list(reversed(hourly_scores))  # Most recent first
 
-    def export_report(self, report_data: Dict[str, Any], format_type: str = "json") -> str:
+    def export_report(
+        self, report_data: Dict[str, Any], format_type: str = "json"
+    ) -> str:
         """Export report in specified format"""
 
         if format_type.lower() == "json":
@@ -448,7 +492,9 @@ class ComplianceReportGenerator:
         else:
             raise ValueError(f"Unsupported export format: {format_type}")
 
-    def generate_executive_summary(self, check_results: List[ComplianceCheckResult]) -> str:
+    def generate_executive_summary(
+        self, check_results: List[ComplianceCheckResult]
+    ) -> str:
         """Generate executive summary text"""
 
         report = self.generate_compliance_report(check_results)
@@ -461,7 +507,9 @@ class ComplianceReportGenerator:
 
         if score >= 90:
             status_text = "EXCELLENT"
-            recommendation = "Continue monitoring and maintain current security posture."
+            recommendation = (
+                "Continue monitoring and maintain current security posture."
+            )
         elif score >= 80:
             status_text = "GOOD"
             recommendation = "Address remaining issues to improve compliance score."

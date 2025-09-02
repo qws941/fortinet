@@ -33,7 +33,9 @@ class FortigateMonitor:
                 return True
 
             self.is_running = True
-            self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
+            self.monitor_thread = threading.Thread(
+                target=self._monitor_loop, daemon=True
+            )
             self.monitor_thread.start()
 
             logger.info("FortiGate 모니터링 시작됨")
@@ -89,7 +91,9 @@ class FortigateMonitor:
             "running": self.is_running,
             "listeners_count": len(self.listeners),
             "data_cache_size": len(self.data_cache),
-            "thread_alive": (self.monitor_thread.is_alive() if self.monitor_thread else False),
+            "thread_alive": (
+                self.monitor_thread.is_alive() if self.monitor_thread else False
+            ),
         }
 
     def get_real_time_data(self) -> Dict[str, Any]:

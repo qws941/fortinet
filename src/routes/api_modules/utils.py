@@ -126,7 +126,12 @@ def get_disk_usage():
         total, used, free = shutil.disk_usage("/")
         usage_percent = (used / total) * 100
 
-        return {"total": total, "used": used, "free": free, "usage_percent": round(usage_percent, 2)}
+        return {
+            "total": total,
+            "used": used,
+            "free": free,
+            "usage_percent": round(usage_percent, 2),
+        }
     except Exception:
         # Fallback
         total_gb = random.randint(50, 500)
@@ -159,7 +164,11 @@ def get_performance_metrics():
         return metrics
     except Exception:
         # Fallback metrics
-        return {"cpu": {"usage_percent": 6.1}, "memory": {"usage_percent": 27.53}, "disk": {"usage_percent": 45.2}}
+        return {
+            "cpu": {"usage_percent": 6.1},
+            "memory": {"usage_percent": 27.53},
+            "disk": {"usage_percent": 45.2},
+        }
 
 
 def generate_topology_data():

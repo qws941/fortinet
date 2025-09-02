@@ -213,7 +213,9 @@ class SecurityFabricIntegration:
 
         try:
             # Get all managed devices
-            devices = await asyncio.get_event_loop().run_in_executor(self.executor, self.api_client.get_devices, adom)
+            devices = await asyncio.get_event_loop().run_in_executor(
+                self.executor, self.api_client.get_devices, adom
+            )
 
             for device in devices:
                 component = FabricComponent(
@@ -242,13 +244,19 @@ class SecurityFabricIntegration:
 
             discovered_components["summary"] = {
                 "total_components": len(self.fabric_components),
-                "online": sum(1 for c in self.fabric_components.values() if c.status == "online"),
-                "offline": sum(1 for c in self.fabric_components.values() if c.status == "offline"),
+                "online": sum(
+                    1 for c in self.fabric_components.values() if c.status == "online"
+                ),
+                "offline": sum(
+                    1 for c in self.fabric_components.values() if c.status == "offline"
+                ),
                 "component_types": dict(defaultdict(int)),
             }
 
             for component in self.fabric_components.values():
-                discovered_components["summary"]["component_types"][component.component_type.value] += 1
+                discovered_components["summary"]["component_types"][
+                    component.component_type.value
+                ] += 1
 
             return {
                 "success": True,
@@ -260,7 +268,9 @@ class SecurityFabricIntegration:
             self.logger.error(f"Failed to discover fabric components: {e}")
             return {"success": False, "error": str(e)}
 
-    async def import_threat_intelligence(self, source: str, threat_data: List[Dict]) -> Dict[str, Any]:
+    async def import_threat_intelligence(
+        self, source: str, threat_data: List[Dict]
+    ) -> Dict[str, Any]:
         """Import threat intelligence indicators"""
 
         imported = 0
@@ -270,16 +280,22 @@ class SecurityFabricIntegration:
         for threat_info in threat_data:
             try:
                 indicator = ThreatIndicator(
-                    indicator_id=hashlib.sha256(f"{threat_info['type']}{threat_info['value']}".encode()).hexdigest()[
-                        :16
-                    ],
+                    indicator_id=hashlib.sha256(
+                        f"{threat_info['type']}{threat_info['value']}".encode()
+                    ).hexdigest()[:16],
                     indicator_type=threat_info["type"],
                     value=threat_info["value"],
-                    threat_level=ThreatLevel[threat_info.get("severity", "MEDIUM").upper()],
+                    threat_level=ThreatLevel[
+                        threat_info.get("severity", "MEDIUM").upper()
+                    ],
                     confidence=threat_info.get("confidence", 75),
                     source=source,
-                    first_seen=datetime.fromisoformat(threat_info.get("first_seen", datetime.now().isoformat())),
-                    last_seen=datetime.fromisoformat(threat_info.get("last_seen", datetime.now().isoformat())),
+                    first_seen=datetime.fromisoformat(
+                        threat_info.get("first_seen", datetime.now().isoformat())
+                    ),
+                    last_seen=datetime.fromisoformat(
+                        threat_info.get("last_seen", datetime.now().isoformat())
+                    ),
                     tags=threat_info.get("tags", []),
                     metadata=threat_info.get("metadata", {}),
                 )
@@ -356,7 +372,9 @@ class SecurityFabricIntegration:
 
         return detected_incidents
 
-    async def coordinate_response(self, incident_id: str, response_plan: Dict[str, Any]) -> Dict[str, Any]:
+    async def coordinate_response(
+        self, incident_id: str, response_plan: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Coordinate response across Security Fabric components"""
 
         incident = self.security_incidents.get(incident_id)
@@ -401,7 +419,9 @@ class SecurityFabricIntegration:
                     )
 
             except Exception as e:
-                response_results["actions_failed"].append({"action": action.get("type", "unknown"), "error": str(e)})
+                response_results["actions_failed"].append(
+                    {"action": action.get("type", "unknown"), "error": str(e)}
+                )
 
         # Update incident status
         if not response_results["actions_failed"]:
@@ -420,7 +440,9 @@ class SecurityFabricIntegration:
         cutoff = datetime.now() - timedelta(hours=time_period)
 
         # Analyze incidents
-        recent_incidents = [i for i in self.security_incidents.values() if i.timestamp > cutoff]
+        recent_incidents = [
+            i for i in self.security_incidents.values() if i.timestamp > cutoff
+        ]
 
         # Threat statistics
         threat_stats = {
@@ -451,18 +473,29 @@ class SecurityFabricIntegration:
 
         # Response effectiveness
         total_responses = sum(len(i.actions_taken) for i in recent_incidents)
-        successful_responses = sum(1 for i in recent_incidents for a in i.actions_taken if a.get("result") == "success")
+        successful_responses = sum(
+            1
+            for i in recent_incidents
+            for a in i.actions_taken
+            if a.get("result") == "success"
+        )
 
         threat_stats["response_effectiveness"] = {
             "total_responses": total_responses,
             "successful": successful_responses,
-            "success_rate": ((successful_responses / total_responses * 100) if total_responses > 0 else 0),
+            "success_rate": (
+                (successful_responses / total_responses * 100)
+                if total_responses > 0
+                else 0
+            ),
         }
 
         # Fabric health
         fabric_health = {
             "total_components": len(self.fabric_components),
-            "online": sum(1 for c in self.fabric_components.values() if c.status == "online"),
+            "online": sum(
+                1 for c in self.fabric_components.values() if c.status == "online"
+            ),
             "component_performance": {},
         }
 
@@ -479,7 +512,9 @@ class SecurityFabricIntegration:
             "generated_at": datetime.now().isoformat(),
             "threat_statistics": dict(threat_stats),
             "fabric_health": fabric_health,
-            "recommendations": self._generate_recommendations(threat_stats, fabric_health),
+            "recommendations": self._generate_recommendations(
+                threat_stats, fabric_health
+            ),
         }
 
     async def sync_security_policies(self) -> Dict[str, Any]:
@@ -494,14 +529,18 @@ class SecurityFabricIntegration:
         for component in self.fabric_components.values():
             if component.component_type == FabricComponentType.FORTIGATE:
                 try:
-                    result = await self._sync_policies_to_component(component, master_policies)
+                    result = await self._sync_policies_to_component(
+                        component, master_policies
+                    )
 
                     if result["success"]:
                         sync_results["synchronized"] += 1
                     else:
                         sync_results["failed"] += 1
 
-                    sync_results["details"].append({"component": component.name, "result": result})
+                    sync_results["details"].append(
+                        {"component": component.name, "result": result}
+                    )
 
                 except Exception as e:
                     sync_results["failed"] += 1
@@ -517,7 +556,9 @@ class SecurityFabricIntegration:
             "results": sync_results,
         }
 
-    async def perform_threat_hunting(self, hunt_parameters: Dict[str, Any]) -> Dict[str, Any]:
+    async def perform_threat_hunting(
+        self, hunt_parameters: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Perform proactive threat hunting"""
 
         hunt_results = {
@@ -594,7 +635,9 @@ class SecurityFabricIntegration:
                         "value": indicator.value,
                         "action": "block",
                         "severity": indicator.threat_level.value,
-                        "expires": (indicator.last_seen + timedelta(days=90)).isoformat(),
+                        "expires": (
+                            indicator.last_seen + timedelta(days=90)
+                        ).isoformat(),
                     }
                 )
 
@@ -602,11 +645,17 @@ class SecurityFabricIntegration:
         for component in self.fabric_components.values():
             if component.status == "online":
                 try:
-                    await self._push_indicators_to_component(component, indicators_update)
+                    await self._push_indicators_to_component(
+                        component, indicators_update
+                    )
                 except Exception as e:
-                    self.logger.error(f"Failed to push indicators to {component.name}: {e}")
+                    self.logger.error(
+                        f"Failed to push indicators to {component.name}: {e}"
+                    )
 
-    async def _get_threat_logs(self, start_time: datetime, end_time: datetime) -> List[Dict]:
+    async def _get_threat_logs(
+        self, start_time: datetime, end_time: datetime
+    ) -> List[Dict]:
         """Get threat logs from fabric components"""
 
         all_logs = []
@@ -660,7 +709,9 @@ class SecurityFabricIntegration:
 
         return matches
 
-    def _determine_threat_level(self, log: Dict, indicators: List[ThreatIndicator]) -> ThreatLevel:
+    def _determine_threat_level(
+        self, log: Dict, indicators: List[ThreatIndicator]
+    ) -> ThreatLevel:
         """Determine overall threat level"""
 
         if not indicators:
@@ -731,7 +782,9 @@ class SecurityFabricIntegration:
                 except Exception as e:
                     self.logger.error(f"Failed to execute playbook action: {e}")
 
-    async def _execute_response_action(self, incident: SecurityIncident, action: Dict) -> Dict[str, Any]:
+    async def _execute_response_action(
+        self, incident: SecurityIncident, action: Dict
+    ) -> Dict[str, Any]:
         """Execute a response action"""
 
         action_type = action.get("type")
@@ -750,7 +803,9 @@ class SecurityFabricIntegration:
                 "error": f"Unknown action type: {action_type}",
             }
 
-    async def _execute_playbook_action(self, incident: SecurityIncident, action: Dict) -> Dict[str, Any]:
+    async def _execute_playbook_action(
+        self, incident: SecurityIncident, action: Dict
+    ) -> Dict[str, Any]:
         """Execute a playbook action"""
 
         action_name = action.get("action")
@@ -830,24 +885,34 @@ class SecurityFabricIntegration:
         # This would add file hash to block lists
         return {"success": True, "details": f"Blocked file hash {file_hash}"}
 
-    def _generate_recommendations(self, threat_stats: Dict, fabric_health: Dict) -> List[str]:
+    def _generate_recommendations(
+        self, threat_stats: Dict, fabric_health: Dict
+    ) -> List[str]:
         """Generate security recommendations"""
 
         recommendations = []
 
         # Based on threat statistics
         if threat_stats["by_severity"].get("CRITICAL", 0) > 5:
-            recommendations.append("High number of critical threats detected - review security policies")
+            recommendations.append(
+                "High number of critical threats detected - review security policies"
+            )
 
         if threat_stats["response_effectiveness"]["success_rate"] < 80:
-            recommendations.append("Response effectiveness below 80% - review response playbooks")
+            recommendations.append(
+                "Response effectiveness below 80% - review response playbooks"
+            )
 
         # Based on fabric health
         offline_ratio = (
-            (fabric_health["total_components"] - fabric_health["online"]) / fabric_health["total_components"] * 100
+            (fabric_health["total_components"] - fabric_health["online"])
+            / fabric_health["total_components"]
+            * 100
         )
         if offline_ratio > 10:
-            recommendations.append(f"{offline_ratio:.1f}% of fabric components offline - investigate connectivity")
+            recommendations.append(
+                f"{offline_ratio:.1f}% of fabric components offline - investigate connectivity"
+            )
 
         return recommendations
 
@@ -862,13 +927,17 @@ class SecurityFabricIntegration:
             "app_control_policies": [],
         }
 
-    async def _sync_policies_to_component(self, component: FabricComponent, policies: Dict) -> Dict[str, Any]:
+    async def _sync_policies_to_component(
+        self, component: FabricComponent, policies: Dict
+    ) -> Dict[str, Any]:
         """Sync policies to a specific component"""
 
         # This would push policies to the component
         return {"success": True, "policies_synced": len(policies)}
 
-    async def _push_indicators_to_component(self, component: FabricComponent, indicators: Dict):
+    async def _push_indicators_to_component(
+        self, component: FabricComponent, indicators: Dict
+    ):
         """Push threat indicators to component"""
 
         # This would push IoCs to the component

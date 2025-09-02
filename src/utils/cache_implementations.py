@@ -188,7 +188,12 @@ class FileCacheAdapter(CacheBackend):
 
                 expires_at = time.time() + ttl if ttl > 0 else 0
 
-                data = {"value": value, "ttl": ttl, "expires_at": expires_at, "created_at": time.time()}
+                data = {
+                    "value": value,
+                    "ttl": ttl,
+                    "expires_at": expires_at,
+                    "created_at": time.time(),
+                }
 
                 with open(file_path, "w") as f:
                     f.write(orjson.dumps(data).decode("utf-8"))
@@ -540,7 +545,9 @@ class CacheAdapterFactory:
             redis_password = os.environ.get("REDIS_PASSWORD")
 
             try:
-                return RedisCacheAdapter(host=redis_host, port=redis_port, password=redis_password)
+                return RedisCacheAdapter(
+                    host=redis_host, port=redis_port, password=redis_password
+                )
             except Exception as e:
                 logger.warning(f"Failed to create Redis cache, using memory: {e}")
                 return MemoryCacheAdapter()

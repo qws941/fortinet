@@ -92,10 +92,14 @@ class SecureJWTManager:
 
         # Header
         header = {"typ": "JWT", "alg": "HS256"}
-        header_encoded = base64.urlsafe_b64encode(json.dumps(header).encode()).decode().rstrip("=")
+        header_encoded = (
+            base64.urlsafe_b64encode(json.dumps(header).encode()).decode().rstrip("=")
+        )
 
         # Payload
-        payload_encoded = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+        payload_encoded = (
+            base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+        )
 
         # Signature
         message = f"{header_encoded}.{payload_encoded}"
@@ -342,16 +346,26 @@ class RateLimitManager:
 
         cutoff_time = now - timedelta(minutes=window_minutes)
         RateLimitManager._attempts[identifier] = [
-            (ts, ep) for ts, ep in RateLimitManager._attempts[identifier] if ts > cutoff_time
+            (ts, ep)
+            for ts, ep in RateLimitManager._attempts[identifier]
+            if ts > cutoff_time
         ]
 
         # 현재 시도 횟수 확인
-        current_attempts = len([(ts, ep) for ts, ep in RateLimitManager._attempts[identifier] if ep == endpoint])
+        current_attempts = len(
+            [
+                (ts, ep)
+                for ts, ep in RateLimitManager._attempts[identifier]
+                if ep == endpoint
+            ]
+        )
 
         if current_attempts >= max_attempts:
             # 일시적 차단 (30분)
             RateLimitManager._blocked_ips[identifier] = now + timedelta(minutes=30)
-            logger.warning(f"IP 차단: {identifier} (시도 횟수: {current_attempts}, 엔드포인트: {endpoint})")
+            logger.warning(
+                f"IP 차단: {identifier} (시도 횟수: {current_attempts}, 엔드포인트: {endpoint})"
+            )
             return True
 
         # 시도 기록
@@ -500,7 +514,9 @@ def secure_endpoint(
             # 커스텀 Rate limiting
             if rate_limit:
                 max_attempts, window_minutes = rate_limit
-                if RateLimitManager.is_rate_limited(client_ip, request.endpoint, max_attempts, window_minutes):
+                if RateLimitManager.is_rate_limited(
+                    client_ip, request.endpoint, max_attempts, window_minutes
+                ):
                     return (
                         jsonify(
                             {

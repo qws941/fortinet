@@ -230,7 +230,9 @@ class PolicyOrchestrationEngine:
         self.logger.info(f"Created custom template: {name}")
         return True
 
-    def analyze_policy_conflicts(self, device: str, adom: str = "root") -> Dict[str, Any]:
+    def analyze_policy_conflicts(
+        self, device: str, adom: str = "root"
+    ) -> Dict[str, Any]:
         """Analyze policy conflicts and overlaps"""
 
         policies = self.api_client.get_firewall_policies("default", adom)
@@ -283,8 +285,11 @@ class PolicyOrchestrationEngine:
         optimized_policies = sorted(
             policies,
             key=lambda p: (
-                -policy_stats.get(p["policyid"], {}).get("hit_count", 0),  # Most hit first
-                -len(p.get("srcaddr", [])) * len(p.get("dstaddr", [])),  # Specific first
+                -policy_stats.get(p["policyid"], {}).get(
+                    "hit_count", 0
+                ),  # Most hit first
+                -len(p.get("srcaddr", []))
+                * len(p.get("dstaddr", [])),  # Specific first
                 p.get("action") == "deny",  # Deny before allow
                 p.get("policyid", 0),  # Maintain relative order
             ),
@@ -293,12 +298,16 @@ class PolicyOrchestrationEngine:
         # Generate reorder plan
         reorder_plan = []
         for new_pos, policy in enumerate(optimized_policies):
-            old_pos = next(i for i, p in enumerate(policies) if p["policyid"] == policy["policyid"])
+            old_pos = next(
+                i for i, p in enumerate(policies) if p["policyid"] == policy["policyid"]
+            )
             if old_pos != new_pos:
                 reorder_plan.append(
                     {
                         "policy_id": policy["policyid"],
-                        "policy_name": policy.get("name", f"Policy-{policy['policyid']}"),
+                        "policy_name": policy.get(
+                            "name", f"Policy-{policy['policyid']}"
+                        ),
                         "old_position": old_pos,
                         "new_position": new_pos,
                         "reason": self._get_reorder_reason(policy, policy_stats),
@@ -307,7 +316,9 @@ class PolicyOrchestrationEngine:
 
         return reorder_plan
 
-    def bulk_policy_update(self, updates: List[Dict], adom: str = "root") -> Dict[str, Any]:
+    def bulk_policy_update(
+        self, updates: List[Dict], adom: str = "root"
+    ) -> Dict[str, Any]:
         """Perform bulk policy updates with validation"""
 
         results = {
@@ -350,7 +361,9 @@ class PolicyOrchestrationEngine:
 
         return results
 
-    def generate_policy_recommendations(self, device: str, adom: str = "root") -> List[Dict]:
+    def generate_policy_recommendations(
+        self, device: str, adom: str = "root"
+    ) -> List[Dict]:
         """Generate intelligent policy recommendations"""
 
         # Get current policies and traffic logs
@@ -398,7 +411,9 @@ class PolicyOrchestrationEngine:
                         "priority": "high",
                         "policy_id": policy["policyid"],
                         "description": "Policy allows any-to-any traffic",
-                        "suggestions": self._get_tightening_suggestions(policy, traffic_patterns),
+                        "suggestions": self._get_tightening_suggestions(
+                            policy, traffic_patterns
+                        ),
                     }
                 )
 
@@ -415,7 +430,9 @@ class PolicyOrchestrationEngine:
     ) -> str:
         """Track policy changes for audit and rollback"""
 
-        change_id = hashlib.sha256(f"{device}{policy_id}{datetime.now().isoformat()}".encode()).hexdigest()[:16]
+        change_id = hashlib.sha256(
+            f"{device}{policy_id}{datetime.now().isoformat()}".encode()
+        ).hexdigest()[:16]
 
         change = PolicyChange(
             change_id=change_id,
@@ -436,10 +453,14 @@ class PolicyOrchestrationEngine:
 
         return change_id
 
-    def rollback_policy_change(self, change_id: str, adom: str = "root") -> Dict[str, Any]:
+    def rollback_policy_change(
+        self, change_id: str, adom: str = "root"
+    ) -> Dict[str, Any]:
         """Rollback a specific policy change"""
 
-        change = next((c for c in self.change_history if c.change_id == change_id), None)
+        change = next(
+            (c for c in self.change_history if c.change_id == change_id), None
+        )
         if not change:
             return {"success": False, "error": "Change not found"}
 
@@ -470,7 +491,9 @@ class PolicyOrchestrationEngine:
             return {"success": False, "error": "Cannot rollback this change"}
 
     # Helper methods
-    def _validate_template_parameters(self, template: PolicyTemplate, parameters: Dict) -> Dict[str, Any]:
+    def _validate_template_parameters(
+        self, template: PolicyTemplate, parameters: Dict
+    ) -> Dict[str, Any]:
         """Validate template parameters"""
 
         for param_name, param_def in template.parameters.items():
@@ -502,7 +525,9 @@ class PolicyOrchestrationEngine:
 
         return {"valid": True}
 
-    def _generate_policies_from_template(self, template: PolicyTemplate, parameters: Dict) -> List[Dict]:
+    def _generate_policies_from_template(
+        self, template: PolicyTemplate, parameters: Dict
+    ) -> List[Dict]:
         """Generate policies from template with parameter substitution"""
 
         policies = []
@@ -546,7 +571,9 @@ class PolicyOrchestrationEngine:
 
         return policies
 
-    async def _apply_policies_to_device(self, device: str, policies: List[Dict], adom: str) -> Dict[str, Any]:
+    async def _apply_policies_to_device(
+        self, device: str, policies: List[Dict], adom: str
+    ) -> Dict[str, Any]:
         """Apply policies to a specific device"""
 
         results = []
@@ -560,7 +587,9 @@ class PolicyOrchestrationEngine:
                     policy,
                     adom,
                 )
-                results.append({"policy": policy.get("name", "unnamed"), "success": True})
+                results.append(
+                    {"policy": policy.get("name", "unnamed"), "success": True}
+                )
             except Exception as e:
                 results.append(
                     {
@@ -580,9 +609,15 @@ class PolicyOrchestrationEngine:
 
         # Check if policies have opposite actions for overlapping traffic
         if policy1.get("action") != policy2.get("action"):
-            src_overlap = self._check_address_overlap(policy1.get("srcaddr", []), policy2.get("srcaddr", []))
-            dst_overlap = self._check_address_overlap(policy1.get("dstaddr", []), policy2.get("dstaddr", []))
-            svc_overlap = self._check_service_overlap(policy1.get("service", []), policy2.get("service", []))
+            src_overlap = self._check_address_overlap(
+                policy1.get("srcaddr", []), policy2.get("srcaddr", [])
+            )
+            dst_overlap = self._check_address_overlap(
+                policy1.get("dstaddr", []), policy2.get("dstaddr", [])
+            )
+            svc_overlap = self._check_service_overlap(
+                policy1.get("service", []), policy2.get("service", [])
+            )
 
             if src_overlap and dst_overlap and svc_overlap:
                 return {
@@ -637,13 +672,21 @@ class PolicyOrchestrationEngine:
         """Check if address lists overlap"""
 
         # Simplified check - in production would resolve address objects
-        return bool(set(addr_list1) & set(addr_list2)) or "all" in addr_list1 or "all" in addr_list2
+        return (
+            bool(set(addr_list1) & set(addr_list2))
+            or "all" in addr_list1
+            or "all" in addr_list2
+        )
 
     def _check_service_overlap(self, svc_list1: List, svc_list2: List) -> bool:
         """Check if service lists overlap"""
 
         # Simplified check - in production would resolve service objects
-        return bool(set(svc_list1) & set(svc_list2)) or "ALL" in svc_list1 or "ALL" in svc_list2
+        return (
+            bool(set(svc_list1) & set(svc_list2))
+            or "ALL" in svc_list1
+            or "ALL" in svc_list2
+        )
 
     def _is_subset(self, list1: List, list2: List) -> bool:
         """Check if list1 is a subset of list2"""
@@ -652,7 +695,9 @@ class PolicyOrchestrationEngine:
             return True
         return set(list1).issubset(set(list2))
 
-    def _calculate_optimization_score(self, total: int, conflicts: int, shadows: int, redundancies: int) -> float:
+    def _calculate_optimization_score(
+        self, total: int, conflicts: int, shadows: int, redundancies: int
+    ) -> float:
         """Calculate policy optimization score"""
 
         if total == 0:
@@ -814,13 +859,17 @@ class PolicyOrchestrationEngine:
             and policy.get("action") == "accept"
         )
 
-    def _get_tightening_suggestions(self, policy: Dict, traffic_patterns: List[Dict]) -> List[str]:
+    def _get_tightening_suggestions(
+        self, policy: Dict, traffic_patterns: List[Dict]
+    ) -> List[str]:
         """Get suggestions for tightening overly permissive policies"""
 
         suggestions = []
 
         # Analyze actual traffic through this policy
-        policy_traffic = [p for p in traffic_patterns if self._matches_policy(p, policy)]
+        policy_traffic = [
+            p for p in traffic_patterns if self._matches_policy(p, policy)
+        ]
 
         if policy_traffic:
             # Suggest specific sources

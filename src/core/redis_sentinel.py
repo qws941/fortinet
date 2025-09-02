@@ -9,8 +9,9 @@ import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
-import redis
 import redis.sentinel
+
+import redis
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,9 @@ class RedisSentinelManager:
             service_name: Name of the Redis service
         """
         self.sentinels = sentinels or self._get_sentinels_from_env()
-        self.service_name = service_name or os.getenv("REDIS_SERVICE_NAME", "fortinet-master")
+        self.service_name = service_name or os.getenv(
+            "REDIS_SERVICE_NAME", "fortinet-master"
+        )
         self.sentinel = None
         self.master = None
         self.slaves = []
@@ -140,9 +143,14 @@ class RedisSentinelManager:
             if self.sentinel:
                 slaves = self.sentinel.discover_slaves(self.service_name)
 
-                health["sentinels"] = [{"host": host, "port": port, "status": "up"} for host, port in self.sentinels]
+                health["sentinels"] = [
+                    {"host": host, "port": port, "status": "up"}
+                    for host, port in self.sentinels
+                ]
 
-                health["slaves"] = [{"host": host, "port": port} for host, port in slaves]
+                health["slaves"] = [
+                    {"host": host, "port": port} for host, port in slaves
+                ]
 
             health["status"] = "healthy" if health["master"] else "unhealthy"
 
@@ -239,7 +247,9 @@ class RedisClusterManager:
             logger.info("Redis Cluster initialized successfully")
 
         except ImportError:
-            logger.warning("redis-py-cluster not installed, falling back to standard Redis")
+            logger.warning(
+                "redis-py-cluster not installed, falling back to standard Redis"
+            )
             self._fallback_to_standard_redis()
 
         except Exception as e:

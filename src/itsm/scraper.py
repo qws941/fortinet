@@ -242,7 +242,10 @@ class ITSMScraper:
             category = request.get("category", "").lower()
 
             # 방화벽 관련 키워드 검사
-            is_firewall_request = any(keyword in title or keyword in category for keyword in self.firewall_keywords)
+            is_firewall_request = any(
+                keyword in title or keyword in category
+                for keyword in self.firewall_keywords
+            )
 
             if is_firewall_request:
                 request["request_type"] = self._classify_request_type(request)
@@ -448,7 +451,10 @@ class ITSMScraper:
                 new_requests = [
                     req
                     for req in current_requests
-                    if datetime.strptime(req.get("request_date", ""), "%Y-%m-%d %H:%M:%S") > last_check_time
+                    if datetime.strptime(
+                        req.get("request_date", ""), "%Y-%m-%d %H:%M:%S"
+                    )
+                    > last_check_time
                 ]
 
                 if new_requests:

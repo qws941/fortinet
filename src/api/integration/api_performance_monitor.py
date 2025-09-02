@@ -39,7 +39,9 @@ class APIPerformanceMonitor(MonitoringBase):
             self.threshold_violations = deque(maxlen=100)
 
         # API 성능 특화 데이터 구조 (누락된 속성들 추가)
-        self.endpoint_metrics = defaultdict(lambda: {"calls": [], "errors": 0, "total": 0})
+        self.endpoint_metrics = defaultdict(
+            lambda: {"calls": [], "errors": 0, "total": 0}
+        )
         self.metrics = defaultdict(lambda: deque(maxlen=1000))  # 수정: 누락된 속성
         self.response_times = defaultdict(lambda: deque(maxlen=1000))  # 수정: 누락된 속성
         self.success_counts = defaultdict(int)  # 수정: 누락된 속성
@@ -54,7 +56,9 @@ class APIPerformanceMonitor(MonitoringBase):
             name,
             threshold_config,
         ) in config.api_performance.thresholds.items():
-            self.set_threshold(name, threshold_config.warning, threshold_config.critical)
+            self.set_threshold(
+                name, threshold_config.warning, threshold_config.critical
+            )
 
     def _collect_data(self) -> Optional[Dict]:
         """API 성능 데이터 수집"""
@@ -75,18 +79,27 @@ class APIPerformanceMonitor(MonitoringBase):
                     recent_calls = [
                         call
                         for call in metrics["calls"]
-                        if (datetime.now() - datetime.fromisoformat(call["timestamp"]) < timedelta(hours=1))
+                        if (
+                            datetime.now() - datetime.fromisoformat(call["timestamp"])
+                            < timedelta(hours=1)
+                        )
                     ]
 
                     if recent_calls:
-                        response_times = [call["response_time"] for call in recent_calls]
-                        error_count = sum(1 for call in recent_calls if not call["success"])
+                        response_times = [
+                            call["response_time"] for call in recent_calls
+                        ]
+                        error_count = sum(
+                            1 for call in recent_calls if not call["success"]
+                        )
 
                         endpoint_stats[endpoint] = {
                             "total_requests": len(recent_calls),
                             "error_requests": error_count,
                             "error_rate": (error_count / len(recent_calls)) * 100,
-                            "avg_response_time": (sum(response_times) / len(response_times)),
+                            "avg_response_time": (
+                                sum(response_times) / len(response_times)
+                            ),
                             "min_response_time": min(response_times),
                             "max_response_time": max(response_times),
                             "p95_response_time": self._percentile(response_times, 95),
@@ -97,7 +110,9 @@ class APIPerformanceMonitor(MonitoringBase):
                         total_response_times.extend(response_times)
 
             if total_response_times:
-                overall_stats["avg_response_time"] = sum(total_response_times) / len(total_response_times)
+                overall_stats["avg_response_time"] = sum(total_response_times) / len(
+                    total_response_times
+                )
                 overall_stats["overall_error_rate"] = (
                     overall_stats["total_errors"] / overall_stats["total_requests"]
                 ) * 100
@@ -105,7 +120,9 @@ class APIPerformanceMonitor(MonitoringBase):
             return {
                 "endpoint_stats": endpoint_stats,
                 "overall_stats": overall_stats,
-                "optimization_actions": (self.optimization_actions[-10:] if self.optimization_actions else []),
+                "optimization_actions": (
+                    self.optimization_actions[-10:] if self.optimization_actions else []
+                ),
             }
 
         except Exception as e:
@@ -165,7 +182,11 @@ class APIPerformanceMonitor(MonitoringBase):
         """특정 엔드포인트 통계"""
         with self._lock:
             cutoff = datetime.now() - timedelta(hours=hours)
-            recent_metrics = [m for m in self.metrics[endpoint] if datetime.fromisoformat(m["timestamp"]) > cutoff]
+            recent_metrics = [
+                m
+                for m in self.metrics[endpoint]
+                if datetime.fromisoformat(m["timestamp"]) > cutoff
+            ]
 
             if not recent_metrics:
                 return {}
@@ -173,7 +194,11 @@ class APIPerformanceMonitor(MonitoringBase):
             response_times = [m["response_time"] for m in recent_metrics]
             success_count = sum(1 for m in recent_metrics if m["success"])
             total_count = len(recent_metrics)
-            error_rate = ((total_count - success_count) / total_count * 100) if total_count > 0 else 0
+            error_rate = (
+                ((total_count - success_count) / total_count * 100)
+                if total_count > 0
+                else 0
+            )
 
             # 처리량 계산 (분당)
             throughput = self._calculate_throughput(endpoint, hours)
@@ -223,7 +248,9 @@ class APIPerformanceMonitor(MonitoringBase):
                     ]
                     all_response_times.extend(recent_times)
 
-            overall_error_rate = (total_errors / total_requests * 100) if total_requests > 0 else 0
+            overall_error_rate = (
+                (total_errors / total_requests * 100) if total_requests > 0 else 0
+            )
 
             result = {
                 "period_hours": hours,
@@ -355,7 +382,10 @@ class APIPerformanceMonitor(MonitoringBase):
                         "type": "response_time_optimization",
                         "endpoint": ep["endpoint"],
                         "priority": (
-                            "high" if ep["avg_response_time"] > self.thresholds["response_time_critical"] else "medium"
+                            "high"
+                            if ep["avg_response_time"]
+                            > self.thresholds["response_time_critical"]
+                            else "medium"
                         ),
                         "description": f"엔드포인트 {ep['endpoint']} 응답시간 최적화 필요",
                         "current_value": ep["avg_response_time"],
@@ -453,7 +483,11 @@ class APIPerformanceMonitor(MonitoringBase):
         # 임계값이 설정되어 있는 경우만 체크 (수정: dict 형태 처리)
         if "response_time_critical" in self.thresholds:
             threshold_val = self.thresholds["response_time_critical"]
-            critical_val = threshold_val["critical"] if isinstance(threshold_val, dict) else threshold_val
+            critical_val = (
+                threshold_val["critical"]
+                if isinstance(threshold_val, dict)
+                else threshold_val
+            )
             if response_time > critical_val:
                 self._notify_listeners(
                     "slow_response",
@@ -466,7 +500,11 @@ class APIPerformanceMonitor(MonitoringBase):
 
         if "response_time_warning" in self.thresholds:
             threshold_val = self.thresholds["response_time_warning"]
-            warning_val = threshold_val["warning"] if isinstance(threshold_val, dict) else threshold_val
+            warning_val = (
+                threshold_val["warning"]
+                if isinstance(threshold_val, dict)
+                else threshold_val
+            )
             if response_time > warning_val:
                 self._notify_listeners(
                     "slow_response",
@@ -540,7 +578,11 @@ class APIPerformanceMonitor(MonitoringBase):
             for endpoint in list(self.metrics.keys()):
                 # 24시간 이전 데이터 제거
                 self.metrics[endpoint] = deque(
-                    [m for m in self.metrics[endpoint] if datetime.fromisoformat(m["timestamp"]) > cutoff],
+                    [
+                        m
+                        for m in self.metrics[endpoint]
+                        if datetime.fromisoformat(m["timestamp"]) > cutoff
+                    ],
                     maxlen=1000,
                 )
 
@@ -581,7 +623,9 @@ def monitor_api_performance(monitor: APIPerformanceMonitor):
                 # Flask response 객체인 경우
                 if hasattr(result, "status_code"):
                     status_code = result.status_code
-                    response_size = len(result.get_data()) if hasattr(result, "get_data") else 0
+                    response_size = (
+                        len(result.get_data()) if hasattr(result, "get_data") else 0
+                    )
                 else:
                     status_code = 200
                     response_size = len(str(result)) if result else 0

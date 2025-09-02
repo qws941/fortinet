@@ -74,7 +74,9 @@ class PolicyManagementMixin:
             logger.error(f"Error getting package policies: {e}")
             return {"status": "error", "message": str(e)}
 
-    def get_policy_package_settings(self, package_name: str, cli_path: str, adom: str = "root") -> Dict[str, Any]:
+    def get_policy_package_settings(
+        self, package_name: str, cli_path: str, adom: str = "root"
+    ) -> Dict[str, Any]:
         """Get settings from a policy package"""
         try:
             data = {"adom": adom, "option": "object member"}

@@ -19,7 +19,9 @@ class SSHAnalyzer:
         self.key_exchanges = []
         self.sessions = {}
 
-    def analyze_ssh(self, payload: bytes, packet_info: Dict[str, Any]) -> Dict[str, Any]:
+    def analyze_ssh(
+        self, payload: bytes, packet_info: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """SSH 패킷 분석"""
 
         try:
@@ -113,7 +115,9 @@ class SSHAnalyzer:
         elif any("128" in cipher for cipher in encryption_info["ciphers"]):
             encryption_info["strength"] = "medium"
         elif any(
-            weak in cipher.lower() for cipher in encryption_info["ciphers"] for weak in ["3des", "blowfish", "cast"]
+            weak in cipher.lower()
+            for cipher in encryption_info["ciphers"]
+            for weak in ["3des", "blowfish", "cast"]
         ):
             encryption_info["strength"] = "weak"
 
@@ -133,7 +137,9 @@ class SSHAnalyzer:
         else:
             return "unknown"
 
-    def _detect_ssh_tunneling(self, payload: bytes, packet_info: Dict[str, Any]) -> bool:
+    def _detect_ssh_tunneling(
+        self, payload: bytes, packet_info: Dict[str, Any]
+    ) -> bool:
         """SSH 터널링 탐지"""
 
         # 포트 포워딩 패턴 검사
@@ -145,7 +151,9 @@ class SSHAnalyzer:
 
         return any(pattern in payload for pattern in port_forward_patterns)
 
-    def _check_ssh_security(self, analysis: Dict[str, Any], payload_str: str) -> List[str]:
+    def _check_ssh_security(
+        self, analysis: Dict[str, Any], payload_str: str
+    ) -> List[str]:
         """SSH 보안 검사"""
 
         issues = []
@@ -219,7 +227,9 @@ class SSHAnalyzer:
         """SSH 분석 통계"""
 
         total_sessions = len(self.sessions)
-        successful_auths = sum(1 for s in self.sessions.values() if s.get("successful_auth"))
+        successful_auths = sum(
+            1 for s in self.sessions.values() if s.get("successful_auth")
+        )
         failed_auths = sum(s.get("auth_failures", 0) for s in self.sessions.values())
 
         # 가장 많이 사용된 SSH 버전
@@ -227,7 +237,11 @@ class SSHAnalyzer:
         for version in self.ssh_versions:
             version_counts[version] = version_counts.get(version, 0) + 1
 
-        most_common_version = max(version_counts.items(), key=lambda x: x[1])[0] if version_counts else "unknown"
+        most_common_version = (
+            max(version_counts.items(), key=lambda x: x[1])[0]
+            if version_counts
+            else "unknown"
+        )
 
         return {
             "total_sessions": total_sessions,
@@ -235,5 +249,7 @@ class SSHAnalyzer:
             "failed_authentications": failed_auths,
             "most_common_version": most_common_version,
             "version_distribution": version_counts,
-            "active_sessions": len([s for s in self.sessions.values() if s.get("successful_auth")]),
+            "active_sessions": len(
+                [s for s in self.sessions.values() if s.get("successful_auth")]
+            ),
         }

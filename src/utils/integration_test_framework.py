@@ -95,17 +95,23 @@ class IntegrationTestFramework:
     def assert_eq(self, actual: Any, expected: Any, message: str = ""):
         """Rust 스타일 assert_eq! 매크로"""
         if actual != expected:
-            raise AssertionError(f"Assertion failed: {message}\n  Expected: {expected}\n  Actual: {actual}")
+            raise AssertionError(
+                f"Assertion failed: {message}\n  Expected: {expected}\n  Actual: {actual}"
+            )
 
     def assert_ne(self, actual: Any, expected: Any, message: str = ""):
         """Rust 스타일 assert_ne! 매크로"""
         if actual == expected:
-            raise AssertionError(f"Assertion failed: {message}\n  Expected NOT: {expected}\n  Actual: {actual}")
+            raise AssertionError(
+                f"Assertion failed: {message}\n  Expected NOT: {expected}\n  Actual: {actual}"
+            )
 
     def assert_ok(self, result: Any, message: str = ""):
         """Result가 성공인지 확인"""
         if isinstance(result, dict) and result.get("success") is False:
-            raise AssertionError(f"Expected success but got failure: {message}\n  Error: {result.get('error')}")
+            raise AssertionError(
+                f"Expected success but got failure: {message}\n  Error: {result.get('error')}"
+            )
         if result is None or result is False:
             raise AssertionError(f"Expected truthy result: {message}")
 
@@ -209,7 +215,9 @@ class IntegrationTestFramework:
             "total": self.test_count,
             "passed": self.passed_count,
             "failed": self.failed_count,
-            "success_rate": (self.passed_count / self.test_count if self.test_count > 0 else 0),
+            "success_rate": (
+                self.passed_count / self.test_count if self.test_count > 0 else 0
+            ),
             "duration": total_time,
             "results": self.results,
         }
@@ -246,7 +254,9 @@ if __name__ == "__main__":
         test_config = {"test_mode": True, "port": 7777}
 
         with self_test.temp_config_file(test_config) as config_path:
-            self_test.assert_ok(os.path.exists(config_path), "Temp config file should exist")
+            self_test.assert_ok(
+                os.path.exists(config_path), "Temp config file should exist"
+            )
 
             with open(config_path, "r") as f:
                 loaded_config = json.load(f)
@@ -258,7 +268,9 @@ if __name__ == "__main__":
             )
 
         # 파일이 정리되었는지 확인
-        self_test.assert_ok(not os.path.exists(config_path), "Temp file should be cleaned up")
+        self_test.assert_ok(
+            not os.path.exists(config_path), "Temp file should be cleaned up"
+        )
 
         return {"config_data": test_config}
 
@@ -277,7 +289,9 @@ if __name__ == "__main__":
 
             # 기본 라우트 테스트
             response = client.get("/")
-            self_test.assert_eq(response.status_code, 200, "Home page should be accessible")
+            self_test.assert_eq(
+                response.status_code, 200, "Home page should be accessible"
+            )
 
         return {"app_testing": True, "custom_config_applied": True}
 

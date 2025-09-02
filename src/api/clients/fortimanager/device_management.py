@@ -16,7 +16,9 @@ class DeviceManagementMixin:
     def get_devices(self, adom="root"):
         """Get list of devices in ADOM"""
         data = {"adom": adom}
-        return self._make_api_request("get", "/dvmdb/adom/{adom}/device".format(adom=adom), data=data)
+        return self._make_api_request(
+            "get", "/dvmdb/adom/{adom}/device".format(adom=adom), data=data
+        )
 
     def get_managed_devices(self, adom="root"):
         """Get managed devices with detailed information"""
@@ -46,7 +48,9 @@ class DeviceManagementMixin:
         """Get device status and information"""
         try:
             data = {"adom": adom, "device": device_name}
-            response = self._make_api_request("get", f"/dvmdb/adom/{adom}/device/{device_name}", data=data)
+            response = self._make_api_request(
+                "get", f"/dvmdb/adom/{adom}/device/{device_name}", data=data
+            )
 
             if response and "data" in response:
                 device_info = response["data"]
@@ -70,7 +74,9 @@ class DeviceManagementMixin:
             logger.error(f"Error getting device status for {device_name}: {e}")
             return {"status": "error", "message": str(e)}
 
-    def get_device_global_settings(self, device_name: str, cli_path: str, adom: str = "root") -> Dict[str, Any]:
+    def get_device_global_settings(
+        self, device_name: str, cli_path: str, adom: str = "root"
+    ) -> Dict[str, Any]:
         """Get global settings from a managed device"""
         try:
             data = {

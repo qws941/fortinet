@@ -12,7 +12,8 @@ from typing import Any, Dict, List, Optional
 from api.clients.fortimanager_api_client import FortiManagerAPIClient
 
 from .calculations import AnalyticsCalculator
-from .models import AnalyticsInsight, AnalyticsMetric, PredictiveModel, ReportFormat
+from .models import (AnalyticsInsight, AnalyticsMetric, PredictiveModel,
+                     ReportFormat)
 from .predictive import PredictiveAnalytics
 from .reports import ReportGenerator
 
@@ -206,7 +207,9 @@ class AdvancedAnalyticsEngine:
         """List all available metrics"""
         return list(self.metrics.values())
 
-    async def analyze_metric(self, metric_id: str, start_time: datetime, end_time: datetime) -> Dict[str, Any]:
+    async def analyze_metric(
+        self, metric_id: str, start_time: datetime, end_time: datetime
+    ) -> Dict[str, Any]:
         """Analyze a specific metric"""
         metric = self.get_metric(metric_id)
         if not metric:
@@ -224,13 +227,17 @@ class AdvancedAnalyticsEngine:
             "trend": self.calculator.identify_trend(data),
             "seasonality": self.calculator.detect_seasonality(data),
             "anomalies": self.calculator.detect_anomalies(data),
-            "threshold_violations": self.calculator.check_threshold_violations(data, metric),
+            "threshold_violations": self.calculator.check_threshold_violations(
+                data, metric
+            ),
             "aggregated": self.calculator.aggregate_metric_data(data, metric),
         }
 
         return analysis
 
-    async def generate_insights(self, analysis_results: List[Dict]) -> List[AnalyticsInsight]:
+    async def generate_insights(
+        self, analysis_results: List[Dict]
+    ) -> List[AnalyticsInsight]:
         """Generate actionable insights from analysis results"""
         insights = []
 
@@ -248,7 +255,9 @@ class AdvancedAnalyticsEngine:
                     title=f"{metric.name} Threshold Violation",
                     description=f"{metric.name} exceeded {violation['violation']['level']} threshold",
                     affected_metrics=[metric.metric_id],
-                    recommendations=self._get_threshold_recommendations(metric, violation),
+                    recommendations=self._get_threshold_recommendations(
+                        metric, violation
+                    ),
                 )
                 insights.append(insight)
 
@@ -312,7 +321,9 @@ class AdvancedAnalyticsEngine:
                     "trend": "stable",
                 }  # Mock value
 
-        return self.report_generator.generate_report(template_name, report_data, format_type)
+        return self.report_generator.generate_report(
+            template_name, report_data, format_type
+        )
 
     async def _collect_metric_data(
         self, metric: AnalyticsMetric, start_time: datetime, end_time: datetime
@@ -328,21 +339,27 @@ class AdvancedAnalyticsEngine:
             for i in range(0, int((end_time - start_time).total_seconds() / 60), 5)
         ]
 
-    def _get_threshold_recommendations(self, metric: AnalyticsMetric, violation: Dict) -> List[str]:
+    def _get_threshold_recommendations(
+        self, metric: AnalyticsMetric, violation: Dict
+    ) -> List[str]:
         """Get recommendations for threshold violations"""
         recommendations = []
         level = violation["violation"]["level"]
 
         if level == "critical":
             recommendations.append(f"Immediate action required for {metric.name}")
-            recommendations.append("Consider scaling resources or investigating root cause")
+            recommendations.append(
+                "Consider scaling resources or investigating root cause"
+            )
         elif level == "warning":
             recommendations.append(f"Monitor {metric.name} closely")
             recommendations.append("Consider preventive measures")
 
         return recommendations
 
-    def _get_trend_recommendations(self, metric: AnalyticsMetric, trend: Dict) -> List[str]:
+    def _get_trend_recommendations(
+        self, metric: AnalyticsMetric, trend: Dict
+    ) -> List[str]:
         """Get recommendations for trend analysis"""
         recommendations = []
         direction = trend.get("direction")
@@ -357,7 +374,9 @@ class AdvancedAnalyticsEngine:
 
         return recommendations
 
-    def _get_anomaly_recommendations(self, metric: AnalyticsMetric, anomaly: Dict) -> List[str]:
+    def _get_anomaly_recommendations(
+        self, metric: AnalyticsMetric, anomaly: Dict
+    ) -> List[str]:
         """Get recommendations for anomaly detection"""
         recommendations = []
         severity = anomaly.get("severity", "medium")

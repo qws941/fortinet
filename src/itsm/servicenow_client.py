@@ -15,7 +15,8 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-from core.error_handler_advanced import ApplicationError, ErrorCategory, ErrorSeverity, handle_errors
+from core.error_handler_advanced import (ApplicationError, ErrorCategory,
+                                         ErrorSeverity, handle_errors)
 from utils.unified_cache_manager import get_cache_manager
 from utils.unified_logger import get_logger
 
@@ -89,7 +90,9 @@ class ServiceNowAPIClient:
 
         logger.info(f"ServiceNow 클라이언트 초기화 완료: {instance_url}")
 
-    def _setup_authentication(self, username: str, password: str, api_token: str, oauth_config: Dict):
+    def _setup_authentication(
+        self, username: str, password: str, api_token: str, oauth_config: Dict
+    ):
         """인증 방식 설정"""
         if api_token:
             # Token 기반 인증
@@ -105,7 +108,9 @@ class ServiceNowAPIClient:
         elif username and password:
             # Basic 인증
             self.session.auth = (username, password)
-            self.session.headers.update({"Content-Type": "application/json", "Accept": "application/json"})
+            self.session.headers.update(
+                {"Content-Type": "application/json", "Accept": "application/json"}
+            )
             self.auth_type = "basic"
 
         elif oauth_config:
@@ -114,7 +119,9 @@ class ServiceNowAPIClient:
             self.auth_type = "oauth"
 
         else:
-            raise ValueError("인증 정보가 제공되지 않았습니다 (username/password, api_token, 또는 oauth_config 필요)")
+            raise ValueError(
+                "인증 정보가 제공되지 않았습니다 (username/password, api_token, 또는 oauth_config 필요)"
+            )
 
     def _setup_oauth(self, oauth_config: Dict):
         """OAuth 2.0 인증 설정"""
@@ -138,19 +145,29 @@ class ServiceNowAPIClient:
         token_url = self.oauth_config["token_url"]
 
         # Client credentials 인코딩
-        credentials = f"{self.oauth_config['client_id']}:{self.oauth_config['client_secret']}"
+        credentials = (
+            f"{self.oauth_config['client_id']}:{self.oauth_config['client_secret']}"
+        )
         encoded_credentials = base64.b64encode(credentials.encode()).decode()
 
-        headers = {"Authorization": f"Basic {encoded_credentials}", "Content-Type": "application/x-www-form-urlencoded"}
+        headers = {
+            "Authorization": f"Basic {encoded_credentials}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
 
         # Grant type에 따른 요청 데이터
         if self.refresh_token:
             data = {"grant_type": "refresh_token", "refresh_token": self.refresh_token}
         else:
-            data = {"grant_type": "client_credentials", "scope": self.oauth_config.get("scope", "useraccount")}
+            data = {
+                "grant_type": "client_credentials",
+                "scope": self.oauth_config.get("scope", "useraccount"),
+            }
 
         try:
-            response = self.session.post(token_url, headers=headers, data=data, timeout=30)
+            response = self.session.post(
+                token_url, headers=headers, data=data, timeout=30
+            )
             response.raise_for_status()
 
             token_data = response.json()
@@ -183,17 +200,28 @@ class ServiceNowAPIClient:
         retry_strategy = Retry(
             total=max_retries,
             status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["HEAD", "GET", "OPTIONS", "POST", "PUT"],  # method_whitelist → allowed_methods
+            allowed_methods=[
+                "HEAD",
+                "GET",
+                "OPTIONS",
+                "POST",
+                "PUT",
+            ],  # method_whitelist → allowed_methods
             backoff_factor=1,
         )
 
-        adapter = HTTPAdapter(max_retries=retry_strategy, pool_connections=10, pool_maxsize=20)
+        adapter = HTTPAdapter(
+            max_retries=retry_strategy, pool_connections=10, pool_maxsize=20
+        )
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
 
         # 기본 헤더
         self.session.headers.update(
-            {"User-Agent": "FortiGate-Nextrade-ITSM-Client/1.0", "X-Requested-With": "XMLHttpRequest"}
+            {
+                "User-Agent": "FortiGate-Nextrade-ITSM-Client/1.0",
+                "X-Requested-With": "XMLHttpRequest",
+            }
         )
 
     @handle_errors(category=ErrorCategory.EXTERNAL_SERVICE)
@@ -208,7 +236,11 @@ class ServiceNowAPIClient:
             start_time = time.time()
 
             # 간단한 API 호출로 연결 확인
-            response = self.session.get(f"{self.api_base}/table/sys_user", params={"sysparm_limit": 1}, timeout=10)
+            response = self.session.get(
+                f"{self.api_base}/table/sys_user",
+                params={"sysparm_limit": 1},
+                timeout=10,
+            )
 
             response_time = (time.time() - start_time) * 1000
 
@@ -240,7 +272,11 @@ class ServiceNowAPIClient:
             self.connection_errors += 1
 
             logger.error(f"ServiceNow 연결 확인 실패: {e}")
-            return {"status": "error", "error": str(e), "connection_errors": self.connection_errors}
+            return {
+                "status": "error",
+                "error": str(e),
+                "connection_errors": self.connection_errors,
+            }
 
     @handle_errors(category=ErrorCategory.EXTERNAL_SERVICE)
     def create_incident(
@@ -291,7 +327,9 @@ class ServiceNowAPIClient:
             ticket_data.update(additional_fields)
 
         # API 호출
-        response = self._make_request("POST", f"{self.api_base}/table/incident", json=ticket_data)
+        response = self._make_request(
+            "POST", f"{self.api_base}/table/incident", json=ticket_data
+        )
 
         if response["success"]:
             incident_data = response["data"]["result"]
@@ -372,7 +410,9 @@ class ServiceNowAPIClient:
             change_data.update(additional_fields)
 
         # API 호출
-        response = self._make_request("POST", f"{self.api_base}/table/change_request", json=change_data)
+        response = self._make_request(
+            "POST", f"{self.api_base}/table/change_request", json=change_data
+        )
 
         if response["success"]:
             change_data = response["data"]["result"]
@@ -418,7 +458,9 @@ class ServiceNowAPIClient:
         return response
 
     @handle_errors(category=ErrorCategory.EXTERNAL_SERVICE)
-    def update_ticket(self, table: str, sys_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+    def update_ticket(
+        self, table: str, sys_id: str, updates: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         티켓 업데이트
 
@@ -430,7 +472,9 @@ class ServiceNowAPIClient:
         Returns:
             업데이트 결과
         """
-        response = self._make_request("PUT", f"{self.api_base}/table/{table}/{sys_id}", json=updates)
+        response = self._make_request(
+            "PUT", f"{self.api_base}/table/{table}/{sys_id}", json=updates
+        )
 
         if response["success"]:
             # 캐시 무효화
@@ -443,7 +487,12 @@ class ServiceNowAPIClient:
 
     @handle_errors(category=ErrorCategory.EXTERNAL_SERVICE)
     def search_tickets(
-        self, table: str, query: str = None, fields: List[str] = None, limit: int = 100, offset: int = 0
+        self,
+        table: str,
+        query: str = None,
+        fields: List[str] = None,
+        limit: int = 100,
+        offset: int = 0,
     ) -> Dict[str, Any]:
         """
         티켓 검색
@@ -473,7 +522,9 @@ class ServiceNowAPIClient:
             return {"success": True, "data": cached_data, "cached": True}
 
         # API 호출
-        response = self._make_request("GET", f"{self.api_base}/table/{table}", params=params)
+        response = self._make_request(
+            "GET", f"{self.api_base}/table/{table}", params=params
+        )
 
         if response["success"]:
             # 짧은 시간 캐시 (검색 결과는 자주 변경됨)
@@ -514,7 +565,9 @@ class ServiceNowAPIClient:
             생성된 방화벽 정책 요청 정보
         """
         # 방화벽 정책 전용 템플릿
-        short_desc = f"방화벽 정책 요청: {source_ip} -> {destination_ip}:{port}/{protocol.upper()}"
+        short_desc = (
+            f"방화벽 정책 요청: {source_ip} -> {destination_ip}:{port}/{protocol.upper()}"
+        )
 
         description = f"""
 방화벽 정책 추가 요청
@@ -587,7 +640,9 @@ class ServiceNowAPIClient:
             additional_fields=change_fields,
         )
 
-    def _make_request(self, method: str, url: str, params: Dict = None, json: Dict = None, **kwargs) -> Dict[str, Any]:
+    def _make_request(
+        self, method: str, url: str, params: Dict = None, json: Dict = None, **kwargs
+    ) -> Dict[str, Any]:
         """
         HTTP 요청 실행 (내부 메서드)
 
@@ -606,13 +661,20 @@ class ServiceNowAPIClient:
 
         try:
             response = self.session.request(
-                method=method, url=url, params=params, json=json, timeout=self.timeout, **kwargs
+                method=method,
+                url=url,
+                params=params,
+                json=json,
+                timeout=self.timeout,
+                **kwargs,
             )
 
             response_time = (time.time() - start_time) * 1000
             self.stats["last_response_time"] = response_time
             self.stats["total_response_time"] += response_time
-            self.stats["average_response_time"] = self.stats["total_response_time"] / self.stats["requests_made"]
+            self.stats["average_response_time"] = (
+                self.stats["total_response_time"] / self.stats["requests_made"]
+            )
 
             if response.status_code in [200, 201]:
                 return {
@@ -638,7 +700,11 @@ class ServiceNowAPIClient:
 
             logger.error(f"ServiceNow API 요청 실패: {method} {url} - {e}")
 
-            return {"success": False, "error": str(e), "response_time_ms": round(response_time, 2)}
+            return {
+                "success": False,
+                "error": str(e),
+                "response_time_ms": round(response_time, 2),
+            }
 
     def get_statistics(self) -> Dict[str, Any]:
         """
@@ -648,19 +714,25 @@ class ServiceNowAPIClient:
             통계 정보
         """
         error_rate = (self.stats["errors"] / max(self.stats["requests_made"], 1)) * 100
-        cache_hit_rate = (self.stats["cache_hits"] / max(self.stats["requests_made"], 1)) * 100
+        cache_hit_rate = (
+            self.stats["cache_hits"] / max(self.stats["requests_made"], 1)
+        ) * 100
 
         return {
             "connection_status": {
                 "is_connected": self.is_connected,
-                "last_health_check": self.last_health_check.isoformat() if self.last_health_check else None,
+                "last_health_check": self.last_health_check.isoformat()
+                if self.last_health_check
+                else None,
                 "connection_errors": self.connection_errors,
                 "auth_type": self.auth_type,
             },
             "performance": {
                 "requests_made": self.stats["requests_made"],
                 "error_rate_percent": round(error_rate, 2),
-                "average_response_time_ms": round(self.stats["average_response_time"], 2),
+                "average_response_time_ms": round(
+                    self.stats["average_response_time"], 2
+                ),
                 "last_response_time_ms": round(self.stats["last_response_time"], 2),
             },
             "caching": {
@@ -668,7 +740,10 @@ class ServiceNowAPIClient:
                 "cache_hit_rate_percent": round(cache_hit_rate, 2),
                 "cache_ttl_seconds": self.cache_ttl,
             },
-            "instance_info": {"instance_url": self.instance_url, "api_base": self.api_base},
+            "instance_info": {
+                "instance_url": self.instance_url,
+                "api_base": self.api_base,
+            },
         }
 
     def close(self):

@@ -113,7 +113,12 @@ def get_service_port(service_name: str) -> int:
         포트 번호
     """
     # 우선순위: SERVICE_PORTS > FORTIGATE_PORTS > STANDARD_PORTS
-    return SERVICE_PORTS.get(service_name) or FORTIGATE_PORTS.get(service_name) or STANDARD_PORTS.get(service_name) or 0
+    return (
+        SERVICE_PORTS.get(service_name)
+        or FORTIGATE_PORTS.get(service_name)
+        or STANDARD_PORTS.get(service_name)
+        or 0
+    )
 
 
 def get_protocol_ports(protocol_category: str) -> Dict[str, int]:

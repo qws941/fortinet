@@ -426,7 +426,9 @@ class RedisCacheBackend(BaseCacheBackend):
                 stats.update(
                     {
                         "redis_memory_used": info.get("used_memory_human", "Unknown"),
-                        "redis_keys": (info.get("db0", {}).get("keys", 0) if "db0" in info else 0),
+                        "redis_keys": (
+                            info.get("db0", {}).get("keys", 0) if "db0" in info else 0
+                        ),
                     }
                 )
             except Exception:
@@ -596,7 +598,9 @@ class CacheManager:
 
         return success
 
-    def keys(self, pattern: str = "*", backend: CacheBackend = CacheBackend.AUTO) -> List[str]:
+    def keys(
+        self, pattern: str = "*", backend: CacheBackend = CacheBackend.AUTO
+    ) -> List[str]:
         """
         Get keys matching pattern.
 
@@ -685,7 +689,9 @@ class CacheManager:
 
         return decorator
 
-    def _populate_lower_caches(self, key: str, value: Any, source_backend: CacheBackend):
+    def _populate_lower_caches(
+        self, key: str, value: Any, source_backend: CacheBackend
+    ):
         """
         Populate lower-priority caches with value from higher-priority cache.
 
@@ -695,7 +701,10 @@ class CacheManager:
             source_backend: Backend where value was found
         """
         # Only populate memory cache from Redis
-        if source_backend == CacheBackend.REDIS and CacheBackend.MEMORY in self._backends:
+        if (
+            source_backend == CacheBackend.REDIS
+            and CacheBackend.MEMORY in self._backends
+        ):
             self._backends[CacheBackend.MEMORY].set(key, value)
 
 

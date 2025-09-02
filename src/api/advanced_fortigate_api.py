@@ -129,7 +129,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
         login_data = {"username": self.username, "secretkey": self.password}
 
         try:
-            response = self.session.post(login_url, data=login_data, timeout=self.timeout, verify=self.verify_ssl)
+            response = self.session.post(
+                login_url, data=login_data, timeout=self.timeout, verify=self.verify_ssl
+            )
             response.raise_for_status()
             logger.info("Session login successful")
         except Exception as e:
@@ -137,7 +139,12 @@ class AdvancedFortiGateAPI(BaseApiClient):
             raise
 
     async def _make_request(
-        self, method: str, endpoint: str, params: Dict = None, data: Dict = None, timeout: int = None
+        self,
+        method: str,
+        endpoint: str,
+        params: Dict = None,
+        data: Dict = None,
+        timeout: int = None,
     ) -> Dict[str, Any]:
         """
         비동기 API 요청 실행
@@ -162,7 +169,10 @@ class AdvancedFortiGateAPI(BaseApiClient):
             # 동기 요청을 비동기로 실행
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(
-                None, lambda: self.session.request(method, url, params=params, json=data, timeout=request_timeout)
+                None,
+                lambda: self.session.request(
+                    method, url, params=params, json=data, timeout=request_timeout
+                ),
             )
 
             response.raise_for_status()
@@ -174,7 +184,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
             # JSON 응답 파싱
             result = response.json()
 
-            logger.debug(f"API request successful: {method} {endpoint} ({response_time:.3f}s)")
+            logger.debug(
+                f"API request successful: {method} {endpoint} ({response_time:.3f}s)"
+            )
             return result
 
         except requests.exceptions.RequestException as e:
@@ -187,7 +199,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
             raise
         except Exception as e:
             self._update_stats(time.time() - start_time, False)
-            logger.error(f"Unexpected error during API request: {method} {endpoint} - {e}")
+            logger.error(
+                f"Unexpected error during API request: {method} {endpoint} - {e}"
+            )
             raise
 
     def _update_stats(self, response_time: float, success: bool):
@@ -211,7 +225,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
 
     # ===== 방화벽 정책 관리 =====
 
-    async def get_firewall_policies(self, vdom: str = "root", filters: Dict = None) -> List[Dict[str, Any]]:
+    async def get_firewall_policies(
+        self, vdom: str = "root", filters: Dict = None
+    ) -> List[Dict[str, Any]]:
         """
         방화벽 정책 목록 조회 (고급 필터링)
 
@@ -239,7 +255,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
             logger.error(f"Failed to get firewall policies: {e}")
             raise
 
-    async def create_firewall_policy(self, policy_data: Dict[str, Any], vdom: str = "root") -> Dict[str, Any]:
+    async def create_firewall_policy(
+        self, policy_data: Dict[str, Any], vdom: str = "root"
+    ) -> Dict[str, Any]:
         """
         새로운 방화벽 정책 생성
 
@@ -254,14 +272,26 @@ class AdvancedFortiGateAPI(BaseApiClient):
         params = {"vdom": vdom}
 
         # 필수 필드 검증
-        required_fields = ["name", "srcintf", "dstintf", "srcaddr", "dstaddr", "service", "action"]
-        missing_fields = [field for field in required_fields if field not in policy_data]
+        required_fields = [
+            "name",
+            "srcintf",
+            "dstintf",
+            "srcaddr",
+            "dstaddr",
+            "service",
+            "action",
+        ]
+        missing_fields = [
+            field for field in required_fields if field not in policy_data
+        ]
 
         if missing_fields:
             raise ValueError(f"Missing required fields: {missing_fields}")
 
         try:
-            response = await self._make_request("POST", endpoint, params=params, data=policy_data)
+            response = await self._make_request(
+                "POST", endpoint, params=params, data=policy_data
+            )
             logger.info(f"Created firewall policy: {policy_data.get('name')}")
             return response
 
@@ -287,7 +317,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
         params = {"vdom": vdom}
 
         try:
-            response = await self._make_request("PUT", endpoint, params=params, data=policy_data)
+            response = await self._make_request(
+                "PUT", endpoint, params=params, data=policy_data
+            )
             logger.info(f"Updated firewall policy ID {policy_id}")
             return response
 
@@ -295,7 +327,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
             logger.error(f"Failed to update firewall policy {policy_id}: {e}")
             raise
 
-    async def delete_firewall_policy(self, policy_id: int, vdom: str = "root") -> Dict[str, Any]:
+    async def delete_firewall_policy(
+        self, policy_id: int, vdom: str = "root"
+    ) -> Dict[str, Any]:
         """
         방화벽 정책 삭제
 
@@ -352,20 +386,28 @@ class AdvancedFortiGateAPI(BaseApiClient):
             logger.error(f"Failed to get SSL VPN settings: {e}")
             raise
 
-    async def create_ipsec_vpn_tunnel(self, tunnel_data: Dict[str, Any], vdom: str = "root") -> Dict[str, Any]:
+    async def create_ipsec_vpn_tunnel(
+        self, tunnel_data: Dict[str, Any], vdom: str = "root"
+    ) -> Dict[str, Any]:
         """새로운 IPSec VPN 터널 생성"""
         endpoint = "cmdb/vpn.ipsec/phase1-interface"
         params = {"vdom": vdom}
 
         # 필수 필드 검증
         required_fields = ["name", "interface", "remote-gw", "psksecret"]
-        missing_fields = [field for field in required_fields if field not in tunnel_data]
+        missing_fields = [
+            field for field in required_fields if field not in tunnel_data
+        ]
 
         if missing_fields:
-            raise ValueError(f"Missing required fields for VPN tunnel: {missing_fields}")
+            raise ValueError(
+                f"Missing required fields for VPN tunnel: {missing_fields}"
+            )
 
         try:
-            response = await self._make_request("POST", endpoint, params=params, data=tunnel_data)
+            response = await self._make_request(
+                "POST", endpoint, params=params, data=tunnel_data
+            )
             logger.info(f"Created IPSec VPN tunnel: {tunnel_data.get('name')}")
             return response
 
@@ -375,7 +417,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
 
     # ===== NAT 정책 관리 =====
 
-    async def get_nat_policies(self, policy_type: str = "ipv4", vdom: str = "root") -> List[Dict[str, Any]]:
+    async def get_nat_policies(
+        self, policy_type: str = "ipv4", vdom: str = "root"
+    ) -> List[Dict[str, Any]]:
         """
         NAT 정책 목록 조회
 
@@ -395,7 +439,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
 
             # NAT가 활성화된 정책만 필터링
             nat_policies = [
-                policy for policy in policies if policy.get("nat") == "enable" or policy.get("ippool") == "enable"
+                policy
+                for policy in policies
+                if policy.get("nat") == "enable" or policy.get("ippool") == "enable"
             ]
 
             logger.info(f"Retrieved {len(nat_policies)} NAT policies")
@@ -405,16 +451,25 @@ class AdvancedFortiGateAPI(BaseApiClient):
             logger.error(f"Failed to get NAT policies: {e}")
             raise
 
-    async def create_snat_policy(self, policy_data: Dict[str, Any], vdom: str = "root") -> Dict[str, Any]:
+    async def create_snat_policy(
+        self, policy_data: Dict[str, Any], vdom: str = "root"
+    ) -> Dict[str, Any]:
         """Source NAT 정책 생성"""
         # SNAT 설정 추가
-        policy_data.update({"nat": "enable", "ippool": "enable" if policy_data.get("poolname") else "disable"})
+        policy_data.update(
+            {
+                "nat": "enable",
+                "ippool": "enable" if policy_data.get("poolname") else "disable",
+            }
+        )
 
         return await self.create_firewall_policy(policy_data, vdom)
 
     # ===== 보안 프로필 관리 =====
 
-    async def get_security_profiles(self, profile_type: str, vdom: str = "root") -> List[Dict[str, Any]]:
+    async def get_security_profiles(
+        self, profile_type: str, vdom: str = "root"
+    ) -> List[Dict[str, Any]]:
         """
         보안 프로필 목록 조회
 
@@ -485,14 +540,18 @@ class AdvancedFortiGateAPI(BaseApiClient):
                     update_data[profile_mappings[profile_type]] = profile_name
 
             # SSL 검사 활성화 (HTTPS 트래픽 검사를 위해)
-            if any(key in security_profiles for key in ["ips", "antivirus", "webfilter"]):
+            if any(
+                key in security_profiles for key in ["ips", "antivirus", "webfilter"]
+            ):
                 update_data["ssl-ssh-profile"] = "deep-inspection"
 
             # 정책 업데이트
             return await self.update_firewall_policy(policy_id, update_data, vdom)
 
         except Exception as e:
-            logger.error(f"Failed to apply security profiles to policy {policy_id}: {e}")
+            logger.error(
+                f"Failed to apply security profiles to policy {policy_id}: {e}"
+            )
             raise
 
     # ===== 실시간 로그 모니터링 =====
@@ -517,7 +576,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
 
         if filters:
             # 필터 조건을 쿼리 파라미터로 변환
-            filter_str = " and ".join([f"{key}='{value}'" for key, value in filters.items()])
+            filter_str = " and ".join(
+                [f"{key}='{value}'" for key, value in filters.items()]
+            )
             params["filter"] = filter_str
 
         try:
@@ -531,7 +592,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
             logger.error(f"Failed to get {log_type} logs: {e}")
             raise
 
-    async def stream_logs(self, log_type: str = "traffic", callback: callable = None, interval: int = 5) -> None:
+    async def stream_logs(
+        self, log_type: str = "traffic", callback: callable = None, interval: int = 5
+    ) -> None:
         """
         실시간 로그 스트리밍
 
@@ -612,7 +675,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
             response = await self._make_request("GET", endpoint, params=params)
             stats = response.get("results", [] if not interface_name else {})
 
-            logger.info(f"Retrieved interface statistics for {interface_name or 'all interfaces'}")
+            logger.info(
+                f"Retrieved interface statistics for {interface_name or 'all interfaces'}"
+            )
             return stats
 
         except Exception as e:
@@ -621,7 +686,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
 
     # ===== 고급 분석 기능 =====
 
-    async def analyze_traffic_patterns(self, time_range: int = 3600, vdom: str = "root") -> Dict[str, Any]:
+    async def analyze_traffic_patterns(
+        self, time_range: int = 3600, vdom: str = "root"
+    ) -> Dict[str, Any]:
         """
         트래픽 패턴 분석
 
@@ -656,19 +723,27 @@ class AdvancedFortiGateAPI(BaseApiClient):
             for log in logs:
                 # Source IP 통계
                 src_ip = log.get("srcip", "unknown")
-                analysis["top_sources"][src_ip] = analysis["top_sources"].get(src_ip, 0) + 1
+                analysis["top_sources"][src_ip] = (
+                    analysis["top_sources"].get(src_ip, 0) + 1
+                )
 
                 # Destination IP 통계
                 dst_ip = log.get("dstip", "unknown")
-                analysis["top_destinations"][dst_ip] = analysis["top_destinations"].get(dst_ip, 0) + 1
+                analysis["top_destinations"][dst_ip] = (
+                    analysis["top_destinations"].get(dst_ip, 0) + 1
+                )
 
                 # Application 통계
                 app = log.get("app", "unknown")
-                analysis["top_applications"][app] = analysis["top_applications"].get(app, 0) + 1
+                analysis["top_applications"][app] = (
+                    analysis["top_applications"].get(app, 0) + 1
+                )
 
                 # Protocol 통계
                 proto = log.get("proto", "unknown")
-                analysis["protocol_distribution"][proto] = analysis["protocol_distribution"].get(proto, 0) + 1
+                analysis["protocol_distribution"][proto] = (
+                    analysis["protocol_distribution"].get(proto, 0) + 1
+                )
 
                 # Action 통계
                 action = log.get("action", "unknown")
@@ -678,10 +753,19 @@ class AdvancedFortiGateAPI(BaseApiClient):
                     analysis["allowed_sessions"] += 1
 
             # Top 10으로 제한
-            for key in ["top_sources", "top_destinations", "top_applications", "protocol_distribution"]:
-                analysis[key] = dict(sorted(analysis[key].items(), key=lambda x: x[1], reverse=True)[:10])
+            for key in [
+                "top_sources",
+                "top_destinations",
+                "top_applications",
+                "protocol_distribution",
+            ]:
+                analysis[key] = dict(
+                    sorted(analysis[key].items(), key=lambda x: x[1], reverse=True)[:10]
+                )
 
-            logger.info(f"Analyzed {len(logs)} traffic sessions over {time_range} seconds")
+            logger.info(
+                f"Analyzed {len(logs)} traffic sessions over {time_range} seconds"
+            )
             return analysis
 
         except Exception as e:
@@ -730,9 +814,13 @@ class AdvancedFortiGateAPI(BaseApiClient):
                     threats.append(threat)
 
             # 심각도별로 정렬
-            threats.sort(key=lambda x: severity_levels.get(x["severity"], 1), reverse=True)
+            threats.sort(
+                key=lambda x: severity_levels.get(x["severity"], 1), reverse=True
+            )
 
-            logger.info(f"Detected {len(threats)} security threats above {severity_threshold} level")
+            logger.info(
+                f"Detected {len(threats)} security threats above {severity_threshold} level"
+            )
             return threats
 
         except Exception as e:
@@ -746,7 +834,9 @@ class AdvancedFortiGateAPI(BaseApiClient):
         stats = self.api_stats.copy()
 
         if stats["total_requests"] > 0:
-            stats["success_rate"] = (stats["successful_requests"] / stats["total_requests"]) * 100
+            stats["success_rate"] = (
+                stats["successful_requests"] / stats["total_requests"]
+            ) * 100
         else:
             stats["success_rate"] = 0
 
@@ -777,7 +867,11 @@ class AdvancedFortiGateAPI(BaseApiClient):
 
         except Exception as e:
             logger.error(f"Connection test failed: {e}")
-            return {"status": "failed", "error": str(e), "api_statistics": self.get_api_statistics()}
+            return {
+                "status": "failed",
+                "error": str(e),
+                "api_statistics": self.get_api_statistics(),
+            }
 
     def close(self):
         """API 클라이언트 정리"""

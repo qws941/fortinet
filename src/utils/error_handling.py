@@ -17,16 +17,11 @@ from typing import Any, Callable, Dict
 
 from flask import jsonify
 
-from utils.common_imports import (
-    DEFAULT_RETRY_COUNT,
-    DEFAULT_TIMEOUT,
-    FortiGateAPIException,
-    FortiManagerAPIException,
-    NetworkException,
-    ValidationException,
-    get_current_timestamp,
-    setup_module_logger,
-)
+from utils.common_imports import (DEFAULT_RETRY_COUNT, DEFAULT_TIMEOUT,
+                                  FortiGateAPIException,
+                                  FortiManagerAPIException, NetworkException,
+                                  ValidationException, get_current_timestamp,
+                                  setup_module_logger)
 
 logger = setup_module_logger(__name__)
 
@@ -57,7 +52,12 @@ class RateLimitException(Exception):
 
 
 # Error handling decorators
-def handle_api_errors(default_return=None, log_errors=True, reraise_on_critical=True, timeout_seconds=DEFAULT_TIMEOUT):
+def handle_api_errors(
+    default_return=None,
+    log_errors=True,
+    reraise_on_critical=True,
+    timeout_seconds=DEFAULT_TIMEOUT,
+):
     """
     API 오류를 처리하는 데코레이터
 
@@ -80,7 +80,9 @@ def handle_api_errors(default_return=None, log_errors=True, reraise_on_critical=
                 execution_time = time.time() - start_time
                 if execution_time > timeout_seconds:
                     if log_errors:
-                        logger.warning(f"{func.__name__} took {execution_time:.2f}s (timeout: {timeout_seconds}s)")
+                        logger.warning(
+                            f"{func.__name__} took {execution_time:.2f}s (timeout: {timeout_seconds}s)"
+                        )
 
                 return result
 
@@ -112,7 +114,9 @@ def handle_api_errors(default_return=None, log_errors=True, reraise_on_critical=
             except Exception as e:
                 execution_time = time.time() - start_time
                 if log_errors:
-                    logger.error(f"Unexpected error in {func.__name__} after {execution_time:.2f}s: {str(e)}")
+                    logger.error(
+                        f"Unexpected error in {func.__name__} after {execution_time:.2f}s: {str(e)}"
+                    )
                 if reraise_on_critical:
                     raise
                 return default_return
@@ -157,11 +161,15 @@ def retry_on_failure(
                         time.sleep(delay)
                         delay *= backoff_multiplier
                     else:
-                        logger.error(f"{func.__name__} failed after {max_retries + 1} attempts: {str(e)}")
+                        logger.error(
+                            f"{func.__name__} failed after {max_retries + 1} attempts: {str(e)}"
+                        )
                         raise
                 except Exception as e:
                     # Don't retry on unexpected exceptions
-                    logger.error(f"{func.__name__} failed with unexpected error: {str(e)}")
+                    logger.error(
+                        f"{func.__name__} failed with unexpected error: {str(e)}"
+                    )
                     raise
 
             # This should never be reached, but just in case
@@ -174,7 +182,9 @@ def retry_on_failure(
 
 
 # Flask error handlers
-def create_error_response(error: Exception, status_code: int = 500, include_details: bool = False) -> tuple:
+def create_error_response(
+    error: Exception, status_code: int = 500, include_details: bool = False
+) -> tuple:
     """
     표준화된 Flask 오류 응답 생성
 
@@ -242,7 +252,9 @@ class ErrorContext:
     오류 처리 컨텍스트 매니저
     """
 
-    def __init__(self, operation_name: str, default_return=None, log_errors=True, reraise=False):
+    def __init__(
+        self, operation_name: str, default_return=None, log_errors=True, reraise=False
+    ):
         self.operation_name = operation_name
         self.default_return = default_return
         self.log_errors = log_errors
@@ -263,7 +275,8 @@ class ErrorContext:
 
         if self.log_errors:
             logger.error(
-                f"Error in {self.operation_name} after {execution_time:.2f}s: " f"{exc_type.__name__}: {str(exc_val)}"
+                f"Error in {self.operation_name} after {execution_time:.2f}s: "
+                f"{exc_type.__name__}: {str(exc_val)}"
             )
 
         if self.reraise:

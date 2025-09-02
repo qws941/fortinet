@@ -13,7 +13,8 @@ from api.clients.fortimanager_api_client import FortiManagerAPIClient
 
 from .compliance_checker import ComplianceChecker, ComplianceCheckResult
 from .compliance_reports import ComplianceReportGenerator
-from .compliance_rules import ComplianceRule, ComplianceRuleManager, ComplianceSeverity, ComplianceStatus
+from .compliance_rules import (ComplianceRule, ComplianceRuleManager,
+                               ComplianceSeverity, ComplianceStatus)
 
 logger = logging.getLogger(__name__)
 
@@ -54,10 +55,14 @@ class ComplianceAutomationFramework:
 
         # Generate comprehensive report
         if "results" in check_results:
-            report = self.report_generator.generate_compliance_report(check_results["results"])
+            report = self.report_generator.generate_compliance_report(
+                check_results["results"]
+            )
 
             # Auto-remediate if enabled
-            auto_remediation_results = await self._auto_remediate(check_results["results"], adom)
+            auto_remediation_results = await self._auto_remediate(
+                check_results["results"], adom
+            )
             if auto_remediation_results:
                 report["auto_remediation"] = auto_remediation_results
 
@@ -65,7 +70,9 @@ class ComplianceAutomationFramework:
 
         return check_results
 
-    async def remediate_issues(self, issue_ids: List[str], adom: str = "root") -> Dict[str, Any]:
+    async def remediate_issues(
+        self, issue_ids: List[str], adom: str = "root"
+    ) -> Dict[str, Any]:
         """Manually remediate specific compliance issues"""
 
         results = {
@@ -78,7 +85,11 @@ class ComplianceAutomationFramework:
         for issue_id in issue_ids:
             # Find the issue in check results
             issue = next(
-                (r for r in self.check_results if f"{r.rule_id}-{r.device}" == issue_id),
+                (
+                    r
+                    for r in self.check_results
+                    if f"{r.rule_id}-{r.device}" == issue_id
+                ),
                 None,
             )
 
@@ -108,7 +119,9 @@ class ComplianceAutomationFramework:
 
             # Apply remediation
             try:
-                remediation_result = await self._apply_remediation(issue.device, rule, issue, adom)
+                remediation_result = await self._apply_remediation(
+                    issue.device, rule, issue, adom
+                )
 
                 if remediation_result["success"]:
                     results["successful"] += 1
@@ -119,7 +132,9 @@ class ComplianceAutomationFramework:
 
             except Exception as e:
                 results["failed"] += 1
-                results["details"].append({"issue_id": issue_id, "success": False, "error": str(e)})
+                results["details"].append(
+                    {"issue_id": issue_id, "success": False, "error": str(e)}
+                )
 
         return results
 
@@ -138,7 +153,9 @@ class ComplianceAutomationFramework:
 
         return self.report_generator.generate_compliance_report(self.check_results)
 
-    async def _auto_remediate(self, check_results: List[ComplianceCheckResult], adom: str) -> Dict[str, Any]:
+    async def _auto_remediate(
+        self, check_results: List[ComplianceCheckResult], adom: str
+    ) -> Dict[str, Any]:
         """Automatically remediate issues where auto-remediation is enabled"""
 
         auto_remediable = []
@@ -245,7 +262,9 @@ class ComplianceAutomationFramework:
 
         try:
             # This would require careful implementation to avoid breaking connectivity
-            self.logger.warning(f"Any-any policy remediation requires manual review for {device}")
+            self.logger.warning(
+                f"Any-any policy remediation requires manual review for {device}"
+            )
             return {
                 "success": False,
                 "error": "Automatic remediation of any-any policies requires manual review",
@@ -266,7 +285,9 @@ class ComplianceAutomationFramework:
         try:
             # Force password change for accounts with default passwords
             # This is a simplified example
-            self.logger.info(f"Initiating password reset for default accounts on {device}")
+            self.logger.info(
+                f"Initiating password reset for default accounts on {device}"
+            )
             return {
                 "success": True,
                 "message": "Password reset initiated for default accounts",
@@ -287,7 +308,9 @@ class ComplianceAutomationFramework:
         try:
             # Enable audit logging
             config_data = {"audit": "enable"}
-            response = await self.api_client.update_system_config(device, "log", config_data, adom)
+            response = await self.api_client.update_system_config(
+                device, "log", config_data, adom
+            )
 
             if response.get("success"):
                 return {

@@ -8,7 +8,6 @@ from flask import Blueprint, jsonify, request
 
 from fortimanager.advanced_hub import FortiManagerAdvancedHub
 from utils.api_utils import get_api_manager
-
 # Note: Test mode functionality removed for production stability
 from utils.security import rate_limit
 from utils.unified_cache_manager import cached
@@ -51,7 +50,9 @@ async def check_compliance():
 
         if is_test_mode():
             dummy_generator = get_dummy_generator()
-            compliance_results = dummy_generator.generate_compliance_check(devices, frameworks)
+            compliance_results = dummy_generator.generate_compliance_check(
+                devices, frameworks
+            )
             return jsonify(
                 {
                     "compliance_check": compliance_results,
@@ -118,7 +119,9 @@ async def remediate_violations():
 
         if is_test_mode():
             dummy_generator = get_dummy_generator()
-            remediation_results = dummy_generator.generate_remediation_results(violations)
+            remediation_results = dummy_generator.generate_remediation_results(
+                violations
+            )
             return jsonify(
                 {
                     "remediation": remediation_results,
@@ -187,7 +190,9 @@ def get_policy_templates():
         # FortiManager 고급 허브 사용
         hub = FortiManagerAdvancedHub(fm_client)
 
-        templates = hub.policy_orchestrator.get_available_templates(category=category, framework=framework)
+        templates = hub.policy_orchestrator.get_available_templates(
+            category=category, framework=framework
+        )
 
         return jsonify(
             {
@@ -284,7 +289,9 @@ def get_compliance_reports():
 
         if is_test_mode():
             dummy_generator = get_dummy_generator()
-            reports = dummy_generator.generate_compliance_reports(devices, frameworks, date_range)
+            reports = dummy_generator.generate_compliance_reports(
+                devices, frameworks, date_range
+            )
             return jsonify(
                 {
                     "reports": reports,
@@ -374,7 +381,9 @@ def create_scheduled_check():
 
         if not name or not devices or not frameworks or not schedule:
             return (
-                jsonify({"error": "Name, devices, frameworks, and schedule are required"}),
+                jsonify(
+                    {"error": "Name, devices, frameworks, and schedule are required"}
+                ),
                 400,
             )
 

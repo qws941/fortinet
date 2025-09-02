@@ -12,7 +12,6 @@ Automated code cleanup and optimization tools
 """
 
 import ast
-
 # Use basic logging since we might not have unified_logger available
 import logging
 import os
@@ -131,7 +130,11 @@ class DeadCodeDetector(ast.NodeVisitor):
 
         except Exception as e:
             logger.warning(f"Failed to analyze {file_path}: {e}")
-            return {"unused_functions": [], "unused_classes": [], "unreachable_code": []}
+            return {
+                "unused_functions": [],
+                "unused_classes": [],
+                "unreachable_code": [],
+            }
 
 
 class DuplicateCodeDetector:
@@ -175,7 +178,13 @@ class DuplicateCodeDetector:
         # Find duplicates
         for block, locations in self.code_blocks.items():
             if len(locations) > 1:
-                duplicates.append({"block_hash": hash(block), "locations": locations, "lines": self.min_lines})
+                duplicates.append(
+                    {
+                        "block_hash": hash(block),
+                        "locations": locations,
+                        "lines": self.min_lines,
+                    }
+                )
 
         return {"duplicates": duplicates}
 
@@ -213,7 +222,9 @@ class CodeMetricsCollector:
             self.metrics["total_lines"] += len(lines)
 
             if len(lines) > 500:
-                self.metrics["files_over_500_lines"].append({"file": file_path, "lines": len(lines)})
+                self.metrics["files_over_500_lines"].append(
+                    {"file": file_path, "lines": len(lines)}
+                )
 
             tree = ast.parse(content)
             visitor = self._MetricsVisitor(file_path)
@@ -245,13 +256,23 @@ class CodeMetricsCollector:
                 length = node.end_lineno - node.lineno
                 if length > 50:
                     self.long_functions.append(
-                        {"file": self.file_path, "function": node.name, "lines": length, "start_line": node.lineno}
+                        {
+                            "file": self.file_path,
+                            "function": node.name,
+                            "lines": length,
+                            "start_line": node.lineno,
+                        }
                     )
 
             # Check for docstring
             if not ast.get_docstring(node):
                 self.missing_docstrings.append(
-                    {"file": self.file_path, "type": "function", "name": node.name, "line": node.lineno}
+                    {
+                        "file": self.file_path,
+                        "type": "function",
+                        "name": node.name,
+                        "line": node.lineno,
+                    }
                 )
 
             self.generic_visit(node)
@@ -262,7 +283,12 @@ class CodeMetricsCollector:
             # Check for docstring
             if not ast.get_docstring(node):
                 self.missing_docstrings.append(
-                    {"file": self.file_path, "type": "class", "name": node.name, "line": node.lineno}
+                    {
+                        "file": self.file_path,
+                        "type": "class",
+                        "name": node.name,
+                        "line": node.lineno,
+                    }
                 )
 
             self.generic_visit(node)
@@ -280,9 +306,17 @@ class CodeCleanupOrchestrator:
 
     def run_full_cleanup_analysis(self) -> Dict[str, Any]:
         """전체 코드 정리 분석 실행"""
-        logger.info(f"Starting comprehensive code cleanup analysis for {self.source_dir}")
+        logger.info(
+            f"Starting comprehensive code cleanup analysis for {self.source_dir}"
+        )
 
-        results = {"unused_imports": {}, "dead_code": {}, "duplicates": {}, "metrics": {}, "recommendations": []}
+        results = {
+            "unused_imports": {},
+            "dead_code": {},
+            "duplicates": {},
+            "metrics": {},
+            "recommendations": [],
+        }
 
         # Analyze each Python file for unused imports and dead code
         for py_file in Path(self.source_dir).rglob("*.py"):
@@ -302,7 +336,9 @@ class CodeCleanupOrchestrator:
                 results["dead_code"][file_path] = dead_code
 
         # Analyze duplicates across all files
-        results["duplicates"] = self.duplicate_detector.analyze_directory(self.source_dir)
+        results["duplicates"] = self.duplicate_detector.analyze_directory(
+            self.source_dir
+        )
 
         # Collect metrics
         results["metrics"] = self.metrics_collector.analyze_directory(self.source_dir)
@@ -327,7 +363,9 @@ class CodeCleanupOrchestrator:
         # Dead code recommendations
         dead_code_files = len(results.get("dead_code", {}))
         if dead_code_files > 0:
-            recommendations.append(f"Review {dead_code_files} files with potentially unused functions/classes")
+            recommendations.append(
+                f"Review {dead_code_files} files with potentially unused functions/classes"
+            )
 
         # Duplicate code recommendations
         duplicates_count = len(results.get("duplicates", {}).get("duplicates", []))
@@ -339,7 +377,9 @@ class CodeCleanupOrchestrator:
         # Unused imports recommendations
         unused_imports_files = len(results.get("unused_imports", {}))
         if unused_imports_files > 0:
-            recommendations.append(f"Remove unused imports from {unused_imports_files} files to improve load time")
+            recommendations.append(
+                f"Remove unused imports from {unused_imports_files} files to improve load time"
+            )
 
         return recommendations
 
@@ -401,7 +441,9 @@ def generate_cleanup_report(results: Dict[str, Any]) -> str:
                 "-" * 30,
             ]
         )
-        for file_info in sorted(large_files, key=lambda x: x["lines"], reverse=True)[:10]:
+        for file_info in sorted(large_files, key=lambda x: x["lines"], reverse=True)[
+            :10
+        ]:
             report_lines.append(f"  • {file_info['file']}: {file_info['lines']} lines")
         report_lines.append("")
 
@@ -423,7 +465,9 @@ if __name__ == "__main__":
     try:
         orchestrator = CodeCleanupOrchestrator("src")
         if not hasattr(orchestrator, "source_dir"):
-            all_validation_failures.append("Basic initialization: orchestrator missing source_dir attribute")
+            all_validation_failures.append(
+                "Basic initialization: orchestrator missing source_dir attribute"
+            )
     except Exception as e:
         all_validation_failures.append(f"Basic initialization: Exception raised: {e}")
 
@@ -434,28 +478,45 @@ if __name__ == "__main__":
         expected_attrs = ["imports", "used_names", "string_content"]
         missing = [attr for attr in expected_attrs if not hasattr(detector, attr)]
         if missing:
-            all_validation_failures.append(f"UnusedImportDetector: Missing attributes {missing}")
+            all_validation_failures.append(
+                f"UnusedImportDetector: Missing attributes {missing}"
+            )
     except Exception as e:
-        all_validation_failures.append(f"UnusedImportDetector initialization: Exception raised: {e}")
+        all_validation_failures.append(
+            f"UnusedImportDetector initialization: Exception raised: {e}"
+        )
 
     # Test 3: DeadCodeDetector initialization
     total_tests += 1
     try:
         detector = DeadCodeDetector()
-        expected_attrs = ["defined_functions", "called_functions", "defined_classes", "used_classes"]
+        expected_attrs = [
+            "defined_functions",
+            "called_functions",
+            "defined_classes",
+            "used_classes",
+        ]
         missing = [attr for attr in expected_attrs if not hasattr(detector, attr)]
         if missing:
-            all_validation_failures.append(f"DeadCodeDetector: Missing attributes {missing}")
+            all_validation_failures.append(
+                f"DeadCodeDetector: Missing attributes {missing}"
+            )
     except Exception as e:
-        all_validation_failures.append(f"DeadCodeDetector initialization: Exception raised: {e}")
+        all_validation_failures.append(
+            f"DeadCodeDetector initialization: Exception raised: {e}"
+        )
 
     # Final validation result
     if all_validation_failures:
-        print(f"❌ VALIDATION FAILED - {len(all_validation_failures)} of {total_tests} tests failed:")
+        print(
+            f"❌ VALIDATION FAILED - {len(all_validation_failures)} of {total_tests} tests failed:"
+        )
         for failure in all_validation_failures:
             print(f"  - {failure}")
         sys.exit(1)
     else:
-        print(f"✅ VALIDATION PASSED - All {total_tests} tests produced expected results")
+        print(
+            f"✅ VALIDATION PASSED - All {total_tests} tests produced expected results"
+        )
         print("Code cleanup utilities are validated and ready for use")
         sys.exit(0)

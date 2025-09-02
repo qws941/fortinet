@@ -27,7 +27,9 @@ def get_recent_logs():
                     "id": i + 1,
                     "timestamp": time.time() - (i * 60),
                     "level": random.choice(["info", "warning", "error", "debug"]),
-                    "source": random.choice(["system", "application", "security", "network"]),
+                    "source": random.choice(
+                        ["system", "application", "security", "network"]
+                    ),
                     "message": f"Log entry {i + 1}: System event occurred",
                     "details": {
                         "pid": random.randint(1000, 9999),

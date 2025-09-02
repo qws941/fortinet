@@ -113,7 +113,9 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
         """Make request with retry logic"""
         for attempt in range(retries):
             try:
-                return self._make_request(method, url, None, None, headers or self.headers)
+                return self._make_request(
+                    method, url, None, None, headers or self.headers
+                )
             except Exception as e:
                 if attempt == retries - 1:
                     return False, str(e), 500
@@ -200,7 +202,9 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
                 self.set_cached_data(cache_key, routes, ttl=120)  # 2분 캐시
                 return routes
             else:
-                self.handle_api_error(Exception(f"HTTP {status_code}: {result}"), "get_routes")
+                self.handle_api_error(
+                    Exception(f"HTTP {status_code}: {result}"), "get_routes"
+                )
                 return []
 
         except Exception as e:
@@ -267,7 +271,9 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
         if success:
             return result.get("results", [])
         else:
-            self.logger.error(f"Failed to get address objects: {status_code} - {result}")
+            self.logger.error(
+                f"Failed to get address objects: {status_code} - {result}"
+            )
             return []
 
     def get_service_groups(self):
@@ -351,7 +357,9 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
         if success:
             return result.get("results", {})
         else:
-            self.logger.error(f"Failed to get system performance: {status_code} - {result}")
+            self.logger.error(
+                f"Failed to get system performance: {status_code} - {result}"
+            )
             return None
 
     def get_interface_stats(self):
@@ -372,7 +380,9 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
         if success:
             return result.get("results", [])
         else:
-            self.logger.error(f"Failed to get interface stats: {status_code} - {result}")
+            self.logger.error(
+                f"Failed to get interface stats: {status_code} - {result}"
+            )
             return []
 
     def get_sessions(self):
@@ -491,7 +501,8 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
         """Initialize AI components for advanced analysis"""
         try:
             # Import AI modules conditionally
-            from fortimanager.ai_policy_orchestrator import AIPolicyOrchestrator
+            from fortimanager.ai_policy_orchestrator import \
+                AIPolicyOrchestrator
             from security.ai_threat_detector import AIThreatDetector
 
             self.ai_policy_analyzer = AIPolicyOrchestrator(self)
@@ -502,7 +513,9 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
             self.logger.warning(f"AI components not available: {e}")
             self.ai_enabled = False
 
-    def _enhance_policies_with_ai(self, policies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _enhance_policies_with_ai(
+        self, policies: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Enhance policies with AI analysis"""
         if not policies or not hasattr(self, "ai_policy_analyzer"):
             return policies
@@ -525,7 +538,9 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
             self.logger.error(f"AI policy enhancement failed: {e}")
             return policies
 
-    def _get_policy_recommendations(self, policy: Dict[str, Any], patterns: List[Dict]) -> List[str]:
+    def _get_policy_recommendations(
+        self, policy: Dict[str, Any], patterns: List[Dict]
+    ) -> List[str]:
         """Generate recommendations for a specific policy"""
         recommendations = []
         policy_id = policy.get("policyid")
@@ -571,11 +586,15 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
     def _remediate_system_status(self):
         """Remediate system status fetch issues"""
         # Try alternative endpoint
-        success, result, _ = self._make_request("GET", f"{self.base_url}/cmdb/system/status", None, None, self.headers)
+        success, result, _ = self._make_request(
+            "GET", f"{self.base_url}/cmdb/system/status", None, None, self.headers
+        )
         if success:
             self.logger.info("Successfully fetched status from alternative endpoint")
 
-    async def analyze_traffic_patterns(self, duration_minutes: int = 5) -> Dict[str, Any]:
+    async def analyze_traffic_patterns(
+        self, duration_minutes: int = 5
+    ) -> Dict[str, Any]:
         """Analyze traffic patterns using AI"""
         if not self.ai_enabled or not hasattr(self, "ai_threat_detector"):
             return {"error": "AI features not enabled"}
@@ -587,7 +606,9 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
                 return {"error": "No sessions available for analysis"}
 
             # Convert sessions to packet format for AI analysis
-            packets = self._sessions_to_packets(sessions[:1000])  # Limit to 1000 sessions
+            packets = self._sessions_to_packets(
+                sessions[:1000]
+            )  # Limit to 1000 sessions
 
             # Run AI analysis
             analysis = await self.ai_threat_detector.analyze_traffic(packets)
@@ -603,7 +624,9 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
             self.logger.error(f"Traffic analysis failed: {e}")
             return {"error": str(e)}
 
-    def _sessions_to_packets(self, sessions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _sessions_to_packets(
+        self, sessions: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Convert FortiGate sessions to packet format for AI analysis"""
         packets = []
 
@@ -649,7 +672,10 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
             "cache_hits": self._request_stats["cache_hits"],
             "cache_misses": self._request_stats["cache_misses"],
             "cache_hit_rate": self._request_stats["cache_hits"]
-            / max(self._request_stats["cache_hits"] + self._request_stats["cache_misses"], 1),
+            / max(
+                self._request_stats["cache_hits"] + self._request_stats["cache_misses"],
+                1,
+            ),
             "success_rate": self._request_stats["successful_requests"] / total_requests,
             "error_stats": dict(self._error_stats),
             "ai_enabled": self.ai_enabled,
@@ -720,7 +746,9 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
                 del self.active_captures[capture_id]
             return result.get("results", {})
         else:
-            self.logger.error(f"Failed to stop packet capture: {status_code} - {result}")
+            self.logger.error(
+                f"Failed to stop packet capture: {status_code} - {result}"
+            )
             return None
 
     def get_packet_capture_status(self, capture_id):
@@ -744,7 +772,9 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
         if success:
             return result.get("results", {})
         else:
-            self.logger.error(f"Failed to get packet capture status: {status_code} - {result}")
+            self.logger.error(
+                f"Failed to get packet capture status: {status_code} - {result}"
+            )
             return None
 
     def download_packet_capture(self, capture_id):
@@ -769,5 +799,7 @@ class FortiGateAPIClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestM
             # Return raw data for pcap file
             return result
         else:
-            self.logger.error(f"Failed to download packet capture: {status_code} - {result}")
+            self.logger.error(
+                f"Failed to download packet capture: {status_code} - {result}"
+            )
             return None

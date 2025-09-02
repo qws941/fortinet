@@ -158,9 +158,9 @@ def check_ci_cd_readiness():
     print("\n🚀 Checking CI/CD Pipeline Readiness...")
     
     readiness_checks = {
-        'pytest_config': os.path.exists('pytest.ini'),
+        'pytest_config': os.path.exists('config/pytest.ini'),
         'requirements': os.path.exists('requirements.txt'),
-        'pyproject_toml': os.path.exists('pyproject.toml'),
+        'pyproject_toml': os.path.exists('config/pyproject.toml'),
         'github_workflows': os.path.exists('.github/workflows'),
         'docker_files': os.path.exists('Dockerfile.production'),
         'helm_charts': os.path.exists('charts/fortinet'),

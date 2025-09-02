@@ -157,7 +157,9 @@ class RealtimeAlertSystem:
         # 심각도별 통계
         for severity in AlertSeverity:
             stats["by_severity"][severity.value] = sum(
-                1 for a in self.active_alerts.values() if a["severity"] == severity.value
+                1
+                for a in self.active_alerts.values()
+                if a["severity"] == severity.value
             )
 
         # 유형별 통계
@@ -167,12 +169,16 @@ class RealtimeAlertSystem:
             )
 
         # 확인된 알림
-        stats["acknowledged"] = sum(1 for a in self.active_alerts.values() if a["acknowledged"])
+        stats["acknowledged"] = sum(
+            1 for a in self.active_alerts.values() if a["acknowledged"]
+        )
 
         # 최근 24시간 알림
         cutoff = datetime.now().timestamp() - 86400
         stats["recent_24h"] = sum(
-            1 for a in self.alert_history if datetime.fromisoformat(a["timestamp"]).timestamp() > cutoff
+            1
+            for a in self.alert_history
+            if datetime.fromisoformat(a["timestamp"]).timestamp() > cutoff
         )
 
         return stats
@@ -220,8 +226,13 @@ class RealtimeAlertSystem:
         """안전한 조건 평가 - eval() 대신 사용"""
         try:
             # 기본적인 안전성 검증
-            if any(dangerous in lambda_str for dangerous in ["import", "__", "exec", "eval", "open", "file"]):
-                logger.warning(f"Potentially dangerous lambda expression blocked: {lambda_str}")
+            if any(
+                dangerous in lambda_str
+                for dangerous in ["import", "__", "exec", "eval", "open", "file"]
+            ):
+                logger.warning(
+                    f"Potentially dangerous lambda expression blocked: {lambda_str}"
+                )
                 return False
 
             # 간단한 조건식만 허용 (예: "x > 10", "len(x) < 5")
@@ -283,7 +294,9 @@ class RealtimeAlertSystem:
         metric_value = metrics.get(metric_name, "N/A")
         threshold = rule.get("threshold", "N/A")
 
-        return template.format(metric=metric_name, value=metric_value, threshold=threshold)
+        return template.format(
+            metric=metric_name, value=metric_value, threshold=threshold
+        )
 
     def _process_alert(self, alert: Dict):
         """알림 처리"""

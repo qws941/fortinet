@@ -41,7 +41,9 @@ class PortScannerMixin:
                     open_ports.append(port_info)
 
                     # 허용된 포트 목록과 비교
-                    if hasattr(self, "security_baselines") and conn.laddr.port not in self.security_baselines.get(
+                    if hasattr(
+                        self, "security_baselines"
+                    ) and conn.laddr.port not in self.security_baselines.get(
                         "open_ports", []
                     ):
                         suspicious_ports.append(port_info)
@@ -119,7 +121,9 @@ class PortScannerMixin:
                 "timestamp": datetime.now().isoformat(),
             }
 
-    def scan_port_range(self, start_port: int, end_port: int, host: str = "localhost") -> Dict:
+    def scan_port_range(
+        self, start_port: int, end_port: int, host: str = "localhost"
+    ) -> Dict:
         """포트 범위 스캔"""
         logger.info(f"포트 범위 스캔 시작: {start_port}-{end_port} @ {host}")
 

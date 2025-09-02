@@ -13,7 +13,9 @@ from typing import Dict, Optional
 # 기본 디렉토리 설정 - 단일 BASE_DIR 사용
 # 프로덕션 환경에서는 컨테이너 경로 사용, 개발 환경에서는 프로젝트 루트 사용
 BASE_DIR = (
-    "/app" if os.path.exists("/app") else os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    "/app"
+    if os.path.exists("/app")
+    else os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
 # 환경변수로 오버라이드 가능
@@ -93,7 +95,9 @@ DEPLOYMENT_PATHS: Dict[str, str] = {
     "pipeline_log": os.path.join(TEMP_PATHS["base"], "pipeline_monitor.log"),
     "deploy_script": os.path.join(BASE_DIR, "deploy.sh"),
     "docker_socket": os.getenv("DOCKER_SOCKET", "/var/run/docker.sock"),
-    "pid_file": os.path.join(os.getenv("RUN_PATH", "/var/run"), "fortigate-nextrade.pid"),
+    "pid_file": os.path.join(
+        os.getenv("RUN_PATH", "/var/run"), "fortigate-nextrade.pid"
+    ),
 }
 
 # 서비스별 로그 경로

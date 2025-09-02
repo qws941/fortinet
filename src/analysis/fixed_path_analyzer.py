@@ -318,7 +318,9 @@ class FixedPathAnalyzer:
                 "policy_description": policy["description"],
                 "analysis_time": datetime.now().isoformat(),
             },
-            "recommendations": self.generate_recommendations(src_ip, dst_ip, port, allowed, policy),
+            "recommendations": self.generate_recommendations(
+                src_ip, dst_ip, port, allowed, policy
+            ),
         }
 
         return result
@@ -343,7 +345,11 @@ class FixedPathAnalyzer:
             src_zone = self.get_zone_for_ip(src_ip)
             dst_zone = self.get_zone_for_ip(dst_ip)
             for pol_id, pol in self.firewall_policies.items():
-                if pol["source_zone"] == src_zone and pol["dest_zone"] == dst_zone and pol["action"] == "allow":
+                if (
+                    pol["source_zone"] == src_zone
+                    and pol["dest_zone"] == dst_zone
+                    and pol["action"] == "allow"
+                ):
                     recommendations.append(
                         {
                             "type": "info",

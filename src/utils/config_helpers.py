@@ -197,7 +197,11 @@ class ConfigManager:
     def _deep_update(self, target: Dict, source: Dict):
         """딕셔너리 깊은 병합"""
         for key, value in source.items():
-            if isinstance(value, dict) and key in target and isinstance(target[key], dict):
+            if (
+                isinstance(value, dict)
+                and key in target
+                and isinstance(target[key], dict)
+            ):
                 self._deep_update(target[key], value)
             else:
                 target[key] = value
@@ -237,7 +241,9 @@ def convert_env_value(value: str) -> Union[str, int, float, bool]:
     return value
 
 
-def validate_config_schema(config: Dict[str, Any], schema: Dict[str, Any]) -> tuple[bool, list]:
+def validate_config_schema(
+    config: Dict[str, Any], schema: Dict[str, Any]
+) -> tuple[bool, list]:
     """설정 스키마 검증"""
     errors = []
 
@@ -253,12 +259,16 @@ def validate_config_schema(config: Dict[str, Any], schema: Dict[str, Any]) -> tu
 
             if isinstance(expected_type, dict):
                 if not isinstance(value, dict):
-                    errors.append(f"Expected dict for {current_path}, got {type(value).__name__}")
+                    errors.append(
+                        f"Expected dict for {current_path}, got {type(value).__name__}"
+                    )
                 else:
                     validate_recursive(value, expected_type, current_path)
             elif isinstance(expected_type, type):
                 if not isinstance(value, expected_type):
-                    errors.append(f"Expected {expected_type.__name__} for {current_path}, got {type(value).__name__}")
+                    errors.append(
+                        f"Expected {expected_type.__name__} for {current_path}, got {type(value).__name__}"
+                    )
 
     validate_recursive(config, schema)
     return len(errors) == 0, errors

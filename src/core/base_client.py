@@ -12,7 +12,8 @@ from urllib3 import disable_warnings
 from urllib3.exceptions import InsecureRequestWarning
 
 # 공통 임포트 사용
-from utils.common_imports import Any, Dict, Enum, Optional, dataclass, requests, setup_module_logger, time
+from utils.common_imports import (Any, Dict, Enum, Optional, dataclass,
+                                  requests, setup_module_logger, time)
 from utils.exception_handlers import NetworkException
 
 from .auth_manager import AuthManager, AuthType
@@ -124,15 +125,21 @@ class UnifiedAPIClient:
         from config.services import API_VERSIONS
 
         if self.client_type == ClientType.FORTIGATE:
-            self.base_url = f"https://{self.host}:{self.port}{API_VERSIONS['fortigate']}"
+            self.base_url = (
+                f"https://{self.host}:{self.port}{API_VERSIONS['fortigate']}"
+            )
             self.auth_endpoint = "/logincheck"
             self.logout_endpoint = "/logout"
         elif self.client_type == ClientType.FORTIMANAGER:
-            self.base_url = f"https://{self.host}:{self.port}{API_VERSIONS['fortimanager']}"
+            self.base_url = (
+                f"https://{self.host}:{self.port}{API_VERSIONS['fortimanager']}"
+            )
             self.auth_endpoint = None  # Uses JSON-RPC for auth
             self.logout_endpoint = None
         elif self.client_type == ClientType.FORTIANALYZER:
-            self.base_url = f"https://{self.host}:{self.port}{API_VERSIONS['fortianalyzer']}"
+            self.base_url = (
+                f"https://{self.host}:{self.port}{API_VERSIONS['fortianalyzer']}"
+            )
             self.auth_endpoint = None
             self.logout_endpoint = None
         elif self.client_type == ClientType.FORTIWEB:
@@ -152,7 +159,9 @@ class UnifiedAPIClient:
         try:
             if self.api_key:
                 auth_type = AuthType.FORTIGATE_API_KEY
-                success, session = self.auth_manager.authenticate(self.host, self.port, auth_type, api_key=self.api_key)
+                success, session = self.auth_manager.authenticate(
+                    self.host, self.port, auth_type, api_key=self.api_key
+                )
             elif self.username and self.password:
                 if self.client_type == ClientType.FORTIMANAGER:
                     auth_type = AuthType.FORTIMANAGER_SESSION
@@ -263,7 +272,9 @@ class UnifiedAPIClient:
             request_headers = self._build_headers(headers)
 
             # Make request with retry logic
-            response = self._make_request_with_retry(method, url, data, params, request_headers)
+            response = self._make_request_with_retry(
+                method, url, data, params, request_headers
+            )
 
             response_time = time.time() - start_time
             self._stats["requests_made"] += 1
@@ -273,7 +284,12 @@ class UnifiedAPIClient:
             api_response = self._parse_response(response, response_time)
 
             # Cache successful GET responses
-            if self.cache_enabled and cache_key and api_response.success and method.upper() == "GET":
+            if (
+                self.cache_enabled
+                and cache_key
+                and api_response.success
+                and method.upper() == "GET"
+            ):
                 ttl = cache_ttl or self.config_manager.app.cache_default_ttl
                 self.cache_manager.set(cache_key, api_response, ttl)
 
@@ -336,7 +352,10 @@ class UnifiedAPIClient:
                 # Check if we need to re-authenticate
                 if response.status_code == 401:
                     if attempt < max_retries:
-                        self.logger.warning(f"Authentication expired, retrying... " f"(attempt {attempt + 1})")
+                        self.logger.warning(
+                            f"Authentication expired, retrying... "
+                            f"(attempt {attempt + 1})"
+                        )
                         if self.authenticate():
                             continue
 
@@ -347,7 +366,10 @@ class UnifiedAPIClient:
                 requests.exceptions.Timeout,
             ) as e:
                 if attempt < max_retries:
-                    self.logger.warning(f"Request failed, retrying in {retry_delay}s... " f"(attempt {attempt + 1})")
+                    self.logger.warning(
+                        f"Request failed, retrying in {retry_delay}s... "
+                        f"(attempt {attempt + 1})"
+                    )
                     time.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
                 else:
@@ -371,7 +393,9 @@ class UnifiedAPIClient:
         endpoint = endpoint.lstrip("/")
         return f"{self.base_url}/{endpoint}"
 
-    def _build_headers(self, additional_headers: Optional[Dict] = None) -> Dict[str, str]:
+    def _build_headers(
+        self, additional_headers: Optional[Dict] = None
+    ) -> Dict[str, str]:
         """
         Build request headers.
 
@@ -398,7 +422,9 @@ class UnifiedAPIClient:
 
         return headers
 
-    def _parse_response(self, response: requests.Response, response_time: float) -> APIResponse:
+    def _parse_response(
+        self, response: requests.Response, response_time: float
+    ) -> APIResponse:
         """
         Parse HTTP response into APIResponse.
 
@@ -416,7 +442,9 @@ class UnifiedAPIClient:
                 try:
                     error_data = response.json()
                     if isinstance(error_data, dict):
-                        error_msg = error_data.get("error", error_data.get("message", error_msg))
+                        error_msg = error_data.get(
+                            "error", error_data.get("message", error_msg)
+                        )
                 except Exception:
                     error_msg = response.text or error_msg
 
@@ -436,7 +464,9 @@ class UnifiedAPIClient:
                 data = response.json()
 
                 # Handle FortiManager JSON-RPC responses
-                if self.client_type == ClientType.FORTIMANAGER and isinstance(data, dict):
+                if self.client_type == ClientType.FORTIMANAGER and isinstance(
+                    data, dict
+                ):
                     if "result" in data:
                         result = data["result"]
                         if isinstance(result, list) and len(result) > 0:
@@ -470,7 +500,9 @@ class UnifiedAPIClient:
                 response_time=response_time,
             )
 
-    def _generate_cache_key(self, method: str, endpoint: str, params: Optional[Dict] = None) -> str:
+    def _generate_cache_key(
+        self, method: str, endpoint: str, params: Optional[Dict] = None
+    ) -> str:
         """
         Generate cache key for request.
 
@@ -505,7 +537,9 @@ class UnifiedAPIClient:
         """
         avg_response_time = 0.0
         if self._stats["requests_made"] > 0:
-            avg_response_time = self._stats["total_response_time"] / self._stats["requests_made"]
+            avg_response_time = (
+                self._stats["total_response_time"] / self._stats["requests_made"]
+            )
 
         cache_hit_rate = 0.0
         total_requests = self._stats["requests_made"] + self._stats["requests_cached"]
@@ -535,7 +569,9 @@ class UnifiedAPIClient:
         if self.cache_enabled:
             cache_pattern = f"{self.client_type.value}:{self.host}:{self.port}:*"
             if pattern != "*":
-                cache_pattern = f"{self.client_type.value}:{self.host}:{self.port}:{pattern}"
+                cache_pattern = (
+                    f"{self.client_type.value}:{self.host}:{self.port}:{pattern}"
+                )
 
             keys = self.cache_manager.keys(cache_pattern)
             for key in keys:
@@ -588,12 +624,16 @@ def create_fortigate_client(host: str, port: int = 443, **kwargs) -> UnifiedAPIC
     return UnifiedAPIClient(ClientType.FORTIGATE, host, port, **kwargs)
 
 
-def create_fortimanager_client(host: str, port: int = 443, **kwargs) -> UnifiedAPIClient:
+def create_fortimanager_client(
+    host: str, port: int = 443, **kwargs
+) -> UnifiedAPIClient:
     """Create FortiManager API client."""
     return UnifiedAPIClient(ClientType.FORTIMANAGER, host, port, **kwargs)
 
 
-def create_fortianalyzer_client(host: str, port: int = 443, **kwargs) -> UnifiedAPIClient:
+def create_fortianalyzer_client(
+    host: str, port: int = 443, **kwargs
+) -> UnifiedAPIClient:
     """Create FortiAnalyzer API client."""
     return UnifiedAPIClient(ClientType.FORTIANALYZER, host, port, **kwargs)
 

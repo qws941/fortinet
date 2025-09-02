@@ -93,7 +93,11 @@ class AnalyticsCalculator:
             return {
                 "direction": direction,
                 "slope": float(slope),
-                "strength": (abs(slope) / (max(values) - min(values)) if max(values) != min(values) else 0),
+                "strength": (
+                    abs(slope) / (max(values) - min(values))
+                    if max(values) != min(values)
+                    else 0
+                ),
             }
 
         return {"direction": "unknown"}
@@ -133,7 +137,9 @@ class AnalyticsCalculator:
 
         return anomalies
 
-    def check_threshold_violations(self, data: List[Dict], metric: AnalyticsMetric) -> List[Dict]:
+    def check_threshold_violations(
+        self, data: List[Dict], metric: AnalyticsMetric
+    ) -> List[Dict]:
         """Check for threshold violations"""
         violations = []
 
@@ -141,12 +147,18 @@ class AnalyticsCalculator:
             value = point.get("value", 0)
             violation = None
 
-            if metric.threshold_critical is not None and value >= metric.threshold_critical:
+            if (
+                metric.threshold_critical is not None
+                and value >= metric.threshold_critical
+            ):
                 violation = {
                     "level": "critical",
                     "threshold": metric.threshold_critical,
                 }
-            elif metric.threshold_warning is not None and value >= metric.threshold_warning:
+            elif (
+                metric.threshold_warning is not None
+                and value >= metric.threshold_warning
+            ):
                 violation = {
                     "level": "warning",
                     "threshold": metric.threshold_warning,
@@ -164,7 +176,9 @@ class AnalyticsCalculator:
 
         return violations
 
-    def aggregate_metric_data(self, data: List[Dict], metric: AnalyticsMetric) -> Dict[str, float]:
+    def aggregate_metric_data(
+        self, data: List[Dict], metric: AnalyticsMetric
+    ) -> Dict[str, float]:
         """Aggregate metric data based on calculation type"""
         values = [d.get("value", 0) for d in data if "value" in d]
 
@@ -207,9 +221,14 @@ class AnalyticsCalculator:
             return sorted_values[lower_index]
 
         weight = index - lower_index
-        return sorted_values[lower_index] * (1 - weight) + sorted_values[upper_index] * weight
+        return (
+            sorted_values[lower_index] * (1 - weight)
+            + sorted_values[upper_index] * weight
+        )
 
-    def _calculate_linear_slope(self, x_values: List[float], y_values: List[float]) -> float:
+    def _calculate_linear_slope(
+        self, x_values: List[float], y_values: List[float]
+    ) -> float:
         """Calculate linear regression slope manually when numpy is not available"""
         if len(x_values) != len(y_values) or len(x_values) < 2:
             return 0.0
@@ -218,7 +237,9 @@ class AnalyticsCalculator:
         x_mean = sum(x_values) / n
         y_mean = sum(y_values) / n
 
-        numerator = sum((x_values[i] - x_mean) * (y_values[i] - y_mean) for i in range(n))
+        numerator = sum(
+            (x_values[i] - x_mean) * (y_values[i] - y_mean) for i in range(n)
+        )
         denominator = sum((x_values[i] - x_mean) ** 2 for i in range(n))
 
         if denominator == 0:

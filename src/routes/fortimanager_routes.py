@@ -8,7 +8,6 @@ the 500-line limit per file. Each functional area is split into separate modules
 from flask import Blueprint, jsonify, request
 
 from config.unified_settings import unified_settings
-
 # Removed test mode dependencies - using production APIs only
 from utils.unified_logger import get_logger
 
@@ -48,7 +47,13 @@ def get_fortimanager_status():
     except Exception as e:
         logger.error(f"FortiManager status check failed: {e}")
         mode = "test" if unified_settings.is_test_mode() else "production"
-        return jsonify({"status": "error", "mode": mode, "message": f"FortiManager API error: {str(e)}"})
+        return jsonify(
+            {
+                "status": "error",
+                "mode": mode,
+                "message": f"FortiManager API error: {str(e)}",
+            }
+        )
 
 
 @fortimanager_bp.route("/policies", methods=["POST"])
@@ -60,9 +65,19 @@ def get_fortimanager_policies():
 
         # Return sample policies for now
         policies = [
-            {"id": 1, "name": "Allow Internal", "action": "accept", "status": "enabled"},
+            {
+                "id": 1,
+                "name": "Allow Internal",
+                "action": "accept",
+                "status": "enabled",
+            },
             {"id": 2, "name": "Block External", "action": "deny", "status": "enabled"},
-            {"id": 3, "name": "Guest Network", "action": "accept", "status": "disabled"},
+            {
+                "id": 3,
+                "name": "Guest Network",
+                "action": "accept",
+                "status": "disabled",
+            },
         ]
 
         return jsonify({"success": True, "data": policies})
@@ -106,7 +121,10 @@ def analyze_packet_path():
         port = data.get("port", 80)
 
         if not src_ip or not dst_ip:
-            return jsonify({"success": False, "message": "src_ip and dst_ip required"}), 400
+            return (
+                jsonify({"success": False, "message": "src_ip and dst_ip required"}),
+                400,
+            )
 
         # Use real path analyzer
         analyzer = FixedPathAnalyzer()
@@ -136,8 +154,8 @@ def analyze_packet_path():
 async def optimize_policies_with_ai():
     """Optimize policies using AI engine"""
     try:
-
-        from fortimanager.fortimanager_advanced_hub import FortiManagerAdvancedHub
+        from fortimanager.fortimanager_advanced_hub import \
+            FortiManagerAdvancedHub
 
         data = request.get_json()
         device_id = data.get("device_id")
@@ -159,8 +177,8 @@ async def optimize_policies_with_ai():
 async def analyze_threats_with_ai():
     """Analyze security threats using AI"""
     try:
-
-        from fortimanager.fortimanager_advanced_hub import FortiManagerAdvancedHub
+        from fortimanager.fortimanager_advanced_hub import \
+            FortiManagerAdvancedHub
 
         data = request.get_json()
         fabric_id = data.get("fabric_id", "default")
@@ -179,8 +197,8 @@ async def analyze_threats_with_ai():
 async def check_compliance_with_ai():
     """Check compliance using AI-enhanced framework"""
     try:
-
-        from fortimanager.fortimanager_advanced_hub import FortiManagerAdvancedHub
+        from fortimanager.fortimanager_advanced_hub import \
+            FortiManagerAdvancedHub
 
         data = request.get_json()
         device_id = data.get("device_id")
@@ -194,7 +212,9 @@ async def check_compliance_with_ai():
 
         # Auto-remediate if enabled and violations found
         if result.get("violations") and data.get("auto_remediate", False):
-            remediation = await hub.compliance_framework.auto_remediate_violations(device_id, result)
+            remediation = await hub.compliance_framework.auto_remediate_violations(
+                device_id, result
+            )
             result["remediation"] = remediation
 
         return jsonify({"success": True, "compliance": result, "mode": "ai_enhanced"})
@@ -208,15 +228,17 @@ async def check_compliance_with_ai():
 async def generate_analytics_with_ai():
     """Generate advanced analytics report with AI predictions"""
     try:
-
-        from fortimanager.fortimanager_advanced_hub import FortiManagerAdvancedHub
+        from fortimanager.fortimanager_advanced_hub import \
+            FortiManagerAdvancedHub
 
         data = request.get_json()
         scope = data.get("scope", "global")
         period_days = data.get("period_days", 30)
 
         hub = FortiManagerAdvancedHub()
-        result = await hub.analytics_engine.generate_analytics_report(scope, period_days)
+        result = await hub.analytics_engine.generate_analytics_report(
+            scope, period_days
+        )
 
         return jsonify({"success": True, "report": result, "mode": "ai_enhanced"})
 
@@ -229,7 +251,8 @@ async def generate_analytics_with_ai():
 def get_ai_hub_status():
     """Get status of AI-enhanced FortiManager hub"""
     try:
-        from fortimanager.fortimanager_advanced_hub import FortiManagerAdvancedHub
+        from fortimanager.fortimanager_advanced_hub import \
+            FortiManagerAdvancedHub
 
         hub = FortiManagerAdvancedHub()
         status = hub.get_hub_status()

@@ -19,7 +19,11 @@ class PacketAnalyzer:
 
     def analyze_packet(self, packet_data):
         """Analyze a packet"""
-        return {"packet_size": len(str(packet_data)), "analyzed": True, "timestamp": "2024-01-01T00:00:00Z"}
+        return {
+            "packet_size": len(str(packet_data)),
+            "analyzed": True,
+            "timestamp": "2024-01-01T00:00:00Z",
+        }
 
     def start_analysis(self):
         """Start packet analysis"""
@@ -30,6 +34,12 @@ class PacketAnalyzer:
         return {"status": "stopped", "analyzer_active": False}
 
 
-__all__ = ["BaseSniffer", "SessionManager", "PacketCapturer", "DeviceManager", "PacketAnalyzer"]
+__all__ = [
+    "BaseSniffer",
+    "SessionManager",
+    "PacketCapturer",
+    "DeviceManager",
+    "PacketAnalyzer",
+]
 
 __version__ = "1.0.0"

@@ -26,7 +26,9 @@ class SecurityManager:
 
     def __init__(self, config_path: str = None):
         """Initialize security manager with secure defaults"""
-        self.config_path = config_path or os.getenv("SECURITY_CONFIG_PATH", "/etc/fortinet/security.json")
+        self.config_path = config_path or os.getenv(
+            "SECURITY_CONFIG_PATH", "/etc/fortinet/security.json"
+        )
         self.key_rotation_days = int(os.getenv("KEY_ROTATION_DAYS", "30"))
         self.key_length = int(os.getenv("KEY_LENGTH", "32"))
         self.master_key = None
@@ -96,7 +98,9 @@ class SecurityManager:
         try:
             # Hash current key for audit
             if current_key:
-                rotation_result["old_key_hash"] = hashlib.sha256(current_key.encode()).hexdigest()[:16]
+                rotation_result["old_key_hash"] = hashlib.sha256(
+                    current_key.encode()
+                ).hexdigest()[:16]
 
             # Generate new key
             new_key = self.generate_secret_key()
@@ -109,7 +113,9 @@ class SecurityManager:
             # Store rotation history
             self._store_rotation_history(rotation_result)
 
-            logger.info(f"Secret key rotated successfully. Next rotation: {next_rotation}")
+            logger.info(
+                f"Secret key rotated successfully. Next rotation: {next_rotation}"
+            )
 
         except Exception as e:
             rotation_result["status"] = "failed"
@@ -249,7 +255,9 @@ class SecurityManager:
             "X-XSS-Protection": "1; mode=block",
             "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
             "Content-Security-Policy": (
-                "default-src 'self'; " "script-src 'self' 'unsafe-inline'; " "style-src 'self' 'unsafe-inline'"
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline'; "
+                "style-src 'self' 'unsafe-inline'"
             ),
             "Referrer-Policy": "strict-origin-when-cross-origin",
             "Permissions-Policy": "geolocation=(), microphone=(), camera=()",

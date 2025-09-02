@@ -37,8 +37,12 @@ class ConnectionPoolManager:
         if not hasattr(self, "_initialized"):
             self._initialized = True
             self._sessions = {}
-            self._default_pool_size = max_pool_size or BATCH_SETTINGS["CONNECTION_POOL_SIZE"]
-            self._default_pool_maxsize = max_pool_size or BATCH_SETTINGS["CONNECTION_POOL_SIZE"]
+            self._default_pool_size = (
+                max_pool_size or BATCH_SETTINGS["CONNECTION_POOL_SIZE"]
+            )
+            self._default_pool_maxsize = (
+                max_pool_size or BATCH_SETTINGS["CONNECTION_POOL_SIZE"]
+            )
             self._default_max_retries = BATCH_SETTINGS["MAX_RETRIES"]
             self._default_backoff_factor = 0.3
             self._default_status_forcelist = [500, 502, 503, 504]
@@ -182,7 +186,9 @@ class ConnectionPoolManager:
                 pool_stats = {
                     "num_connections": len(adapter.poolmanager.pools),
                     "num_requests": (
-                        adapter.poolmanager.num_requests if hasattr(adapter.poolmanager, "num_requests") else 0
+                        adapter.poolmanager.num_requests
+                        if hasattr(adapter.poolmanager, "num_requests")
+                        else 0
                     ),
                     "num_connections_dropped": (
                         adapter.poolmanager.num_connections_dropped

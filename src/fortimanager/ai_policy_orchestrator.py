@@ -85,7 +85,10 @@ class AIModelEngine:
                     PolicyPattern(
                         "duplicate_policy",
                         0.95,
-                        {"policy_id": policy.get("policyid"), "duplicate_of": policy_hashes[policy_hash]},
+                        {
+                            "policy_id": policy.get("policyid"),
+                            "duplicate_of": policy_hashes[policy_hash],
+                        },
                     )
                 )
             else:
@@ -98,12 +101,20 @@ class AIModelEngine:
                 and policy.get("dstaddr") == ["all"]
                 and policy.get("action") == "accept"
             ):
-                patterns.append(PolicyPattern("overly_permissive", 0.85, {"policy_id": policy.get("policyid")}))
+                patterns.append(
+                    PolicyPattern(
+                        "overly_permissive", 0.85, {"policy_id": policy.get("policyid")}
+                    )
+                )
 
         # Detect unused policies (simulation)
         for policy in policies:
             if policy.get("bytes", 0) == 0 and policy.get("packets", 0) == 0:
-                patterns.append(PolicyPattern("potentially_unused", 0.7, {"policy_id": policy.get("policyid")}))
+                patterns.append(
+                    PolicyPattern(
+                        "potentially_unused", 0.7, {"policy_id": policy.get("policyid")}
+                    )
+                )
 
         return patterns
 
@@ -170,10 +181,14 @@ class AIPolicyOrchestrator:
             "timestamp": datetime.now().isoformat(),
             "policy_count": len(policies),
             "metrics": {
-                "avg_effectiveness": np.mean(effectiveness_scores) if effectiveness_scores else 0,
+                "avg_effectiveness": np.mean(effectiveness_scores)
+                if effectiveness_scores
+                else 0,
                 "avg_risk_score": np.mean(risk_scores) if risk_scores else 0,
                 "max_risk_score": max(risk_scores) if risk_scores else 0,
-                "min_effectiveness": min(effectiveness_scores) if effectiveness_scores else 0,
+                "min_effectiveness": min(effectiveness_scores)
+                if effectiveness_scores
+                else 0,
             },
             "patterns": [p.to_dict() for p in patterns],
             "recommendations": recommendations,
@@ -224,7 +239,9 @@ class AIPolicyOrchestrator:
             "performance_impact": performance_impact,
             "security_posture_change": security_change,
             "risk_assessment": self.ai_engine.predict_risk_score(new_policy),
-            "recommendation": self._generate_policy_recommendation(new_policy, conflicts),
+            "recommendation": self._generate_policy_recommendation(
+                new_policy, conflicts
+            ),
         }
 
     def auto_remediate(self, issue_type: str, policy_id: str) -> Dict[str, Any]:
@@ -242,7 +259,10 @@ class AIPolicyOrchestrator:
         if action:
             return action(policy_id)
 
-        return {"status": "unsupported", "message": f"No remediation available for issue type: {issue_type}"}
+        return {
+            "status": "unsupported",
+            "message": f"No remediation available for issue type: {issue_type}",
+        }
 
     def generate_policy_template(self, requirements: Dict[str, Any]) -> Dict[str, Any]:
         """Generate optimized policy template based on requirements"""
@@ -309,7 +329,9 @@ class AIPolicyOrchestrator:
 
         return recommendations
 
-    def _calculate_optimization_potential(self, policies: List[Dict[str, Any]]) -> float:
+    def _calculate_optimization_potential(
+        self, policies: List[Dict[str, Any]]
+    ) -> float:
         """Calculate the potential for optimization"""
         if not policies:
             return 0.0
@@ -317,7 +339,11 @@ class AIPolicyOrchestrator:
         factors = []
 
         # Check for any-any policies
-        any_any_count = sum(1 for p in policies if p.get("srcaddr") == ["all"] and p.get("dstaddr") == ["all"])
+        any_any_count = sum(
+            1
+            for p in policies
+            if p.get("srcaddr") == ["all"] and p.get("dstaddr") == ["all"]
+        )
         factors.append(any_any_count / len(policies))
 
         # Check for policies without logging
@@ -351,14 +377,17 @@ class AIPolicyOrchestrator:
 
         # Add comment about optimization
         optimized["comments"] = (
-            optimized.get("comments", "") + f" [AI-Optimized: {datetime.now().strftime('%Y-%m-%d')}]"
+            optimized.get("comments", "")
+            + f" [AI-Optimized: {datetime.now().strftime('%Y-%m-%d')}]"
         )
 
         # Add AI metadata
         optimized["ai_metadata"] = {
             "optimized": True,
             "optimization_date": datetime.now().isoformat(),
-            "effectiveness_score": self.ai_engine.analyze_policy_effectiveness(optimized),
+            "effectiveness_score": self.ai_engine.analyze_policy_effectiveness(
+                optimized
+            ),
         }
 
         return optimized
@@ -373,10 +402,15 @@ class AIPolicyOrchestrator:
             # Check for overlapping address ranges
             if self._addresses_overlap(
                 new_policy.get("srcaddr", []), existing.get("srcaddr", [])
-            ) and self._addresses_overlap(new_policy.get("dstaddr", []), existing.get("dstaddr", [])):
-
+            ) and self._addresses_overlap(
+                new_policy.get("dstaddr", []), existing.get("dstaddr", [])
+            ):
                 conflicts.append(
-                    {"policy_id": existing.get("policyid"), "conflict_type": "address_overlap", "severity": "medium"}
+                    {
+                        "policy_id": existing.get("policyid"),
+                        "conflict_type": "address_overlap",
+                        "severity": "medium",
+                    }
                 )
 
         return conflicts
@@ -407,7 +441,11 @@ class AIPolicyOrchestrator:
         return {
             "impact_score": min(impact_score, 1.0),
             "estimated_latency_ms": impact_score * 10,
-            "cpu_impact": "low" if impact_score < 0.3 else "medium" if impact_score < 0.6 else "high",
+            "cpu_impact": "low"
+            if impact_score < 0.3
+            else "medium"
+            if impact_score < 0.6
+            else "high",
         }
 
     def _calculate_security_change(
@@ -415,11 +453,17 @@ class AIPolicyOrchestrator:
     ) -> Dict[str, Any]:
         """Calculate security posture change"""
         current_score = (
-            np.mean([1 - self.ai_engine.predict_risk_score(p) for p in existing_policies]) if existing_policies else 0.5
+            np.mean(
+                [1 - self.ai_engine.predict_risk_score(p) for p in existing_policies]
+            )
+            if existing_policies
+            else 0.5
         )
 
         new_risk = self.ai_engine.predict_risk_score(new_policy)
-        new_score = (current_score * len(existing_policies) + (1 - new_risk)) / (len(existing_policies) + 1)
+        new_score = (current_score * len(existing_policies) + (1 - new_risk)) / (
+            len(existing_policies) + 1
+        )
 
         change = new_score - current_score
 
@@ -427,10 +471,16 @@ class AIPolicyOrchestrator:
             "current_score": current_score,
             "new_score": new_score,
             "change": change,
-            "impact": "positive" if change > 0 else "negative" if change < 0 else "neutral",
+            "impact": "positive"
+            if change > 0
+            else "negative"
+            if change < 0
+            else "neutral",
         }
 
-    def _generate_policy_recommendation(self, policy: Dict[str, Any], conflicts: List[Dict[str, Any]]) -> str:
+    def _generate_policy_recommendation(
+        self, policy: Dict[str, Any], conflicts: List[Dict[str, Any]]
+    ) -> str:
         """Generate recommendation for a policy"""
         if conflicts:
             return "Review and resolve conflicts before implementation"
@@ -459,11 +509,19 @@ class AIPolicyOrchestrator:
 
     def _remediate_duplicate_policy(self, policy_id: str) -> Dict[str, Any]:
         """Remediate duplicate policy"""
-        return {"status": "success", "action": "remove", "message": f"Duplicate policy {policy_id} marked for removal"}
+        return {
+            "status": "success",
+            "action": "remove",
+            "message": f"Duplicate policy {policy_id} marked for removal",
+        }
 
     def _remediate_unused_policy(self, policy_id: str) -> Dict[str, Any]:
         """Remediate unused policy"""
-        return {"status": "success", "action": "disable", "message": f"Unused policy {policy_id} disabled for review"}
+        return {
+            "status": "success",
+            "action": "disable",
+            "message": f"Unused policy {policy_id} disabled for review",
+        }
 
     def _remediate_high_risk_policy(self, policy_id: str) -> Dict[str, Any]:
         """Remediate high risk policy"""
@@ -479,7 +537,9 @@ class AIPolicyOrchestrator:
             "message": f"Security profiles applied to high-risk policy {policy_id}",
         }
 
-    def _apply_template_optimizations(self, template: Dict[str, Any], requirements: Dict[str, Any]) -> Dict[str, Any]:
+    def _apply_template_optimizations(
+        self, template: Dict[str, Any], requirements: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Apply AI optimizations to policy template"""
         # Add security profiles based on requirements
         if requirements.get("security_level", "medium") in ["high", "critical"]:

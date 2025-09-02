@@ -26,7 +26,9 @@ def get_itsm_tickets():
                 {
                     "id": f"TICK-{1000 + i}",
                     "title": f"Issue #{i + 1}",
-                    "status": random.choice(["open", "in_progress", "resolved", "closed"]),
+                    "status": random.choice(
+                        ["open", "in_progress", "resolved", "closed"]
+                    ),
                     "priority": random.choice(["low", "medium", "high", "critical"]),
                     "assignee": f"User{random.randint(1, 5)}",
                     "created_at": time.time() - (i * 3600),

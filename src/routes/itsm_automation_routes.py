@@ -17,7 +17,9 @@ from utils.unified_logger import get_logger
 
 logger = get_logger(__name__)
 
-itsm_automation_bp = Blueprint("itsm_automation", __name__, url_prefix="/api/itsm/automation")
+itsm_automation_bp = Blueprint(
+    "itsm_automation", __name__, url_prefix="/api/itsm/automation"
+)
 
 
 def async_route(f):
@@ -59,7 +61,9 @@ async def start_automation_service():
         service = get_automation_service()
 
         if service.is_running:
-            return jsonify({"status": "warning", "message": "Service is already running"})
+            return jsonify(
+                {"status": "warning", "message": "Service is already running"}
+            )
 
         # 비동기로 서비스 시작 (백그라운드에서 실행)
         asyncio.create_task(service.start_service())
@@ -223,19 +227,45 @@ def get_automation_config():
         # 민감한 정보는 마스킹
         config_data = {
             "itsm": {
-                "platform": (service.connector.config.platform.value if service.connector else None),
-                "base_url": (service.connector.config.base_url if service.connector else None),
-                "poll_interval": (service.connector.config.poll_interval if service.connector else None),
-                "username": ("***" if service.connector and service.connector.config.username else None),
+                "platform": (
+                    service.connector.config.platform.value
+                    if service.connector
+                    else None
+                ),
+                "base_url": (
+                    service.connector.config.base_url if service.connector else None
+                ),
+                "poll_interval": (
+                    service.connector.config.poll_interval
+                    if service.connector
+                    else None
+                ),
+                "username": (
+                    "***"
+                    if service.connector and service.connector.config.username
+                    else None
+                ),
             },
             "fortimanager": {
                 "enabled": service.fortimanager_client is not None,
-                "host": (service.fortimanager_client.host if service.fortimanager_client else None),
+                "host": (
+                    service.fortimanager_client.host
+                    if service.fortimanager_client
+                    else None
+                ),
             },
             "automation_engine": {
                 "initialized": service.automation_engine is not None,
-                "firewall_count": (len(service.automation_engine.firewall_devices) if service.automation_engine else 0),
-                "zone_count": (len(service.automation_engine.network_zones) if service.automation_engine else 0),
+                "firewall_count": (
+                    len(service.automation_engine.firewall_devices)
+                    if service.automation_engine
+                    else 0
+                ),
+                "zone_count": (
+                    len(service.automation_engine.network_zones)
+                    if service.automation_engine
+                    else 0
+                ),
             },
         }
 

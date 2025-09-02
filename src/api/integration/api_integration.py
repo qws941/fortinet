@@ -51,10 +51,15 @@ class APIIntegrationManager:
             # 환경변수에서 우선 읽기
             fm_config = {
                 "host": os.getenv("FORTIMANAGER_HOST") or settings.fortimanager.host,
-                "username": os.getenv("FORTIMANAGER_USERNAME") or settings.fortimanager.username,
-                "password": os.getenv("FORTIMANAGER_PASSWORD") or settings.fortimanager.password,
-                "api_token": os.getenv("FORTIMANAGER_API_TOKEN") or settings.fortimanager.api_token,
-                "port": int(os.getenv("FORTIMANAGER_PORT", str(settings.fortimanager.port))),
+                "username": os.getenv("FORTIMANAGER_USERNAME")
+                or settings.fortimanager.username,
+                "password": os.getenv("FORTIMANAGER_PASSWORD")
+                or settings.fortimanager.password,
+                "api_token": os.getenv("FORTIMANAGER_API_TOKEN")
+                or settings.fortimanager.api_token,
+                "port": int(
+                    os.getenv("FORTIMANAGER_PORT", str(settings.fortimanager.port))
+                ),
                 "verify_ssl": os.getenv(
                     "FORTIMANAGER_VERIFY_SSL",
                     str(settings.fortimanager.verify_ssl),
@@ -123,7 +128,9 @@ class APIIntegrationManager:
 
                         if device_name and device_ip:
                             # FortiGate 클라이언트 생성
-                            self._create_fortigate_client(device_name, device_ip, device)
+                            self._create_fortigate_client(
+                                device_name, device_ip, device
+                            )
 
             logger.info(f"총 {len(self.fortigate_clients)}개의 FortiGate 장치를 발견했습니다.")
 
@@ -166,15 +173,19 @@ class APIIntegrationManager:
         except Exception as e:
             logger.error(f"FortiGate 직접 연결 오류: {str(e)}")
 
-    def _create_fortigate_client(self, device_name: str, device_ip: str, device_info: Dict):
+    def _create_fortigate_client(
+        self, device_name: str, device_ip: str, device_info: Dict
+    ):
         """FortiGate 클라이언트 생성"""
         try:
             # FortiManager의 인증 정보 사용
             client = FortiGateAPIClient(
                 host=device_ip,
                 api_token=device_info.get("api_token"),
-                username=device_info.get("username") or self.config["fortimanager"].get("username"),
-                password=device_info.get("password") or self.config["fortimanager"].get("password"),
+                username=device_info.get("username")
+                or self.config["fortimanager"].get("username"),
+                password=device_info.get("password")
+                or self.config["fortimanager"].get("password"),
                 use_https=True,
                 verify_ssl=False,
             )
@@ -273,7 +284,9 @@ class APIIntegrationManager:
             return
 
         self.monitoring = True
-        self.monitor_thread = threading.Thread(target=self._connection_monitor_loop, args=(interval,), daemon=True)
+        self.monitor_thread = threading.Thread(
+            target=self._connection_monitor_loop, args=(interval,), daemon=True
+        )
         self.monitor_thread.start()
         logger.info("API 연결 모니터링 시작")
 
@@ -304,20 +317,31 @@ class APIIntegrationManager:
                 for device_id, client in list(self.fortigate_clients.items()):
                     try:
                         success, result = client.test_connection()
-                        self.connection_status[device_id]["status"] = "connected" if success else "disconnected"
+                        self.connection_status[device_id]["status"] = (
+                            "connected" if success else "disconnected"
+                        )
                         self.connection_status[device_id]["last_check"] = time.time()
 
                         # 재연결 시도
-                        if not success and self.connection_status[device_id].get("retry_count", 0) < 3:
+                        if (
+                            not success
+                            and self.connection_status[device_id].get("retry_count", 0)
+                            < 3
+                        ):
                             logger.warning(f"장치 {device_id} 재연결 시도...")
                             time.sleep(5)
                             success, result = client.test_connection()
                             if success:
-                                self.connection_status[device_id]["status"] = "connected"
+                                self.connection_status[device_id][
+                                    "status"
+                                ] = "connected"
                                 self.connection_status[device_id]["retry_count"] = 0
                             else:
                                 self.connection_status[device_id]["retry_count"] = (
-                                    self.connection_status[device_id].get("retry_count", 0) + 1
+                                    self.connection_status[device_id].get(
+                                        "retry_count", 0
+                                    )
+                                    + 1
                                 )
                     except Exception as e:
                         logger.error(f"장치 {device_id} 연결 확인 오류: {str(e)}")

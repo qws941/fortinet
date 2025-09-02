@@ -10,7 +10,8 @@ from typing import Any, Dict, List
 
 from utils.unified_logger import get_logger
 
-from .error_handler_advanced import ApplicationError, ErrorCategory, ErrorRecoveryStrategy, ErrorSeverity
+from .error_handler_advanced import (ApplicationError, ErrorCategory,
+                                     ErrorRecoveryStrategy, ErrorSeverity)
 
 logger = get_logger(__name__)
 
@@ -84,7 +85,9 @@ class DatabaseFallbackStrategy(ErrorRecoveryStrategy):
         if cache_key and cache_key in self._cache:
             cached_item = self._cache[cache_key]
             if time.time() - cached_item["timestamp"] < self.cache_ttl:
-                logger.info(f"Using cached data for database error recovery: {cache_key}")
+                logger.info(
+                    f"Using cached data for database error recovery: {cache_key}"
+                )
                 return cached_item["data"]
 
         # 2. 폴백 데이터 사용
@@ -92,11 +95,16 @@ class DatabaseFallbackStrategy(ErrorRecoveryStrategy):
             logger.info("Using fallback data for database error recovery")
             # 폴백 데이터를 캐시에 저장
             if cache_key:
-                self._cache[cache_key] = {"data": fallback_data, "timestamp": time.time()}
+                self._cache[cache_key] = {
+                    "data": fallback_data,
+                    "timestamp": time.time(),
+                }
             return fallback_data
 
         # 3. 기본 응답 반환
-        logger.warning("No cache or fallback data available, returning default response")
+        logger.warning(
+            "No cache or fallback data available, returning default response"
+        )
         return {
             "status": "error",
             "message": "Database temporarily unavailable",
@@ -141,14 +149,18 @@ class AsyncQueueRecoveryStrategy(ErrorRecoveryStrategy):
             # 새 큐 생성 (비동기 실행)
             if asyncio.get_event_loop().is_running():
                 # 이미 실행 중인 이벤트 루프가 있는 경우
-                queue = queue_manager.get_queue(queue_name, max_size=10000, worker_count=5)
+                queue = queue_manager.get_queue(
+                    queue_name, max_size=10000, worker_count=5
+                )
                 asyncio.create_task(queue.start())
             else:
                 # 새 이벤트 루프 생성
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 try:
-                    queue = loop.run_until_complete(create_queue(queue_name, max_size=10000, worker_count=5))
+                    queue = loop.run_until_complete(
+                        create_queue(queue_name, max_size=10000, worker_count=5)
+                    )
                 finally:
                     loop.close()
 
@@ -179,21 +191,31 @@ class ServiceMeshRecoveryStrategy(ErrorRecoveryStrategy):
         current_endpoint = context.get("current_endpoint")
 
         if not all([service_name, operation]):
-            raise ValueError("Service mesh recovery requires service_name and operation")
+            raise ValueError(
+                "Service mesh recovery requires service_name and operation"
+            )
 
         # 등록된 서비스 인스턴스들 확인
         available_instances = self.service_registry.get(service_name, [])
 
         if not available_instances:
-            logger.warning(f"No alternative instances found for service: {service_name}")
+            logger.warning(
+                f"No alternative instances found for service: {service_name}"
+            )
             raise error
 
         # 현재 실패한 인스턴스 제외
         if current_endpoint:
-            available_instances = [instance for instance in available_instances if instance != current_endpoint]
+            available_instances = [
+                instance
+                for instance in available_instances
+                if instance != current_endpoint
+            ]
 
         if not available_instances:
-            logger.warning(f"No healthy instances remaining for service: {service_name}")
+            logger.warning(
+                f"No healthy instances remaining for service: {service_name}"
+            )
             raise error
 
         # 사용 가능한 인스턴스들로 순차 재시도
@@ -208,7 +230,9 @@ class ServiceMeshRecoveryStrategy(ErrorRecoveryStrategy):
                 updated_context["target_endpoint"] = instance
 
                 result = operation(updated_context)
-                logger.info(f"Service mesh recovery successful using instance: {instance}")
+                logger.info(
+                    f"Service mesh recovery successful using instance: {instance}"
+                )
                 return result
 
             except Exception as e:
@@ -227,8 +251,14 @@ class GracefulDegradationStrategy(ErrorRecoveryStrategy):
     def __init__(self, degradation_levels: Dict[str, Dict] = None):
         super().__init__()
         self.degradation_levels = degradation_levels or {
-            "level1": {"features": ["analytics", "recommendations"], "performance": 0.8},
-            "level2": {"features": ["analytics", "recommendations", "real_time_updates"], "performance": 0.5},
+            "level1": {
+                "features": ["analytics", "recommendations"],
+                "performance": 0.8,
+            },
+            "level2": {
+                "features": ["analytics", "recommendations", "real_time_updates"],
+                "performance": 0.5,
+            },
             "level3": {"features": ["*"], "performance": 0.3},  # 최소 기능만
         }
 
@@ -280,7 +310,11 @@ class GracefulDegradationStrategy(ErrorRecoveryStrategy):
             }
         else:
             # 부분 기능 비활성화 모드
-            filtered_features = [feature for feature in requested_features if feature not in disabled_features]
+            filtered_features = [
+                feature
+                for feature in requested_features
+                if feature not in disabled_features
+            ]
             degraded_context["requested_features"] = filtered_features
 
             try:
@@ -294,7 +328,9 @@ class GracefulDegradationStrategy(ErrorRecoveryStrategy):
                         "performance_factor": performance_factor,
                     }
 
-                logger.info(f"Operation completed with degraded performance: {degradation_level}")
+                logger.info(
+                    f"Operation completed with degraded performance: {degradation_level}"
+                )
                 return result
 
             except Exception as e:

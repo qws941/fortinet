@@ -196,7 +196,9 @@ def format_bytes(bytes_value: float) -> str:
     return f"{bytes_value:.1f} PB"
 
 
-def is_within_limit(value: int, limit_type: str, limit_category: str = "SIZE_LIMITS") -> bool:
+def is_within_limit(
+    value: int, limit_type: str, limit_category: str = "SIZE_LIMITS"
+) -> bool:
     """
     값이 제한 내에 있는지 확인합니다.
 

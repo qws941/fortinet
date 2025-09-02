@@ -154,7 +154,12 @@ class ErrorRecoveryStrategy:
         """Initialize recovery strategy with learning capabilities"""
         self.success_history = {}  # 성공한 복구 패턴 저장
         self.failure_patterns = {}  # 실패 패턴 학습
-        self.recovery_stats = {"attempts": 0, "successes": 0, "failures": 0, "last_updated": datetime.utcnow()}
+        self.recovery_stats = {
+            "attempts": 0,
+            "successes": 0,
+            "failures": 0,
+            "last_updated": datetime.utcnow(),
+        }
 
     def can_handle(self, error: ApplicationError) -> bool:
         """
@@ -182,7 +187,9 @@ class ErrorRecoveryStrategy:
             # 과거 성공 이력 확인
             error_signature = self._generate_error_signature(error)
             if error_signature in self.success_history:
-                success_rate = self.success_history[error_signature].get("success_rate", 0)
+                success_rate = self.success_history[error_signature].get(
+                    "success_rate", 0
+                )
                 if success_rate > 0.3:  # 30% 이상 성공률이면 시도
                     return True
 
@@ -228,7 +235,9 @@ class ErrorRecoveryStrategy:
             # 복구 성공 처리
             self._handle_recovery_success(error_signature, result)
 
-            logger.info(f"Recovery successful for error {error.code} using {self.__class__.__name__}")
+            logger.info(
+                f"Recovery successful for error {error.code} using {self.__class__.__name__}"
+            )
             return result
 
         except Exception as recovery_error:
@@ -279,7 +288,10 @@ class ErrorRecoveryStrategy:
         Pre-recovery validation and setup
         """
         # 필수 컨텍스트 검증
-        if not context.get("operation") and error.category in [ErrorCategory.NETWORK, ErrorCategory.EXTERNAL_SERVICE]:
+        if not context.get("operation") and error.category in [
+            ErrorCategory.NETWORK,
+            ErrorCategory.EXTERNAL_SERVICE,
+        ]:
             # 네트워크나 외부 서비스 에러의 경우 재시도할 operation이 필요
             logger.warning("No operation provided for network/service error recovery")
 
@@ -311,12 +323,18 @@ class ErrorRecoveryStrategy:
         self.recovery_stats["successes"] += 1
         self.recovery_stats["last_updated"] = datetime.utcnow()
 
-    def _handle_recovery_failure(self, error_signature: str, recovery_error: Exception) -> None:
+    def _handle_recovery_failure(
+        self, error_signature: str, recovery_error: Exception
+    ) -> None:
         """
         Handle recovery failure - update failure patterns
         """
         if error_signature not in self.failure_patterns:
-            self.failure_patterns[error_signature] = {"count": 0, "last_failure": None, "failure_reasons": []}
+            self.failure_patterns[error_signature] = {
+                "count": 0,
+                "last_failure": None,
+                "failure_reasons": [],
+            }
 
         pattern = self.failure_patterns[error_signature]
         pattern["count"] += 1
@@ -335,7 +353,11 @@ class ErrorRecoveryStrategy:
         Get recovery strategy statistics
         """
         total_attempts = self.recovery_stats["attempts"]
-        success_rate = (self.recovery_stats["successes"] / total_attempts * 100) if total_attempts > 0 else 0
+        success_rate = (
+            (self.recovery_stats["successes"] / total_attempts * 100)
+            if total_attempts > 0
+            else 0
+        )
 
         return {
             "strategy_name": self.__class__.__name__,
@@ -390,7 +412,9 @@ class RetryStrategy(ErrorRecoveryStrategy):
             if error.retry_after:
                 delay = max(delay, error.retry_after)
 
-            logger.info(f"Retry attempt {attempt + 1}/{self.max_retries} after {delay}s")
+            logger.info(
+                f"Retry attempt {attempt + 1}/{self.max_retries} after {delay}s"
+            )
 
             import time
 
@@ -504,7 +528,9 @@ class CircuitBreakerStrategy(ErrorRecoveryStrategy):
 
         if self.failure_count >= self.failure_threshold:
             self.state = "open"
-            logger.warning(f"Circuit breaker opened after {self.failure_count} failures")
+            logger.warning(
+                f"Circuit breaker opened after {self.failure_count} failures"
+            )
 
 
 class ErrorHandler:
@@ -547,7 +573,9 @@ class ErrorHandler:
             except Exception as e:
                 logger.error(f"Failed to load error configuration: {e}")
 
-    def handle_error(self, error: Exception, context: ErrorContext = None) -> Dict[str, Any]:
+    def handle_error(
+        self, error: Exception, context: ErrorContext = None
+    ) -> Dict[str, Any]:
         """
         Handle error with recovery strategies
 
@@ -578,7 +606,9 @@ class ErrorHandler:
                 try:
                     recovery_result = strategy.recover(
                         app_error,
-                        {"operation": context.additional_data.get("operation")} if context else {},
+                        {"operation": context.additional_data.get("operation")}
+                        if context
+                        else {},
                     )
                     logger.info(f"Error recovered using {strategy.__class__.__name__}")
                     return {
@@ -592,7 +622,9 @@ class ErrorHandler:
         # No recovery possible
         return {"recovered": False, "error": app_error.to_dict()}
 
-    def _convert_to_application_error(self, error: Exception, context: ErrorContext = None) -> ApplicationError:
+    def _convert_to_application_error(
+        self, error: Exception, context: ErrorContext = None
+    ) -> ApplicationError:
         """Convert standard exception to ApplicationError"""
         # Check error mappings
         error_type = type(error).__name__

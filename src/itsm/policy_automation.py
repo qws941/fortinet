@@ -216,7 +216,9 @@ class PolicyAutomationEngine:
             logger.error(f"Invalid IP address: {ip_address}")
             return None
 
-    def analyze_firewall_request(self, request: FirewallPolicyRequest) -> PolicyDeploymentPlan:
+    def analyze_firewall_request(
+        self, request: FirewallPolicyRequest
+    ) -> PolicyDeploymentPlan:
         """방화벽 정책 요청 분석 및 배포 계획 수립"""
         logger.info(f"Analyzing firewall request: {request.ticket_id}")
 
@@ -225,7 +227,9 @@ class PolicyAutomationEngine:
         dst_zone = self.get_zone_by_ip(request.destination_ip)
 
         if not src_zone or not dst_zone:
-            logger.error(f"Unable to determine network zones for {request.source_ip} -> {request.destination_ip}")
+            logger.error(
+                f"Unable to determine network zones for {request.source_ip} -> {request.destination_ip}"
+            )
             return PolicyDeploymentPlan(
                 request=request,
                 target_firewalls=[],
@@ -239,16 +243,22 @@ class PolicyAutomationEngine:
         target_firewalls = self._determine_target_firewalls(src_zone, dst_zone, request)
 
         # 배포 순서 결정 (우선순위 및 종속성 고려)
-        deployment_order = self._calculate_deployment_order(target_firewalls, src_zone, dst_zone)
+        deployment_order = self._calculate_deployment_order(
+            target_firewalls, src_zone, dst_zone
+        )
 
         # 예상 정책 규칙 생성
-        estimated_rules = self._generate_policy_rules(request, src_zone, dst_zone, target_firewalls)
+        estimated_rules = self._generate_policy_rules(
+            request, src_zone, dst_zone, target_firewalls
+        )
 
         # 리스크 평가
         risk_assessment = self._assess_security_risk(request, src_zone, dst_zone)
 
         # 자동 승인 여부 결정
-        auto_approve = self._should_auto_approve(request, src_zone, dst_zone, risk_assessment)
+        auto_approve = self._should_auto_approve(
+            request, src_zone, dst_zone, risk_assessment
+        )
 
         plan = PolicyDeploymentPlan(
             request=request,
@@ -316,7 +326,9 @@ class PolicyAutomationEngine:
         # 우선순위로 정렬
         target_firewalls.sort(key=lambda fw: fw.priority)
 
-        logger.info(f"Target firewalls for {src_zone.name} -> {dst_zone.name}: {[fw.id for fw in target_firewalls]}")
+        logger.info(
+            f"Target firewalls for {src_zone.name} -> {dst_zone.name}: {[fw.id for fw in target_firewalls]}"
+        )
         return target_firewalls
 
     def _calculate_deployment_order(
@@ -336,13 +348,17 @@ class PolicyAutomationEngine:
         if src_zone.name == "internal" and dst_zone.name == "external":
             # 내부 -> 외부: 내부 방화벽 먼저, 그다음 Edge
             internal_fw = [fw for fw in ordered if "internal" in fw.zones]
-            edge_fw = [fw for fw in ordered if "external" in fw.zones and fw not in internal_fw]
+            edge_fw = [
+                fw for fw in ordered if "external" in fw.zones and fw not in internal_fw
+            ]
             ordered = internal_fw + edge_fw
 
         elif src_zone.name == "external" and dst_zone.name == "internal":
             # 외부 -> 내부: Edge 먼저, 그다음 내부
             edge_fw = [fw for fw in ordered if "external" in fw.zones]
-            internal_fw = [fw for fw in ordered if "internal" in fw.zones and fw not in edge_fw]
+            internal_fw = [
+                fw for fw in ordered if "internal" in fw.zones and fw not in edge_fw
+            ]
             ordered = edge_fw + internal_fw
 
         return [fw.id for fw in ordered]
@@ -366,13 +382,17 @@ class PolicyAutomationEngine:
                 "destination_zone": dst_zone.name,
                 "source_address": request.source_ip,
                 "destination_address": request.destination_ip,
-                "service": self._map_protocol_to_service(request.protocol, request.port),
+                "service": self._map_protocol_to_service(
+                    request.protocol, request.port
+                ),
                 "action": request.action,
                 "schedule": "always",
                 "log_traffic": "all",
                 "comment": f"Auto-created from ITSM ticket {request.ticket_id} - {request.description}",
                 "nat": self._determine_nat_policy(src_zone, dst_zone),
-                "security_profiles": self._get_security_profiles(src_zone, dst_zone, request),
+                "security_profiles": self._get_security_profiles(
+                    src_zone, dst_zone, request
+                ),
             }
 
             rules.append(rule)
@@ -402,10 +422,15 @@ class PolicyAutomationEngine:
             # 커스텀 서비스 이름 생성
             return f"{protocol_upper}_{port}"
 
-    def _determine_nat_policy(self, src_zone: NetworkZone, dst_zone: NetworkZone) -> str:
+    def _determine_nat_policy(
+        self, src_zone: NetworkZone, dst_zone: NetworkZone
+    ) -> str:
         """NAT 정책 결정"""
         # 내부 -> 외부: NAT 활성화
-        if src_zone.name in ["internal", "dmz", "branch"] and dst_zone.name == "external":
+        if (
+            src_zone.name in ["internal", "dmz", "branch"]
+            and dst_zone.name == "external"
+        ):
             return "enable"
 
         # 외부 -> 내부: 일반적으로 NAT 비활성화 (DNAT 별도 설정)
@@ -547,7 +572,9 @@ class PolicyAutomationEngine:
                     deployed_rules=[],
                     deployment_time=deployment_start,
                     affected_firewalls=[],
-                    error_messages=["Policy requires manual approval due to security risk"],
+                    error_messages=[
+                        "Policy requires manual approval due to security risk"
+                    ],
                 )
 
             # 순서대로 방화벽에 배포
@@ -560,7 +587,11 @@ class PolicyAutomationEngine:
                     continue
 
                 # 해당 방화벽용 규칙 찾기
-                firewall_rules = [rule for rule in plan.estimated_rules if rule["firewall_id"] == firewall_id]
+                firewall_rules = [
+                    rule
+                    for rule in plan.estimated_rules
+                    if rule["firewall_id"] == firewall_id
+                ]
 
                 for rule in firewall_rules:
                     try:
@@ -576,11 +607,17 @@ class PolicyAutomationEngine:
                             affected_firewalls.append(firewall_id)
                             logger.info(f"Successfully deployed rule to {firewall_id}")
                         else:
-                            error_messages.append(f"Failed to deploy to {firewall_id}: {result['error']}")
-                            logger.error(f"Deployment failed for {firewall_id}: {result['error']}")
+                            error_messages.append(
+                                f"Failed to deploy to {firewall_id}: {result['error']}"
+                            )
+                            logger.error(
+                                f"Deployment failed for {firewall_id}: {result['error']}"
+                            )
 
                     except Exception as e:
-                        error_message = f"Exception during deployment to {firewall_id}: {str(e)}"
+                        error_message = (
+                            f"Exception during deployment to {firewall_id}: {str(e)}"
+                        )
                         error_messages.append(error_message)
                         logger.error(error_message)
 
@@ -604,7 +641,9 @@ class PolicyAutomationEngine:
             # 배포 기록 저장
             self.deployment_history.append(deployment_report)
 
-            logger.info(f"Deployment completed for {plan.request.ticket_id}: {result.value}")
+            logger.info(
+                f"Deployment completed for {plan.request.ticket_id}: {result.value}"
+            )
             return deployment_report
 
         except Exception as e:
@@ -620,7 +659,9 @@ class PolicyAutomationEngine:
                 error_messages=[error_message],
             )
 
-    async def _deploy_via_fortimanager(self, firewall: FirewallDevice, rule: Dict) -> Dict:
+    async def _deploy_via_fortimanager(
+        self, firewall: FirewallDevice, rule: Dict
+    ) -> Dict:
         """FortiManager를 통한 정책 배포"""
         try:
             # FortiManager API를 통해 정책 생성
@@ -628,8 +669,12 @@ class PolicyAutomationEngine:
                 "name": rule["rule_name"],
                 "srcintf": [{"name": rule["source_zone"]}],
                 "dstintf": [{"name": rule["destination_zone"]}],
-                "srcaddr": [{"name": self._create_address_object(rule["source_address"])}],
-                "dstaddr": [{"name": self._create_address_object(rule["destination_address"])}],
+                "srcaddr": [
+                    {"name": self._create_address_object(rule["source_address"])}
+                ],
+                "dstaddr": [
+                    {"name": self._create_address_object(rule["destination_address"])}
+                ],
                 "service": [{"name": rule["service"]}],
                 "action": rule["action"],
                 "schedule": rule["schedule"],
@@ -663,7 +708,9 @@ class PolicyAutomationEngine:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    async def _deploy_direct_fortigate(self, firewall: FirewallDevice, rule: Dict) -> Dict:
+    async def _deploy_direct_fortigate(
+        self, firewall: FirewallDevice, rule: Dict
+    ) -> Dict:
         """직접 FortiGate API를 통한 정책 배포"""
         try:
             # FortiGate API 클라이언트 초기화 (필요시)
@@ -713,7 +760,9 @@ class PolicyAutomationEngine:
         clean_ip = ip_address.replace(".", "_").replace("/", "_")
         return f"Host_{clean_ip}"
 
-    async def process_itsm_requests(self, connector: ExternalITSMConnector) -> List[DeploymentReport]:
+    async def process_itsm_requests(
+        self, connector: ExternalITSMConnector
+    ) -> List[DeploymentReport]:
         """ITSM 요청 일괄 처리"""
         logger.info("Starting ITSM request processing")
 
@@ -750,7 +799,9 @@ class PolicyAutomationEngine:
                 logger.error(f"Error processing request {request.ticket_id}: {e}")
                 continue
 
-        logger.info(f"Processed {len(requests)} ITSM requests, {len(deployment_reports)} deployments attempted")
+        logger.info(
+            f"Processed {len(requests)} ITSM requests, {len(deployment_reports)} deployments attempted"
+        )
         return deployment_reports
 
     def get_deployment_history(self, limit: int = 50) -> List[DeploymentReport]:
@@ -774,14 +825,18 @@ class PolicyAutomationEngine:
             }
 
         total = len(self.deployment_history)
-        successful = len([r for r in self.deployment_history if r.result == DeploymentResult.SUCCESS])
+        successful = len(
+            [r for r in self.deployment_history if r.result == DeploymentResult.SUCCESS]
+        )
         failed = total - successful
 
         all_affected_firewalls = set()
         for report in self.deployment_history:
             all_affected_firewalls.update(report.affected_firewalls)
 
-        last_deployment = max(self.deployment_history, key=lambda r: r.deployment_time).deployment_time
+        last_deployment = max(
+            self.deployment_history, key=lambda r: r.deployment_time
+        ).deployment_time
 
         return {
             "total_deployments": total,

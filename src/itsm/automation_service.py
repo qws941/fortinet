@@ -61,7 +61,9 @@ class ITSMAutomationService:
                     config = json.load(f)
                     self._initialize_from_config(config)
             else:
-                logger.warning(f"Config file not found: {self.config_file}. Using default configuration.")
+                logger.warning(
+                    f"Config file not found: {self.config_file}. Using default configuration."
+                )
                 self._create_default_config()
 
         except Exception as e:
@@ -249,7 +251,9 @@ class ITSMAutomationService:
             if reports:
                 successful = len([r for r in reports if r.result.value == "success"])
                 failed = len(reports) - successful
-                logger.info(f"Cycle completed: {successful} successful, {failed} failed deployments")
+                logger.info(
+                    f"Cycle completed: {successful} successful, {failed} failed deployments"
+                )
             else:
                 logger.info("Cycle completed: No new requests found")
 
@@ -302,7 +306,9 @@ class ITSMAutomationService:
                         f"Manual deployment successful: {', '.join(report.affected_firewalls)}",
                     )
 
-            logger.info(f"Manual processing completed: {len(reports)} requests processed")
+            logger.info(
+                f"Manual processing completed: {len(reports)} requests processed"
+            )
             return reports
 
         except Exception as e:
@@ -318,7 +324,11 @@ class ITSMAutomationService:
         status = {
             "is_running": self.is_running,
             "uptime_seconds": uptime,
-            "last_check": (self.service_stats["last_check"].isoformat() if self.service_stats["last_check"] else None),
+            "last_check": (
+                self.service_stats["last_check"].isoformat()
+                if self.service_stats["last_check"]
+                else None
+            ),
             "total_requests_processed": self.service_stats["total_requests_processed"],
             "successful_deployments": self.service_stats["successful_deployments"],
             "failed_deployments": self.service_stats["failed_deployments"],
@@ -330,14 +340,18 @@ class ITSMAutomationService:
             "last_error": self.service_stats["last_error"],
             "connector_status": {
                 "connected": self.connector.is_connected if self.connector else False,
-                "platform": (self.connector.config.platform.value if self.connector else None),
+                "platform": (
+                    self.connector.config.platform.value if self.connector else None
+                ),
                 "base_url": self.connector.config.base_url if self.connector else None,
             },
             "automation_engine_status": {
                 "initialized": self.automation_engine is not None,
                 "fortimanager_enabled": self.fortimanager_client is not None,
                 "deployment_history_count": (
-                    len(self.automation_engine.deployment_history) if self.automation_engine else 0
+                    len(self.automation_engine.deployment_history)
+                    if self.automation_engine
+                    else 0
                 ),
             },
         }
@@ -378,7 +392,9 @@ class ITSMAutomationService:
 
             if connected:
                 # 테스트 요청 수집 시도
-                test_requests = await self.connector.fetch_firewall_requests(datetime.now() - timedelta(hours=1))
+                test_requests = await self.connector.fetch_firewall_requests(
+                    datetime.now() - timedelta(hours=1)
+                )
 
                 return {
                     "success": True,

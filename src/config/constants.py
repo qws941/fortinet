@@ -75,7 +75,9 @@ PAGINATION = {
 # File Size Limits (in bytes)
 FILE_LIMITS = {
     "LOG_MAX_SIZE": int(os.getenv("LOG_MAX_SIZE", str(10 * 1024 * 1024))),  # 10MB
-    "ERROR_LOG_MAX_SIZE": int(os.getenv("ERROR_LOG_MAX_SIZE", str(5 * 1024 * 1024))),  # 5MB
+    "ERROR_LOG_MAX_SIZE": int(
+        os.getenv("ERROR_LOG_MAX_SIZE", str(5 * 1024 * 1024))
+    ),  # 5MB
     "LOG_BACKUP_COUNT": int(os.getenv("LOG_BACKUP_COUNT", "3")),
 }
 
@@ -101,7 +103,9 @@ SECURITY_HEADERS = {
 
 # File Paths
 DEFAULT_PATHS = {
-    "CONFIG": os.getenv("CONFIG_PATH", os.path.join(os.getcwd(), "data", "config.json")),
+    "CONFIG": os.getenv(
+        "CONFIG_PATH", os.path.join(os.getcwd(), "data", "config.json")
+    ),
     "DEFAULT_CONFIG": os.getenv(
         "DEFAULT_CONFIG_PATH",
         os.path.join(os.getcwd(), "data", "default_config.json"),

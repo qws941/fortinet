@@ -45,7 +45,9 @@ class ApplicationAnalyzer:
         self.ssh_analyzer = SSHAnalyzer()
         self.web_analyzer = WebAnalyzer()
 
-    def analyze(self, packet_data: bytes, packet_info: Dict[str, Any]) -> Dict[str, Any]:
+    def analyze(
+        self, packet_data: bytes, packet_info: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """패킷 분석 메인 함수"""
 
         try:
@@ -64,7 +66,9 @@ class ApplicationAnalyzer:
             dst_port = packet_info.get("dst_port", 0)
             src_port = packet_info.get("src_port", 0)
 
-            protocol = self.APPLICATION_PORTS.get(dst_port) or self.APPLICATION_PORTS.get(src_port)
+            protocol = self.APPLICATION_PORTS.get(
+                dst_port
+            ) or self.APPLICATION_PORTS.get(src_port)
 
             # 페이로드 추출
             payload = self._extract_payload(packet_data, packet_info)
@@ -98,7 +102,9 @@ class ApplicationAnalyzer:
                 "packet_size": len(packet_data),
             }
 
-    def _extract_payload(self, packet_data: bytes, packet_info: Dict[str, Any]) -> Optional[bytes]:
+    def _extract_payload(
+        self, packet_data: bytes, packet_info: Dict[str, Any]
+    ) -> Optional[bytes]:
         """페이로드 추출"""
 
         try:
@@ -121,7 +127,10 @@ class ApplicationAnalyzer:
             payload_lower = payload_str.lower()
 
             # HTTP 패턴
-            if any(payload_str.startswith(method + " ") for method in ["GET", "POST", "PUT", "DELETE"]):
+            if any(
+                payload_str.startswith(method + " ")
+                for method in ["GET", "POST", "PUT", "DELETE"]
+            ):
                 detected.append("HTTP")
             elif payload_str.startswith("HTTP/"):
                 detected.append("HTTP")
@@ -131,11 +140,17 @@ class ApplicationAnalyzer:
                 detected.append("SSH")
 
             # FTP 패턴
-            if any(cmd in payload_lower for cmd in ["user ", "pass ", "list", "retr ", "stor "]):
+            if any(
+                cmd in payload_lower
+                for cmd in ["user ", "pass ", "list", "retr ", "stor "]
+            ):
                 detected.append("FTP")
 
             # SMTP 패턴
-            if any(cmd in payload_lower for cmd in ["helo", "ehlo", "mail from:", "rcpt to:"]):
+            if any(
+                cmd in payload_lower
+                for cmd in ["helo", "ehlo", "mail from:", "rcpt to:"]
+            ):
                 detected.append("SMTP")
 
             # MQTT 패턴 (바이너리 체크)
@@ -154,7 +169,9 @@ class ApplicationAnalyzer:
 
         return detected
 
-    def _analyze_protocol(self, protocol: str, payload: bytes, packet_info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _analyze_protocol(
+        self, protocol: str, payload: bytes, packet_info: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         """프로토콜별 분석 라우팅"""
 
         try:
@@ -170,7 +187,9 @@ class ApplicationAnalyzer:
             logger.error(f"{protocol} 분석 오류: {e}")
             return None
 
-    def _analyze_generic(self, payload: bytes, packet_info: Dict[str, Any], protocol: str) -> Dict[str, Any]:
+    def _analyze_generic(
+        self, payload: bytes, packet_info: Dict[str, Any], protocol: str
+    ) -> Dict[str, Any]:
         """일반적인 프로토콜 분석"""
 
         analysis = {
@@ -232,7 +251,9 @@ class ApplicationAnalyzer:
         printable_count = sum(1 for byte in payload if 32 <= byte <= 126)
         return printable_count / len(payload)
 
-    def _update_session_info(self, analysis: Dict[str, Any], packet_info: Dict[str, Any]) -> Dict[str, Any]:
+    def _update_session_info(
+        self, analysis: Dict[str, Any], packet_info: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """세션 정보 업데이트"""
 
         src_ip = packet_info.get("src_ip", "")
@@ -278,7 +299,9 @@ class ApplicationAnalyzer:
             "protocol_distribution": protocol_counts,
             "total_bytes_analyzed": total_bytes,
             "total_packets_analyzed": total_packets,
-            "average_session_size": total_bytes // total_sessions if total_sessions > 0 else 0,
+            "average_session_size": total_bytes // total_sessions
+            if total_sessions > 0
+            else 0,
         }
 
     def get_protocol_analyzer(self, protocol: str):

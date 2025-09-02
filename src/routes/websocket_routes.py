@@ -31,7 +31,13 @@ def init_socketio(app):
     global socketio
 
     # Configure SocketIO
-    socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading", logger=True, engineio_logger=False)
+    socketio = SocketIO(
+        app,
+        cors_allowed_origins="*",
+        async_mode="threading",
+        logger=True,
+        engineio_logger=False,
+    )
 
     # Register event handlers
     register_socketio_events()
@@ -104,7 +110,9 @@ def register_socketio_events():
         else:
             metrics_data = {
                 "type": metric_type,
-                "data": dashboard.metrics_collector.get_historical_metrics(metric_type, limit),
+                "data": dashboard.metrics_collector.get_historical_metrics(
+                    metric_type, limit
+                ),
                 "timestamp": datetime.now().isoformat(),
             }
 
@@ -122,7 +130,10 @@ def register_socketio_events():
         if severity != "all":
             alerts = [a for a in alerts if a.get("type") == severity]
 
-        emit("alerts_response", {"alerts": alerts, "timestamp": datetime.now().isoformat()})
+        emit(
+            "alerts_response",
+            {"alerts": alerts, "timestamp": datetime.now().isoformat()},
+        )
 
     @socketio.on("get_health")
     def handle_get_health():
@@ -154,7 +165,10 @@ def execute_dashboard_command(command: str, params: Dict[str, Any]) -> Dict[str,
         elif command == "set_interval":
             interval = params.get("interval", 1)
             dashboard.metrics_collector.collection_interval = interval
-            return {"success": True, "message": f"Collection interval set to {interval}s"}
+            return {
+                "success": True,
+                "message": f"Collection interval set to {interval}s",
+            }
 
         elif command == "clear_alerts":
             dashboard.metrics_collector.alerts.clear()
@@ -214,7 +228,9 @@ def get_metrics_api():
     else:
         data = {
             "type": metric_type,
-            "data": dashboard.metrics_collector.get_historical_metrics(metric_type, limit),
+            "data": dashboard.metrics_collector.get_historical_metrics(
+                metric_type, limit
+            ),
             "timestamp": datetime.now().isoformat(),
         }
 
@@ -227,7 +243,13 @@ def get_alerts_api():
     limit = int(request.args.get("limit", 10))
     alerts = dashboard.metrics_collector.get_alerts(limit)
 
-    return jsonify({"alerts": alerts, "count": len(alerts), "timestamp": datetime.now().isoformat()})
+    return jsonify(
+        {
+            "alerts": alerts,
+            "count": len(alerts),
+            "timestamp": datetime.now().isoformat(),
+        }
+    )
 
 
 @websocket_bp.route("/health", methods=["GET"])

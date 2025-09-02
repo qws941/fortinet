@@ -74,7 +74,9 @@ class APIOptimizer:
         }
         self.lock = threading.Lock()
 
-    def record_request(self, endpoint: str, response_time: float, cache_hit: bool = False):
+    def record_request(
+        self, endpoint: str, response_time: float, cache_hit: bool = False
+    ):
         """요청 메트릭 기록"""
         with self.lock:
             self.metrics["total_requests"] += 1
@@ -95,13 +97,17 @@ class APIOptimizer:
 
             # Update endpoint specific metrics
             if endpoint not in self.metrics["endpoints"]:
-                self.metrics["endpoints"][endpoint] = {"count": 0, "avg_time": 0, "max_time": 0}
+                self.metrics["endpoints"][endpoint] = {
+                    "count": 0,
+                    "avg_time": 0,
+                    "max_time": 0,
+                }
 
             ep_metrics = self.metrics["endpoints"][endpoint]
             ep_metrics["count"] += 1
-            ep_metrics["avg_time"] = (ep_metrics["avg_time"] * (ep_metrics["count"] - 1) + response_time) / ep_metrics[
-                "count"
-            ]
+            ep_metrics["avg_time"] = (
+                ep_metrics["avg_time"] * (ep_metrics["count"] - 1) + response_time
+            ) / ep_metrics["count"]
             ep_metrics["max_time"] = max(ep_metrics["max_time"], response_time)
 
     def get_performance_metrics(self) -> Dict[str, Any]:
@@ -109,12 +115,21 @@ class APIOptimizer:
         with self.lock:
             return {
                 "total_requests": self.metrics["total_requests"],
-                "cache_hit_rate": (self.metrics["cache_hits"] / max(1, self.metrics["total_requests"])) * 100,
+                "cache_hit_rate": (
+                    self.metrics["cache_hits"] / max(1, self.metrics["total_requests"])
+                )
+                * 100,
                 "avg_response_time_ms": self.metrics["avg_response_time"] * 1000,
-                "slow_request_rate": (self.metrics["slow_requests"] / max(1, self.metrics["total_requests"])) * 100,
-                "top_endpoints": sorted(self.metrics["endpoints"].items(), key=lambda x: x[1]["count"], reverse=True)[
-                    :10
-                ],
+                "slow_request_rate": (
+                    self.metrics["slow_requests"]
+                    / max(1, self.metrics["total_requests"])
+                )
+                * 100,
+                "top_endpoints": sorted(
+                    self.metrics["endpoints"].items(),
+                    key=lambda x: x[1]["count"],
+                    reverse=True,
+                )[:10],
             }
 
 
@@ -140,9 +155,13 @@ class CacheWarmer:
         self.tasks = []
         self.results = {"success": [], "failed": []}
 
-    def add_warming_task(self, namespace: str, key: str, data_func: Callable, ttl: int = 300):
+    def add_warming_task(
+        self, namespace: str, key: str, data_func: Callable, ttl: int = 300
+    ):
         """캐시 예열 작업 추가"""
-        self.tasks.append({"namespace": namespace, "key": key, "data_func": data_func, "ttl": ttl})
+        self.tasks.append(
+            {"namespace": namespace, "key": key, "data_func": data_func, "ttl": ttl}
+        )
 
     def warm_cache(self) -> Dict[str, List]:
         """캐시 예열 실행"""
@@ -159,8 +178,12 @@ class CacheWarmer:
                 logger.info(f"Cache warmed: {cache_key}")
 
             except Exception as e:
-                self.results["failed"].append({"key": f"{task['namespace']}:{task['key']}", "error": str(e)})
-                logger.error(f"Cache warming failed for {task['namespace']}:{task['key']}: {e}")
+                self.results["failed"].append(
+                    {"key": f"{task['namespace']}:{task['key']}", "error": str(e)}
+                )
+                logger.error(
+                    f"Cache warming failed for {task['namespace']}:{task['key']}: {e}"
+                )
 
         return self.results
 
@@ -218,7 +241,9 @@ class RealTimeMonitor:
 
                 # Maintain history size
                 if len(self.metrics_history) > self.max_history_size:
-                    self.metrics_history = self.metrics_history[-self.max_history_size :]
+                    self.metrics_history = self.metrics_history[
+                        -self.max_history_size :
+                    ]
 
             time.sleep(self.collection_interval)
 
@@ -226,7 +251,9 @@ class RealTimeMonitor:
         """모니터링 시작"""
         if not self.is_running:
             self.is_running = True
-            self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
+            self.monitor_thread = threading.Thread(
+                target=self._monitor_loop, daemon=True
+            )
             self.monitor_thread.start()
             logger.info("Real-time monitoring started")
 
@@ -263,10 +290,15 @@ class RealTimeMonitor:
                             for part in parts:
                                 value = value.get(part, {})
 
-                            filtered_history.append({"timestamp": metrics["timestamp"], "value": value})
+                            filtered_history.append(
+                                {"timestamp": metrics["timestamp"], "value": value}
+                            )
                         else:
                             filtered_history.append(
-                                {"timestamp": metrics["timestamp"], "value": metrics.get(metric_name)}
+                                {
+                                    "timestamp": metrics["timestamp"],
+                                    "value": metrics.get(metric_name),
+                                }
                             )
                 except Exception:
                     continue
@@ -391,7 +423,8 @@ def warmup_performance_cache():
 
         def warm_dashboard_stats():
             try:
-                from api.integration.dashboard_collector import DashboardDataCollector
+                from api.integration.dashboard_collector import \
+                    DashboardDataCollector
 
                 api_manager, dummy_generator, test_mode = get_data_source()
                 if test_mode:

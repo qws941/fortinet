@@ -162,7 +162,9 @@ class SecurityFixer:
 
         return fixes
 
-    def _apply_patterns_to_file(self, file_path: str, patterns: List[Tuple[str, str]]) -> bool:
+    def _apply_patterns_to_file(
+        self, file_path: str, patterns: List[Tuple[str, str]]
+    ) -> bool:
         """파일에 패턴 적용"""
         try:
             with open(file_path, "r", encoding="utf-8") as f:
@@ -203,7 +205,9 @@ class SecurityFixer:
                 # 임포트 섹션에 보안 관련 임포트 추가
                 if not imports_added and line.startswith("from flask import"):
                     new_lines.append(line)
-                    new_lines.append("from utils.security import rate_limit, validate_request, csrf_protect\n")
+                    new_lines.append(
+                        "from utils.security import rate_limit, validate_request, csrf_protect\n"
+                    )
                     imports_added = True
                     modified = True
                 elif re.search(

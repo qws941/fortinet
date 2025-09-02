@@ -41,7 +41,9 @@ class FortiGateAPIValidator:
 
     def _init_validators(self):
         """Initialize all validator modules"""
-        self.connection_validator = ConnectionValidator(self.api_client, self.test_config)
+        self.connection_validator = ConnectionValidator(
+            self.api_client, self.test_config
+        )
         # NOTE: PerformanceValidator and SecurityValidator would be implemented similarly
         # self.performance_validator = PerformanceValidator(self.api_client, self.test_config)
         # self.security_validator = SecurityValidator(self.api_client, self.test_config)
@@ -53,7 +55,9 @@ class FortiGateAPIValidator:
         self.connection_validator.config.update(config)
         logger.info(f"Test configuration updated: {config}")
 
-    async def run_all_validations(self, test_categories: List[str] = None) -> Dict[str, Any]:
+    async def run_all_validations(
+        self, test_categories: List[str] = None
+    ) -> Dict[str, Any]:
         """
         Run all validation tests using modular approach
 
@@ -131,10 +135,14 @@ class FortiGateAPIValidator:
                 "passed": 0,
                 "failed": 0,
                 "results": [],
-                "message": "Category " + category + " not yet implemented in modular architecture",
+                "message": "Category "
+                + category
+                + " not yet implemented in modular architecture",
             }
 
-    def _generate_comprehensive_summary(self, category_results: List[Dict], total_time: float) -> Dict[str, Any]:
+    def _generate_comprehensive_summary(
+        self, category_results: List[Dict], total_time: float
+    ) -> Dict[str, Any]:
         """Generate comprehensive summary from category results"""
         total_tests = sum(result.get("total_tests", 0) for result in category_results)
         total_passed = sum(result.get("passed", 0) for result in category_results)
@@ -181,7 +189,9 @@ class FortiGateAPIValidator:
             )
 
         # Failed tests details
-        failed_results = [r for r in results.get("all_results", []) if r.get("status") == "fail"]
+        failed_results = [
+            r for r in results.get("all_results", []) if r.get("status") == "fail"
+        ]
         if failed_results:
             report_lines.extend(["FAILED TESTS:", "-" * 20])
             for result in failed_results:

@@ -19,13 +19,12 @@ from typing import Any, Dict, List, Optional
 
 from flask import request
 
-from api.advanced_fortigate_api import (
-    AdvancedFortiGateAPI,
-    batch_policy_operations,
-    get_fortigate_api_client,
-    initialize_global_api_client,
-)
-from api.fortigate_api_validator import create_test_report, validate_fortigate_api
+from api.advanced_fortigate_api import (AdvancedFortiGateAPI,
+                                        batch_policy_operations,
+                                        get_fortigate_api_client,
+                                        initialize_global_api_client)
+from api.fortigate_api_validator import (create_test_report,
+                                         validate_fortigate_api)
 from config.unified_settings import unified_settings
 from utils.common_imports import Blueprint, jsonify
 from utils.unified_cache_manager import cached
@@ -108,7 +107,10 @@ async def test_api_connection():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not configured"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not configured"}),
+                500,
+            )
 
         result = await client.test_connection()
 
@@ -126,7 +128,13 @@ def get_connection_status():
         client = get_api_client()
         if not client:
             return jsonify(
-                {"success": True, "data": {"status": "not_configured", "message": "API client not configured"}}
+                {
+                    "success": True,
+                    "data": {
+                        "status": "not_configured",
+                        "message": "API client not configured",
+                    },
+                }
             )
 
         stats = client.get_api_statistics()
@@ -134,7 +142,12 @@ def get_connection_status():
         return jsonify(
             {
                 "success": True,
-                "data": {"status": "configured", "host": client.host, "port": client.port, "statistics": stats},
+                "data": {
+                    "status": "configured",
+                    "host": client.host,
+                    "port": client.port,
+                    "statistics": stats,
+                },
             }
         )
 
@@ -154,7 +167,10 @@ async def get_firewall_policies():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         # 쿼리 파라미터 처리
         vdom = request.args.get("vdom", "root")
@@ -169,7 +185,15 @@ async def get_firewall_policies():
         policies = await client.get_firewall_policies(vdom=vdom, filters=filters)
 
         return jsonify(
-            {"success": True, "data": {"policies": policies, "count": len(policies), "vdom": vdom, "filters": filters}}
+            {
+                "success": True,
+                "data": {
+                    "policies": policies,
+                    "count": len(policies),
+                    "vdom": vdom,
+                    "filters": filters,
+                },
+            }
         )
 
     except Exception as e:
@@ -184,10 +208,21 @@ async def create_firewall_policy():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         # 요청 데이터 검증
-        required_fields = ["name", "srcintf", "dstintf", "srcaddr", "dstaddr", "service", "action"]
+        required_fields = [
+            "name",
+            "srcintf",
+            "dstintf",
+            "srcaddr",
+            "dstaddr",
+            "service",
+            "action",
+        ]
         data = validate_json_request(required_fields)
 
         vdom = data.pop("vdom", "root")
@@ -196,7 +231,11 @@ async def create_firewall_policy():
 
         return (
             jsonify(
-                {"success": True, "message": f"Firewall policy '{data['name']}' created successfully", "data": result}
+                {
+                    "success": True,
+                    "message": f"Firewall policy '{data['name']}' created successfully",
+                    "data": result,
+                }
             ),
             201,
         )
@@ -215,7 +254,10 @@ async def update_firewall_policy(policy_id: int):
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         data = validate_json_request()
         vdom = data.pop("vdom", "root")
@@ -223,7 +265,11 @@ async def update_firewall_policy(policy_id: int):
         result = await client.update_firewall_policy(policy_id, data, vdom=vdom)
 
         return jsonify(
-            {"success": True, "message": f"Firewall policy {policy_id} updated successfully", "data": result}
+            {
+                "success": True,
+                "message": f"Firewall policy {policy_id} updated successfully",
+                "data": result,
+            }
         )
 
     except ValueError as e:
@@ -240,14 +286,21 @@ async def delete_firewall_policy(policy_id: int):
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         vdom = request.args.get("vdom", "root")
 
         result = await client.delete_firewall_policy(policy_id, vdom=vdom)
 
         return jsonify(
-            {"success": True, "message": f"Firewall policy {policy_id} deleted successfully", "data": result}
+            {
+                "success": True,
+                "message": f"Firewall policy {policy_id} deleted successfully",
+                "data": result,
+            }
         )
 
     except Exception as e:
@@ -262,7 +315,10 @@ async def batch_policy_operations_route():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         data = validate_json_request(["operations"])
         operations = data["operations"]
@@ -282,7 +338,11 @@ async def batch_policy_operations_route():
                 "message": f"Batch operations completed: {successful_ops} successful, {failed_ops} failed",
                 "data": {
                     "results": results,
-                    "summary": {"total": len(results), "successful": successful_ops, "failed": failed_ops},
+                    "summary": {
+                        "total": len(results),
+                        "successful": successful_ops,
+                        "failed": failed_ops,
+                    },
                 },
             }
         )
@@ -305,12 +365,20 @@ async def get_ipsec_vpn_tunnels():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         vdom = request.args.get("vdom", "root")
         tunnels = await client.get_ipsec_vpn_tunnels(vdom=vdom)
 
-        return jsonify({"success": True, "data": {"tunnels": tunnels, "count": len(tunnels), "vdom": vdom}})
+        return jsonify(
+            {
+                "success": True,
+                "data": {"tunnels": tunnels, "count": len(tunnels), "vdom": vdom},
+            }
+        )
 
     except Exception as e:
         logger.error(f"Failed to get IPSec VPN tunnels: {e}")
@@ -325,7 +393,10 @@ async def get_ssl_vpn_settings():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         vdom = request.args.get("vdom", "root")
         settings = await client.get_ssl_vpn_settings(vdom=vdom)
@@ -344,7 +415,10 @@ async def create_ipsec_vpn_tunnel():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         required_fields = ["name", "interface", "remote-gw", "psksecret"]
         data = validate_json_request(required_fields)
@@ -355,7 +429,11 @@ async def create_ipsec_vpn_tunnel():
 
         return (
             jsonify(
-                {"success": True, "message": f"IPSec VPN tunnel '{data['name']}' created successfully", "data": result}
+                {
+                    "success": True,
+                    "message": f"IPSec VPN tunnel '{data['name']}' created successfully",
+                    "data": result,
+                }
             ),
             201,
         )
@@ -378,7 +456,10 @@ async def get_nat_policies():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         vdom = request.args.get("vdom", "root")
         policy_type = request.args.get("type", "ipv4")
@@ -388,7 +469,12 @@ async def get_nat_policies():
         return jsonify(
             {
                 "success": True,
-                "data": {"policies": policies, "count": len(policies), "vdom": vdom, "policy_type": policy_type},
+                "data": {
+                    "policies": policies,
+                    "count": len(policies),
+                    "vdom": vdom,
+                    "policy_type": policy_type,
+                },
             }
         )
 
@@ -404,9 +490,19 @@ async def create_snat_policy():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
-        required_fields = ["name", "srcintf", "dstintf", "srcaddr", "dstaddr", "service"]
+        required_fields = [
+            "name",
+            "srcintf",
+            "dstintf",
+            "srcaddr",
+            "dstaddr",
+            "service",
+        ]
         data = validate_json_request(required_fields)
 
         vdom = data.pop("vdom", "root")
@@ -414,7 +510,13 @@ async def create_snat_policy():
         result = await client.create_snat_policy(data, vdom=vdom)
 
         return (
-            jsonify({"success": True, "message": f"SNAT policy '{data['name']}' created successfully", "data": result}),
+            jsonify(
+                {
+                    "success": True,
+                    "message": f"SNAT policy '{data['name']}' created successfully",
+                    "data": result,
+                }
+            ),
             201,
         )
 
@@ -436,11 +538,22 @@ async def get_security_profiles(profile_type: str):
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         valid_types = ["ips", "antivirus", "webfilter", "application"]
         if profile_type not in valid_types:
-            return jsonify({"success": False, "message": f"Invalid profile type. Valid types: {valid_types}"}), 400
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": f"Invalid profile type. Valid types: {valid_types}",
+                    }
+                ),
+                400,
+            )
 
         vdom = request.args.get("vdom", "root")
         profiles = await client.get_security_profiles(profile_type, vdom=vdom)
@@ -448,7 +561,12 @@ async def get_security_profiles(profile_type: str):
         return jsonify(
             {
                 "success": True,
-                "data": {"profiles": profiles, "count": len(profiles), "profile_type": profile_type, "vdom": vdom},
+                "data": {
+                    "profiles": profiles,
+                    "count": len(profiles),
+                    "profile_type": profile_type,
+                    "vdom": vdom,
+                },
             }
         )
 
@@ -464,7 +582,10 @@ async def apply_security_profiles():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         required_fields = ["policy_id", "security_profiles"]
         data = validate_json_request(required_fields)
@@ -476,7 +597,9 @@ async def apply_security_profiles():
         if not isinstance(security_profiles, dict):
             raise ValueError("security_profiles must be a dictionary")
 
-        result = await client.apply_security_profile_to_policy(policy_id, security_profiles, vdom=vdom)
+        result = await client.apply_security_profile_to_policy(
+            policy_id, security_profiles, vdom=vdom
+        )
 
         return jsonify(
             {
@@ -503,11 +626,22 @@ async def get_realtime_logs(log_type: str):
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         valid_types = ["traffic", "security", "system"]
         if log_type not in valid_types:
-            return jsonify({"success": False, "message": f"Invalid log type. Valid types: {valid_types}"}), 400
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": f"Invalid log type. Valid types: {valid_types}",
+                    }
+                ),
+                400,
+            )
 
         # 쿼리 파라미터 처리
         limit = int(request.args.get("limit", 100))
@@ -519,12 +653,20 @@ async def get_realtime_logs(log_type: str):
             if value:
                 filters[param] = value
 
-        logs = await client.get_realtime_logs(log_type=log_type, filters=filters, limit=limit)
+        logs = await client.get_realtime_logs(
+            log_type=log_type, filters=filters, limit=limit
+        )
 
         return jsonify(
             {
                 "success": True,
-                "data": {"logs": logs, "count": len(logs), "log_type": log_type, "filters": filters, "limit": limit},
+                "data": {
+                    "logs": logs,
+                    "count": len(logs),
+                    "log_type": log_type,
+                    "filters": filters,
+                    "limit": limit,
+                },
             }
         )
 
@@ -546,7 +688,10 @@ async def get_system_status():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         vdom = request.args.get("vdom", "root")
         status = await client.get_system_status(vdom=vdom)
@@ -566,7 +711,10 @@ async def get_performance_stats():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         vdom = request.args.get("vdom", "root")
         stats = await client.get_performance_stats(vdom=vdom)
@@ -586,15 +734,27 @@ async def get_interface_stats():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         vdom = request.args.get("vdom", "root")
         interface_name = request.args.get("interface")
 
-        stats = await client.get_interface_stats(interface_name=interface_name, vdom=vdom)
+        stats = await client.get_interface_stats(
+            interface_name=interface_name, vdom=vdom
+        )
 
         return jsonify(
-            {"success": True, "data": {"interface_stats": stats, "interface_name": interface_name, "vdom": vdom}}
+            {
+                "success": True,
+                "data": {
+                    "interface_stats": stats,
+                    "interface_name": interface_name,
+                    "vdom": vdom,
+                },
+            }
         )
 
     except Exception as e:
@@ -612,12 +772,17 @@ async def analyze_traffic_patterns():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         time_range = int(request.args.get("time_range", 3600))  # 1시간 기본값
         vdom = request.args.get("vdom", "root")
 
-        analysis = await client.analyze_traffic_patterns(time_range=time_range, vdom=vdom)
+        analysis = await client.analyze_traffic_patterns(
+            time_range=time_range, vdom=vdom
+        )
 
         return jsonify({"success": True, "data": analysis})
 
@@ -635,16 +800,29 @@ async def detect_security_threats():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         time_range = int(request.args.get("time_range", 3600))  # 1시간 기본값
         severity_threshold = request.args.get("severity", "medium")
 
         valid_severities = ["low", "medium", "high", "critical"]
         if severity_threshold not in valid_severities:
-            return jsonify({"success": False, "message": f"Invalid severity. Valid values: {valid_severities}"}), 400
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": f"Invalid severity. Valid values: {valid_severities}",
+                    }
+                ),
+                400,
+            )
 
-        threats = await client.detect_security_threats(time_range=time_range, severity_threshold=severity_threshold)
+        threats = await client.detect_security_threats(
+            time_range=time_range, severity_threshold=severity_threshold
+        )
 
         return jsonify(
             {
@@ -675,7 +853,10 @@ async def run_api_validation():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         # 요청 데이터 처리 (선택적)
         data = request.get_json() or {}
@@ -683,7 +864,9 @@ async def run_api_validation():
         save_results = data.get("save_results")  # 결과 저장 파일 경로
 
         # 유효성 검사 실행
-        results = await validate_fortigate_api(client, test_categories=test_categories, save_results=save_results)
+        results = await validate_fortigate_api(
+            client, test_categories=test_categories, save_results=save_results
+        )
 
         return jsonify(
             {
@@ -705,7 +888,10 @@ async def generate_validation_report():
     try:
         client = get_api_client()
         if not client:
-            return jsonify({"success": False, "message": "API client not available"}), 500
+            return (
+                jsonify({"success": False, "message": "API client not available"}),
+                500,
+            )
 
         # 검증 실행
         results = await validate_fortigate_api(client)
@@ -742,7 +928,12 @@ def get_validation_categories():
         {"name": "monitoring", "description": "모니터링 및 로그 스트리밍 테스트"},
     ]
 
-    return jsonify({"success": True, "data": {"categories": categories, "total_categories": len(categories)}})
+    return jsonify(
+        {
+            "success": True,
+            "data": {"categories": categories, "total_categories": len(categories)},
+        }
+    )
 
 
 # ===== 설정 관리 =====
@@ -816,7 +1007,16 @@ def update_api_config():
 @advanced_fortigate_bp.errorhandler(404)
 def not_found(error):
     """404 에러 핸들러"""
-    return jsonify({"success": False, "message": "API endpoint not found", "error": "Not Found"}), 404
+    return (
+        jsonify(
+            {
+                "success": False,
+                "message": "API endpoint not found",
+                "error": "Not Found",
+            }
+        ),
+        404,
+    )
 
 
 @advanced_fortigate_bp.errorhandler(405)
@@ -824,7 +1024,11 @@ def method_not_allowed(error):
     """405 에러 핸들러"""
     return (
         jsonify(
-            {"success": False, "message": "HTTP method not allowed for this endpoint", "error": "Method Not Allowed"}
+            {
+                "success": False,
+                "message": "HTTP method not allowed for this endpoint",
+                "error": "Method Not Allowed",
+            }
         ),
         405,
     )
@@ -834,7 +1038,16 @@ def method_not_allowed(error):
 def internal_error(error):
     """500 에러 핸들러"""
     logger.error(f"Internal server error: {error}")
-    return jsonify({"success": False, "message": "Internal server error", "error": "Internal Server Error"}), 500
+    return (
+        jsonify(
+            {
+                "success": False,
+                "message": "Internal server error",
+                "error": "Internal Server Error",
+            }
+        ),
+        500,
+    )
 
 
 # Blueprint 등록 시 로깅

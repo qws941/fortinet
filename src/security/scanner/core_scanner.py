@@ -69,7 +69,9 @@ class CoreSecurityScanner(
             return
 
         self.is_scanning = True
-        self.scan_thread = threading.Thread(target=self._continuous_scan_loop, args=(interval_hours,))
+        self.scan_thread = threading.Thread(
+            target=self._continuous_scan_loop, args=(interval_hours,)
+        )
         self.scan_thread.daemon = True
         self.scan_thread.start()
         logger.info(f"지속적인 보안 스캔 시작 ({interval_hours}시간 간격)")
@@ -113,7 +115,9 @@ class CoreSecurityScanner(
         # 스캔 완료 시간 기록
         scan_end_time = datetime.now()
         scan_results["end_time"] = scan_end_time.isoformat()
-        scan_results["duration_seconds"] = (scan_end_time - scan_start_time).total_seconds()
+        scan_results["duration_seconds"] = (
+            scan_end_time - scan_start_time
+        ).total_seconds()
 
         # 요약 정보 생성
         scan_results["summary"] = self._generate_scan_summary(scan_results["results"])
@@ -203,7 +207,9 @@ class CoreSecurityScanner(
         # 트렌드 계산
         trend = "stable"
         if len(self.scan_results) >= 2:
-            prev_issues = self.scan_results[-2].get("summary", {}).get("total_issues", 0)
+            prev_issues = (
+                self.scan_results[-2].get("summary", {}).get("total_issues", 0)
+            )
             if total_issues > prev_issues:
                 trend = "worsening"
             elif total_issues < prev_issues:

@@ -113,7 +113,9 @@ class ConnectionValidator(BaseValidator):
 
         results = await asyncio.gather(*tests, return_exceptions=True)
 
-        passed = sum(1 for r in results if isinstance(r, ValidationResult) and r.status == "pass")
+        passed = sum(
+            1 for r in results if isinstance(r, ValidationResult) and r.status == "pass"
+        )
         total = len(results)
 
         return {

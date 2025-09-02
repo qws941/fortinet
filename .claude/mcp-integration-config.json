@@ -1,0 +1,198 @@
+{
+  "version": "1.0.0",
+  "description": "FortiGate Nextrade MCP 서버 통합 설정",
+  "created": "2025-09-02",
+  "servers": {
+    "serena": {
+      "command": "python",
+      "args": ["-m", "mcp_serena", "--project-path", "/home/jclee/app/fortinet"],
+      "description": "프로젝트 파일 관리 및 코드 분석",
+      "capabilities": ["file_operations", "code_analysis", "project_management"],
+      "priority": 1,
+      "auto_start": true
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/jclee/app/fortinet"],
+      "description": "파일 시스템 접근 및 관리",
+      "capabilities": ["file_read", "file_write", "directory_operations"],
+      "priority": 2,
+      "auto_start": true
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "description": "GitHub 저장소 관리 및 액션 실행",
+      "capabilities": ["repo_management", "actions", "issues", "pull_requests"],
+      "priority": 3,
+      "auto_start": true
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "description": "웹 검색 및 최신 정보 수집",
+      "capabilities": ["web_search", "real_time_info"],
+      "priority": 4,
+      "auto_start": false
+    },
+    "exa": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-exa"],
+      "env": {
+        "EXA_API_KEY": "${EXA_API_KEY}"
+      },
+      "description": "고급 검색 및 데이터 분석",
+      "capabilities": ["advanced_search", "data_analysis"],
+      "priority": 5,
+      "auto_start": false
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+      "description": "웹 자동화 및 스크린샷",
+      "capabilities": ["web_automation", "screenshot", "pdf_generation"],
+      "priority": 6,
+      "auto_start": false
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-playwright"],
+      "description": "고급 웹 테스팅 및 자동화",
+      "capabilities": ["web_testing", "cross_browser", "automation"],
+      "priority": 7,
+      "auto_start": false
+    },
+    "eslint": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-eslint"],
+      "description": "JavaScript/TypeScript 코드 린팅",
+      "capabilities": ["code_linting", "style_checking"],
+      "priority": 8,
+      "auto_start": false
+    },
+    "code-runner": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-code-runner"],
+      "description": "코드 실행 및 테스트",
+      "capabilities": ["code_execution", "testing"],
+      "priority": 9,
+      "auto_start": false
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "description": "지식 그래프 및 메모리 관리",
+      "capabilities": ["knowledge_graph", "memory_storage"],
+      "priority": 10,
+      "auto_start": false
+    }
+  },
+  "workflows": {
+    "automated_development": {
+      "description": "전체 개발 프로세스 자동화",
+      "servers": ["serena", "filesystem", "github"],
+      "steps": [
+        {
+          "name": "code_analysis",
+          "server": "serena",
+          "action": "analyze_project_health"
+        },
+        {
+          "name": "quality_check",
+          "server": "filesystem",
+          "action": "run_linting_tools"
+        },
+        {
+          "name": "git_operations",
+          "server": "github",
+          "action": "commit_and_push"
+        }
+      ]
+    },
+    "ci_cd_pipeline": {
+      "description": "CI/CD 파이프라인 자동화",
+      "servers": ["github", "serena"],
+      "steps": [
+        {
+          "name": "trigger_actions",
+          "server": "github",
+          "action": "dispatch_workflow"
+        },
+        {
+          "name": "monitor_deployment",
+          "server": "serena",
+          "action": "track_deployment_status"
+        }
+      ]
+    },
+    "research_and_optimization": {
+      "description": "연구 및 최적화 작업",
+      "servers": ["brave-search", "exa", "memory"],
+      "steps": [
+        {
+          "name": "gather_information",
+          "server": "brave-search",
+          "action": "search_best_practices"
+        },
+        {
+          "name": "deep_analysis",
+          "server": "exa",
+          "action": "analyze_technical_docs"
+        },
+        {
+          "name": "store_knowledge",
+          "server": "memory",
+          "action": "save_insights"
+        }
+      ]
+    }
+  },
+  "automation_rules": {
+    "auto_commit": {
+      "enabled": true,
+      "conditions": ["code_quality_passed", "tests_passed"],
+      "action": "commit_with_automated_message"
+    },
+    "auto_deploy": {
+      "enabled": true,
+      "conditions": ["main_branch", "all_checks_passed"],
+      "action": "trigger_deployment_pipeline"
+    },
+    "auto_optimize": {
+      "enabled": true,
+      "conditions": ["performance_issues_detected"],
+      "action": "apply_optimization_suggestions"
+    }
+  },
+  "monitoring": {
+    "health_checks": {
+      "interval": "5m",
+      "endpoints": [
+        "http://192.168.50.110:30777/api/health"
+      ]
+    },
+    "alerts": {
+      "deployment_failure": true,
+      "performance_degradation": true,
+      "security_issues": true
+    }
+  },
+  "security": {
+    "api_keys": {
+      "github_token": "${GITHUB_TOKEN}",
+      "brave_api_key": "${BRAVE_API_KEY}",
+      "exa_api_key": "${EXA_API_KEY}"
+    },
+    "access_control": {
+      "restrict_file_access": true,
+      "allowed_paths": ["/home/jclee/app/fortinet"],
+      "forbidden_operations": ["system_commands", "network_access"]
+    }
+  }
+}

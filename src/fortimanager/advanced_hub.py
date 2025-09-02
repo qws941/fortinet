@@ -10,7 +10,8 @@ from typing import Any, Dict, List
 
 from api.clients.fortimanager_api_client import FortiManagerAPIClient
 
-from .fortimanager_analytics_engine import AdvancedAnalyticsEngine, ReportFormat
+from .fortimanager_analytics_engine import (AdvancedAnalyticsEngine,
+                                            ReportFormat)
 from .fortimanager_compliance_automation import ComplianceAutomationFramework
 from .fortimanager_policy_orchestrator import PolicyOrchestrationEngine
 from .fortimanager_security_fabric import SecurityFabricIntegration
@@ -71,7 +72,9 @@ class FortiManagerAdvancedHub:
             # Discover Security Fabric components
             fabric_discovery = await self.security_fabric.discover_fabric_components()
             initialization_results["modules"]["security_fabric"] = fabric_discovery
-            self.module_status["security_fabric"] = "active" if fabric_discovery["success"] else "error"
+            self.module_status["security_fabric"] = (
+                "active" if fabric_discovery["success"] else "error"
+            )
 
             # Load compliance rules
             compliance_rules = len(self.compliance_framework.rules)
@@ -92,7 +95,9 @@ class FortiManagerAdvancedHub:
 
             # Load policy templates
             templates_count = len(self.policy_orchestrator.templates)
-            initialization_results["modules"]["policy_orchestrator"] = {"templates_loaded": templates_count}
+            initialization_results["modules"]["policy_orchestrator"] = {
+                "templates_loaded": templates_count
+            }
             self.module_status["policy_orchestrator"] = "active"
 
         except Exception as e:
@@ -111,9 +116,13 @@ class FortiManagerAdvancedHub:
         adom: str = "root",
     ) -> Dict[str, Any]:
         """Apply a policy template to devices"""
-        return await self.policy_orchestrator.apply_template(template_name, parameters, target_devices, adom)
+        return await self.policy_orchestrator.apply_template(
+            template_name, parameters, target_devices, adom
+        )
 
-    def analyze_policy_conflicts(self, device: str, adom: str = "root") -> Dict[str, Any]:
+    def analyze_policy_conflicts(
+        self, device: str, adom: str = "root"
+    ) -> Dict[str, Any]:
         """Analyze policy conflicts and overlaps"""
         return self.policy_orchestrator.analyze_policy_conflicts(device, adom)
 
@@ -133,9 +142,13 @@ class FortiManagerAdvancedHub:
         adom: str = "root",
     ) -> Dict[str, Any]:
         """Run compliance checks on devices"""
-        return await self.compliance_framework.run_compliance_check(devices, frameworks, None, adom)
+        return await self.compliance_framework.run_compliance_check(
+            devices, frameworks, None, adom
+        )
 
-    async def remediate_compliance_issues(self, issue_ids: List[str], adom: str = "root") -> Dict[str, Any]:
+    async def remediate_compliance_issues(
+        self, issue_ids: List[str], adom: str = "root"
+    ) -> Dict[str, Any]:
         """Remediate compliance issues"""
         return await self.compliance_framework.remediate_issues(issue_ids, adom)
 
@@ -143,7 +156,9 @@ class FortiManagerAdvancedHub:
         """Get compliance dashboard data"""
         return self.compliance_framework.get_compliance_dashboard()
 
-    def export_compliance_report(self, format: str = "json", frameworks: List[str] = None) -> str:
+    def export_compliance_report(
+        self, format: str = "json", frameworks: List[str] = None
+    ) -> str:
         """Export compliance report"""
         return self.compliance_framework.export_compliance_report(format, frameworks)
 
@@ -152,24 +167,36 @@ class FortiManagerAdvancedHub:
         """Detect threats across Security Fabric"""
         return await self.security_fabric.detect_threats(time_window)
 
-    async def respond_to_incident(self, incident_id: str, response_plan: Dict[str, Any]) -> Dict[str, Any]:
+    async def respond_to_incident(
+        self, incident_id: str, response_plan: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Coordinate incident response"""
-        return await self.security_fabric.coordinate_response(incident_id, response_plan)
+        return await self.security_fabric.coordinate_response(
+            incident_id, response_plan
+        )
 
-    async def import_threat_intel(self, source: str, threat_data: List[Dict]) -> Dict[str, Any]:
+    async def import_threat_intel(
+        self, source: str, threat_data: List[Dict]
+    ) -> Dict[str, Any]:
         """Import threat intelligence"""
-        return await self.security_fabric.import_threat_intelligence(source, threat_data)
+        return await self.security_fabric.import_threat_intelligence(
+            source, threat_data
+        )
 
     async def generate_threat_report(self, hours: int = 24) -> Dict[str, Any]:
         """Generate threat report"""
         return await self.security_fabric.generate_threat_report(hours)
 
-    async def perform_threat_hunting(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    async def perform_threat_hunting(
+        self, parameters: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Perform threat hunting"""
         return await self.security_fabric.perform_threat_hunting(parameters)
 
     # Analytics Methods
-    async def analyze_trends(self, metric_id: str, time_range: Dict[str, Any]) -> Dict[str, Any]:
+    async def analyze_trends(
+        self, metric_id: str, time_range: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Analyze trends for metrics"""
         return await self.analytics_engine.analyze_trends(metric_id, time_range)
 
@@ -177,7 +204,9 @@ class FortiManagerAdvancedHub:
         """Detect anomalies in metrics"""
         return await self.analytics_engine.detect_anomalies(time_window)
 
-    async def generate_predictions(self, model_id: str, horizon: int = 24) -> Dict[str, Any]:
+    async def generate_predictions(
+        self, model_id: str, horizon: int = 24
+    ) -> Dict[str, Any]:
         """Generate predictions"""
         return await self.analytics_engine.generate_predictions(model_id, horizon)
 
@@ -189,7 +218,9 @@ class FortiManagerAdvancedHub:
     ) -> Any:
         """Generate analytics report"""
         report_format = ReportFormat(format.lower())
-        return await self.analytics_engine.generate_report(report_type, parameters, report_format)
+        return await self.analytics_engine.generate_report(
+            report_type, parameters, report_format
+        )
 
     async def get_optimization_recommendations(self) -> List[Dict[str, Any]]:
         """Get optimization recommendations"""
@@ -227,7 +258,9 @@ class FortiManagerAdvancedHub:
 
             # Get compliance status
             compliance_dashboard = self.get_compliance_dashboard()
-            health_data["compliance_score"] = compliance_dashboard["summary"]["compliance_score"]
+            health_data["compliance_score"] = compliance_dashboard["summary"][
+                "compliance_score"
+            ]
 
             # Get recent threats
             recent_threats = await self.detect_threats(60)
@@ -243,7 +276,9 @@ class FortiManagerAdvancedHub:
 
         return health_data
 
-    async def execute_automated_response(self, trigger: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute_automated_response(
+        self, trigger: str, context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Execute automated response based on trigger"""
 
         response_results = {
@@ -259,7 +294,9 @@ class FortiManagerAdvancedHub:
                     context.get("affected_devices", []),
                     ["PCI-DSS", "ISO27001"],
                 )
-                response_results["actions_taken"].append({"action": "compliance_check", "result": compliance_result})
+                response_results["actions_taken"].append(
+                    {"action": "compliance_check", "result": compliance_result}
+                )
 
                 # Analyze policies
                 for device in context.get("affected_devices", []):
@@ -285,13 +322,17 @@ class FortiManagerAdvancedHub:
 
                 # Perform capacity planning
                 capacity_plan = await self.perform_capacity_planning(30)
-                response_results["actions_taken"].append({"action": "capacity_planning", "result": capacity_plan})
+                response_results["actions_taken"].append(
+                    {"action": "capacity_planning", "result": capacity_plan}
+                )
 
             elif trigger == "compliance_violation":
                 # Auto-remediate if enabled
                 if context.get("auto_remediate", False):
                     issue_ids = context.get("issue_ids", [])
-                    remediation_result = await self.remediate_compliance_issues(issue_ids)
+                    remediation_result = await self.remediate_compliance_issues(
+                        issue_ids
+                    )
                     response_results["actions_taken"].append(
                         {
                             "action": "compliance_remediation",
@@ -305,7 +346,9 @@ class FortiManagerAdvancedHub:
 
         return response_results
 
-    async def generate_executive_report(self, time_range: Dict[str, Any], format: str = "pdf") -> Any:
+    async def generate_executive_report(
+        self, time_range: Dict[str, Any], format: str = "pdf"
+    ) -> Any:
         """Generate comprehensive executive report"""
 
         # Gather data from all modules
@@ -316,23 +359,32 @@ class FortiManagerAdvancedHub:
         }
 
         # Analytics section
-        analytics_report = await self.generate_analytics_report("executive_summary", time_range, "json")
-        report_data["sections"].append({"title": "Analytics Overview", "data": analytics_report})
+        analytics_report = await self.generate_analytics_report(
+            "executive_summary", time_range, "json"
+        )
+        report_data["sections"].append(
+            {"title": "Analytics Overview", "data": analytics_report}
+        )
 
         # Compliance section
         compliance_report = self.export_compliance_report("json")
-        report_data["sections"].append({"title": "Compliance Status", "data": compliance_report})
+        report_data["sections"].append(
+            {"title": "Compliance Status", "data": compliance_report}
+        )
 
         # Security section
         threat_report = await self.generate_threat_report(
             int(
                 (
-                    datetime.fromisoformat(time_range["end"]) - datetime.fromisoformat(time_range["start"])
+                    datetime.fromisoformat(time_range["end"])
+                    - datetime.fromisoformat(time_range["start"])
                 ).total_seconds()
                 / 3600
             )
         )
-        report_data["sections"].append({"title": "Security Analysis", "data": threat_report})
+        report_data["sections"].append(
+            {"title": "Security Analysis", "data": threat_report}
+        )
 
         # Policy section
         policy_analysis = {
@@ -341,12 +393,16 @@ class FortiManagerAdvancedHub:
             "policy_recommendations": [],
         }
 
-        for device in list(self.security_fabric.fabric_components.keys())[:5]:  # Top 5 devices
+        for device in list(self.security_fabric.fabric_components.keys())[
+            :5
+        ]:  # Top 5 devices
             recommendations = self.get_policy_recommendations(device)
             if recommendations:
                 policy_analysis["policy_recommendations"].extend(recommendations[:2])
 
-        report_data["sections"].append({"title": "Policy Management", "data": policy_analysis})
+        report_data["sections"].append(
+            {"title": "Policy Management", "data": policy_analysis}
+        )
 
         # Format report
         if format.lower() == "json":

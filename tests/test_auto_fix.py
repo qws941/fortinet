@@ -417,7 +417,7 @@ filterwarnings =
 timeout = 30
 '''
     
-    with open("pytest.ini", 'w', encoding='utf-8') as f:
+    with open("config/pytest.ini", 'w', encoding='utf-8') as f:
         f.write(pytest_ini_content)
     
     print("✅ Updated pytest configuration for better performance")

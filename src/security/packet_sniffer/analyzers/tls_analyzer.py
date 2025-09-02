@@ -62,7 +62,9 @@ class TLSAnalyzer:
         self.connections = {}  # TLS 연결 추적
         self.certificates = {}  # 인증서 캐시
 
-    def analyze(self, packet_data: bytes, packet_info: Dict[str, Any]) -> Dict[str, Any]:
+    def analyze(
+        self, packet_data: bytes, packet_info: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         TLS 패킷 분석
 
@@ -170,7 +172,9 @@ class TLSAnalyzer:
                 record_data = data[offset + 5 : offset + 5 + length]
 
                 record = {
-                    "content_type": self.TLS_CONTENT_TYPES.get(content_type, f"unknown_{content_type}"),
+                    "content_type": self.TLS_CONTENT_TYPES.get(
+                        content_type, f"unknown_{content_type}"
+                    ),
                     "version": self.TLS_VERSIONS.get(version, f"unknown_{version:04x}"),
                     "length": length,
                     "data": record_data,
@@ -201,7 +205,9 @@ class TLSAnalyzer:
             msg_length = struct.unpack(">I", b"\x00" + data[1:4])[0]
 
             handshake_info = {
-                "handshake_type": self.HANDSHAKE_TYPES.get(msg_type, f"unknown_{msg_type}"),
+                "handshake_type": self.HANDSHAKE_TYPES.get(
+                    msg_type, f"unknown_{msg_type}"
+                ),
                 "message_length": msg_length,
             }
 
@@ -251,7 +257,11 @@ class TLSAnalyzer:
             # 세션 ID
             session_id_length = data[offset]
             offset += 1
-            session_id = data[offset : offset + session_id_length] if session_id_length > 0 else b""
+            session_id = (
+                data[offset : offset + session_id_length]
+                if session_id_length > 0
+                else b""
+            )
             offset += session_id_length
 
             # 암호화 스위트
@@ -268,7 +278,9 @@ class TLSAnalyzer:
                 offset += 2
 
             return {
-                "client_version": self.TLS_VERSIONS.get(client_version, f"unknown_{client_version:04x}"),
+                "client_version": self.TLS_VERSIONS.get(
+                    client_version, f"unknown_{client_version:04x}"
+                ),
                 "random": random.hex(),
                 "session_id": session_id.hex() if session_id else "",
                 "cipher_suites": cipher_suites,
@@ -298,7 +310,11 @@ class TLSAnalyzer:
             # 세션 ID
             session_id_length = data[offset]
             offset += 1
-            session_id = data[offset : offset + session_id_length] if session_id_length > 0 else b""
+            session_id = (
+                data[offset : offset + session_id_length]
+                if session_id_length > 0
+                else b""
+            )
             offset += session_id_length
 
             # 선택된 암호화 스위트
@@ -311,7 +327,9 @@ class TLSAnalyzer:
             compression_method = data[offset] if offset < len(data) else 0
 
             return {
-                "server_version": self.TLS_VERSIONS.get(server_version, f"unknown_{server_version:04x}"),
+                "server_version": self.TLS_VERSIONS.get(
+                    server_version, f"unknown_{server_version:04x}"
+                ),
                 "random": random.hex(),
                 "session_id": session_id.hex() if session_id else "",
                 "chosen_cipher_suite": f"0x{chosen_cipher_suite:04x}",
@@ -338,7 +356,9 @@ class TLSAnalyzer:
                 if offset + 3 > len(data):
                     break
 
-                cert_length = struct.unpack(">I", b"\x00" + data[offset : offset + 3])[0]
+                cert_length = struct.unpack(">I", b"\x00" + data[offset : offset + 3])[
+                    0
+                ]
                 offset += 3
 
                 if offset + cert_length > len(data):
@@ -388,7 +408,9 @@ class TLSAnalyzer:
 
         return hashlib.sha256(data).hexdigest()
 
-    def _analyze_handshake(self, record: Dict[str, Any], packet_info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _analyze_handshake(
+        self, record: Dict[str, Any], packet_info: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         """핸드셰이크 분석"""
         try:
             connection_key = (
@@ -431,7 +453,9 @@ class TLSAnalyzer:
 
             if "chosen_cipher_suite" in record:
                 connection["negotiated_cipher"] = record["chosen_cipher_suite"]
-                connection["security_level"] = self._assess_cipher_security(record["chosen_cipher_suite"])
+                connection["security_level"] = self._assess_cipher_security(
+                    record["chosen_cipher_suite"]
+                )
 
             if "certificates" in record:
                 connection["certificates"].extend(record["certificates"])
@@ -481,7 +505,9 @@ class TLSAnalyzer:
                 return {
                     "type": "tls_alert",
                     "level": alert_levels.get(alert_level, f"unknown_{alert_level}"),
-                    "description": alert_descriptions.get(alert_description, f"unknown_{alert_description}"),
+                    "description": alert_descriptions.get(
+                        alert_description, f"unknown_{alert_description}"
+                    ),
                     "severity": "high" if alert_level == 2 else "medium",
                 }
 

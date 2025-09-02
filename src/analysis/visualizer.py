@@ -41,7 +41,9 @@ class PathVisualizer:
             # 소스 노드와 목적지 노드 정보 추출
             if len(path_data["path"]) > 0:
                 src_ip = path_data["path"][0]["src_ip"]
-                dst_ip = path_data.get("final_destination", path_data["path"][-1]["dst_ip"])
+                dst_ip = path_data.get(
+                    "final_destination", path_data["path"][-1]["dst_ip"]
+                )
 
                 # 소스 노드 추가
                 graph_data["nodes"].append(
@@ -272,10 +274,18 @@ class PathVisualizer:
                 "blocked_by": path_data.get("blocked_by"),
                 "summary": {
                     "total_hops": len(path_data.get("path", [])),
-                    "source_ip": (path_data["path"][0]["src_ip"] if path_data.get("path") else None),
+                    "source_ip": (
+                        path_data["path"][0]["src_ip"]
+                        if path_data.get("path")
+                        else None
+                    ),
                     "destination_ip": path_data.get(
                         "final_destination",
-                        (path_data["path"][-1]["dst_ip"] if path_data.get("path") else None),
+                        (
+                            path_data["path"][-1]["dst_ip"]
+                            if path_data.get("path")
+                            else None
+                        ),
                     ),
                 },
             }

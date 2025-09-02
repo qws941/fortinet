@@ -45,14 +45,18 @@ class DeviceManagerAPI:
             for device in fortigate_devices:
                 device_name = device.get("name", "")
                 if device_name:
-                    connected_devices = self.device_manager.get_connected_devices(device_name)
+                    connected_devices = self.device_manager.get_connected_devices(
+                        device_name
+                    )
                     # FortiGate 정보 추가
                     for connected in connected_devices:
                         connected["fortigate_device"] = device_name
                     all_connected_devices.extend(connected_devices)
 
             # 장치 유형별 통계
-            statistics = self._calculate_device_statistics(fortigate_devices, all_connected_devices)
+            statistics = self._calculate_device_statistics(
+                fortigate_devices, all_connected_devices
+            )
 
             return {
                 "fortigate_devices": fortigate_devices,
@@ -280,7 +284,9 @@ class DeviceManagerAPI:
             logger.error(f"방화벽 정책 목록 조회 실패: {str(e)}")
             return []
 
-    def get_interface_connected_devices(self, device_name: str, interface: str) -> List[Dict[str, Any]]:
+    def get_interface_connected_devices(
+        self, device_name: str, interface: str
+    ) -> List[Dict[str, Any]]:
         """
         특정 인터페이스에 연결된 장치 목록 조회
 
@@ -293,7 +299,9 @@ class DeviceManagerAPI:
         """
         try:
             all_devices = self.device_manager.get_connected_devices(device_name)
-            filtered_devices = [d for d in all_devices if d.get("interface") == interface]
+            filtered_devices = [
+                d for d in all_devices if d.get("interface") == interface
+            ]
             return filtered_devices
         except Exception as e:
             logger.error(f"인터페이스 연결 장치 목록 조회 실패: {str(e)}")

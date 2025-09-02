@@ -265,7 +265,9 @@ class RBACManager:
                 # Load custom roles
                 for role_data in config.get("custom_roles", []):
                     permissions = {
-                        Permission(p) for p in role_data["permissions"] if p in [perm.value for perm in Permission]
+                        Permission(p)
+                        for p in role_data["permissions"]
+                        if p in [perm.value for perm in Permission]
                     }
                     self.roles[role_data["name"]] = Role(
                         role_data["name"],
@@ -329,7 +331,11 @@ class RBACManager:
         if name in self.roles:
             raise ValueError(f"Role {name} already exists")
 
-        permission_set = {Permission(p) for p in permissions if p in [perm.value for perm in Permission]}
+        permission_set = {
+            Permission(p)
+            for p in permissions
+            if p in [perm.value for perm in Permission]
+        }
 
         # Inherit permissions from parent roles
         if inherits_from:

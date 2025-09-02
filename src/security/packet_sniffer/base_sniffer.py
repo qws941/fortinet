@@ -132,7 +132,9 @@ class BaseSniffer(ABC):
             if stats["start_time"]:
                 stats["uptime_seconds"] = time.time() - stats["start_time"]
                 if stats["uptime_seconds"] > 0:
-                    stats["packets_per_second"] = stats["packets_captured"] / stats["uptime_seconds"]
+                    stats["packets_per_second"] = (
+                        stats["packets_captured"] / stats["uptime_seconds"]
+                    )
             return stats
 
     def reset_stats(self) -> None:
@@ -270,7 +272,10 @@ class ProtocolIdentifier:
         score = 0.0
 
         # 포트 기반 점수
-        if cls.identify_by_port(port, "TCP") == protocol or cls.identify_by_port(port, "UDP") == protocol:
+        if (
+            cls.identify_by_port(port, "TCP") == protocol
+            or cls.identify_by_port(port, "UDP") == protocol
+        ):
             score += 0.7
 
         # 시그니처 기반 점수
@@ -323,7 +328,9 @@ class MockDataGenerator:
         if app_protocol and app_protocol in payload_samples:
             payload = payload_samples[app_protocol]
         else:
-            payload = bytes([secrets.randbelow(256) for _ in range(secrets.randbelow(90) + 10)])
+            payload = bytes(
+                [secrets.randbelow(256) for _ in range(secrets.randbelow(90) + 10)]
+            )
 
         return PacketInfo(
             timestamp=time.time(),

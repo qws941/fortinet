@@ -137,7 +137,10 @@ class SecurityScanner:
                     file_path = os.path.join(root, file)
 
                     # 제외 패턴 확인
-                    if any(re.search(pattern, file_path) for pattern in self.exclude_patterns):
+                    if any(
+                        re.search(pattern, file_path)
+                        for pattern in self.exclude_patterns
+                    ):
                         continue
 
                     self.scan_file(file_path)
@@ -156,7 +159,9 @@ class SecurityScanner:
             # 각 취약점 카테고리별로 검사
             for category, config in self.vulnerability_patterns.items():
                 for pattern in config["patterns"]:
-                    matches = re.finditer(pattern, content, re.IGNORECASE | re.MULTILINE)
+                    matches = re.finditer(
+                        pattern, content, re.IGNORECASE | re.MULTILINE
+                    )
 
                     for match in matches:
                         line_num = content[: match.start()].count("\n") + 1
@@ -164,7 +169,9 @@ class SecurityScanner:
 
                         # 코드 스니펫 생성 (전후 2줄 포함)
                         snippet_lines = []
-                        for i in range(max(0, line_num - 2), min(len(lines), line_num + 2)):
+                        for i in range(
+                            max(0, line_num - 2), min(len(lines), line_num + 2)
+                        ):
                             prefix = ">>> " if i == line_num - 1 else "    "
                             snippet_lines.append(f"{prefix}{lines[i]}")
 
@@ -187,7 +194,9 @@ class SecurityScanner:
 
         return vulnerabilities
 
-    def analyze_dependencies(self, requirements_file: str) -> List[SecurityVulnerability]:
+    def analyze_dependencies(
+        self, requirements_file: str
+    ) -> List[SecurityVulnerability]:
         """의존성 보안 분석"""
         vulnerabilities = []
 
@@ -329,7 +338,9 @@ class SecurityScanner:
         return specific_recommendations + recommendations
 
 
-def run_security_scan(directory: str, output_file: Optional[str] = None) -> Dict[str, Any]:
+def run_security_scan(
+    directory: str, output_file: Optional[str] = None
+) -> Dict[str, Any]:
     """보안 스캔 실행"""
     scanner = SecurityScanner()
 
@@ -350,7 +361,9 @@ def run_security_scan(directory: str, output_file: Optional[str] = None) -> Dict
     # 보고서 생성
     report = scanner.generate_report(output_file)
 
-    logger.info(f"Security scan completed. Found {len(vulnerabilities)} vulnerabilities")
+    logger.info(
+        f"Security scan completed. Found {len(vulnerabilities)} vulnerabilities"
+    )
 
     return report
 

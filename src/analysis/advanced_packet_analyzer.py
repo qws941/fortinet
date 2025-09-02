@@ -60,7 +60,9 @@ class MLAnomalyDetector:
 
         # Size anomaly
         size_score = self._calculate_zscore(
-            packet.size, self.baseline_metrics["packet_size"]["mean"], self.baseline_metrics["packet_size"]["std"]
+            packet.size,
+            self.baseline_metrics["packet_size"]["mean"],
+            self.baseline_metrics["packet_size"]["std"],
         )
         scores.append(min(abs(size_score) / self.anomaly_threshold, 1.0))
 
@@ -120,7 +122,9 @@ class MLAnomalyDetector:
         # Update running average for packet size
         alpha = 0.01  # Learning rate
         old_mean = self.baseline_metrics["packet_size"]["mean"]
-        self.baseline_metrics["packet_size"]["mean"] = old_mean * (1 - alpha) + packet.size * alpha
+        self.baseline_metrics["packet_size"]["mean"] = (
+            old_mean * (1 - alpha) + packet.size * alpha
+        )
 
 
 class ThreatIntelligence:
@@ -129,15 +133,30 @@ class ThreatIntelligence:
     def __init__(self):
         """Initialize threat intelligence"""
         self.threat_signatures = {
-            "port_scan": {"pattern": "multiple_ports_single_source", "threshold": 10, "time_window": 60, "severity": 7},
-            "dos_attack": {"pattern": "high_packet_rate", "threshold": 1000, "time_window": 10, "severity": 9},
+            "port_scan": {
+                "pattern": "multiple_ports_single_source",
+                "threshold": 10,
+                "time_window": 60,
+                "severity": 7,
+            },
+            "dos_attack": {
+                "pattern": "high_packet_rate",
+                "threshold": 1000,
+                "time_window": 10,
+                "severity": 9,
+            },
             "data_exfiltration": {
                 "pattern": "large_outbound_transfer",
                 "threshold": 100000000,  # 100MB
                 "time_window": 300,
                 "severity": 8,
             },
-            "brute_force": {"pattern": "repeated_auth_failures", "threshold": 5, "time_window": 60, "severity": 6},
+            "brute_force": {
+                "pattern": "repeated_auth_failures",
+                "threshold": 5,
+                "time_window": 60,
+                "severity": 6,
+            },
         }
 
         self.malicious_ips = set()
@@ -150,13 +169,21 @@ class ThreatIntelligence:
         # Check against known malicious IPs
         if packet.src_ip in self.malicious_ips or packet.dst_ip in self.malicious_ips:
             threats_detected.append(
-                {"type": "malicious_ip", "severity": 8, "details": "Communication with known malicious IP"}
+                {
+                    "type": "malicious_ip",
+                    "severity": 8,
+                    "details": "Communication with known malicious IP",
+                }
             )
 
         # Check for port scanning
         if self._detect_port_scan(packet):
             threats_detected.append(
-                {"type": "port_scan", "severity": 7, "details": f"Potential port scan from {packet.src_ip}"}
+                {
+                    "type": "port_scan",
+                    "severity": 7,
+                    "details": f"Potential port scan from {packet.src_ip}",
+                }
             )
 
         # Check for unusual protocols on standard ports
@@ -181,11 +208,15 @@ class ThreatIntelligence:
         now = datetime.now()
 
         # Track destination ports from this source
-        self.suspicious_patterns[key].append({"port": packet.dst_port, "timestamp": now})
+        self.suspicious_patterns[key].append(
+            {"port": packet.dst_port, "timestamp": now}
+        )
 
         # Clean old entries
         cutoff = now - timedelta(seconds=60)
-        self.suspicious_patterns[key] = [p for p in self.suspicious_patterns[key] if p["timestamp"] > cutoff]
+        self.suspicious_patterns[key] = [
+            p for p in self.suspicious_patterns[key] if p["timestamp"] > cutoff
+        ]
 
         # Check if threshold exceeded
         unique_ports = set(p["port"] for p in self.suspicious_patterns[key])
@@ -289,7 +320,9 @@ class AdvancedPacketAnalyzer:
     def _parse_packet(self, packet_data: Dict[str, Any]) -> PacketMetadata:
         """Parse raw packet data into metadata"""
         return PacketMetadata(
-            timestamp=datetime.fromisoformat(packet_data.get("timestamp", datetime.now().isoformat())),
+            timestamp=datetime.fromisoformat(
+                packet_data.get("timestamp", datetime.now().isoformat())
+            ),
             src_ip=packet_data.get("src_ip", "127.0.0.1"),
             dst_ip=packet_data.get("dst_ip", "127.0.0.1"),
             src_port=packet_data.get("src_port", 0),
@@ -297,12 +330,16 @@ class AdvancedPacketAnalyzer:
             protocol=packet_data.get("protocol", "TCP"),
             size=packet_data.get("size", 0),
             flags=packet_data.get("flags", []),
-            payload_hash=hashlib.sha256(str(packet_data.get("payload", "")).encode()).hexdigest(),
+            payload_hash=hashlib.sha256(
+                str(packet_data.get("payload", "")).encode()
+            ).hexdigest(),
         )
 
     def _track_session(self, packet: PacketMetadata) -> Dict[str, Any]:
         """Track packet session"""
-        session_key = f"{packet.src_ip}:{packet.src_port}-{packet.dst_ip}:{packet.dst_port}"
+        session_key = (
+            f"{packet.src_ip}:{packet.src_port}-{packet.dst_ip}:{packet.dst_port}"
+        )
 
         if session_key not in self.session_tracker:
             self.session_tracker[session_key] = {
@@ -327,7 +364,8 @@ class AdvancedPacketAnalyzer:
             "packet_count": session["packet_count"],
             "total_bytes": session["total_bytes"],
             "avg_packet_size": session["total_bytes"] / session["packet_count"],
-            "is_established": "SYN" in session["flags_seen"] and "ACK" in session["flags_seen"],
+            "is_established": "SYN" in session["flags_seen"]
+            and "ACK" in session["flags_seen"],
         }
 
     def _update_statistics(self, packet: PacketMetadata):
@@ -344,7 +382,10 @@ class AdvancedPacketAnalyzer:
             self.statistics["threat_packets"] += 1
 
     def _generate_alerts(
-        self, packet: PacketMetadata, anomaly_score: float, threat_analysis: Dict[str, Any]
+        self,
+        packet: PacketMetadata,
+        anomaly_score: float,
+        threat_analysis: Dict[str, Any],
     ) -> List[Dict[str, Any]]:
         """Generate alerts based on analysis"""
         alerts = []
@@ -384,7 +425,9 @@ class AdvancedPacketAnalyzer:
 
         return alerts
 
-    def _generate_recommendations(self, packet: PacketMetadata, threat_analysis: Dict[str, Any]) -> List[str]:
+    def _generate_recommendations(
+        self, packet: PacketMetadata, threat_analysis: Dict[str, Any]
+    ) -> List[str]:
         """Generate security recommendations"""
         recommendations = []
 
@@ -457,4 +500,8 @@ class AdvancedPacketAnalyzer:
 
     def get_recent_alerts(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Get recent alerts"""
-        return self.alert_queue[-limit:] if len(self.alert_queue) > limit else self.alert_queue
+        return (
+            self.alert_queue[-limit:]
+            if len(self.alert_queue) > limit
+            else self.alert_queue
+        )

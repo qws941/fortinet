@@ -42,7 +42,9 @@ class ComplianceRule:
     check_function: str  # Name of the check function
     remediation_function: Optional[str] = None
     parameters: Dict[str, Any] = field(default_factory=dict)
-    frameworks: List[str] = field(default_factory=list)  # ['PCI-DSS', 'HIPAA', 'ISO27001', etc.]
+    frameworks: List[str] = field(
+        default_factory=list
+    )  # ['PCI-DSS', 'HIPAA', 'ISO27001', etc.]
     enabled: bool = True
     auto_remediate: bool = False
 

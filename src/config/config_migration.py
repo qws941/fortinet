@@ -166,7 +166,9 @@ class ConfigMigration:
         print(f"📁 백업 디렉토리: {self.backup_dir}")
         print(f"🔧 현재 모드: {report['current_settings']['app_mode']}")
         print(f"🌐 웹앱 포트: {report['current_settings']['webapp_config']['port']}")
-        print(f"📊 활성화된 서비스: {list(k for k, v in report['current_settings']['enabled_services'].items() if v)}")
+        print(
+            f"📊 활성화된 서비스: {list(k for k, v in report['current_settings']['enabled_services'].items() if v)}"
+        )
 
         return True
 
@@ -245,7 +247,11 @@ def migrate_config(old_config: Dict[str, Any]) -> Dict[str, Any]:
 
     except Exception as e:
         # Return a basic migrated structure on error
-        return {"status": "migrated_with_errors", "error": str(e), "migrated_data": old_config}
+        return {
+            "status": "migrated_with_errors",
+            "error": str(e),
+            "migrated_data": old_config,
+        }
 
 
 if __name__ == "__main__":

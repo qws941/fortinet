@@ -16,7 +16,8 @@ from typing import Any, Dict, List
 import psutil
 import requests
 
-from config.constants import CHECK_INTERVALS, DEFAULT_PATHS, DEFAULT_PORTS, SERVICE_URLS, TIMEOUTS
+from config.constants import (CHECK_INTERVALS, DEFAULT_PATHS, DEFAULT_PORTS,
+                              SERVICE_URLS, TIMEOUTS)
 
 # 텔레그램 알림 시스템 제거됨
 
@@ -38,7 +39,9 @@ class TroubleshootingLoop:
 
         log_path = os.path.join(DEFAULT_PATHS["LOG_DIR"], "troubleshooting_loop.log")
         handler = logging.FileHandler(log_path)
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
@@ -87,7 +90,9 @@ class TroubleshootingLoop:
         loop_thread.start()
 
         # 성능 모니터링 스레드
-        perf_thread = threading.Thread(target=self._performance_monitor_loop, daemon=True)
+        perf_thread = threading.Thread(
+            target=self._performance_monitor_loop, daemon=True
+        )
         perf_thread.start()
 
         return loop_thread, perf_thread
@@ -427,7 +432,9 @@ class TroubleshootingLoop:
         self.logger.info("트러블슈팅 루프 중지")
 
         # 종료 로깅
-        self.logger.info(f"FortiGate 트러블슈팅 시스템 중지: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.logger.info(
+            f"FortiGate 트러블슈팅 시스템 중지: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
 
 
 if __name__ == "__main__":

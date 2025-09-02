@@ -228,7 +228,9 @@ class BPFFilter:
             logger.error(f"조건 파싱 오류 ({condition}): {e}")
             return {"type": "always_false"}
 
-    def _evaluate_filter(self, filter_expr: Dict[str, Any], packet_info: Dict[str, Any]) -> bool:
+    def _evaluate_filter(
+        self, filter_expr: Dict[str, Any], packet_info: Dict[str, Any]
+    ) -> bool:
         """컴파일된 필터를 패킷 정보에 대해 평가"""
         try:
             expr_type = filter_expr.get("type")
@@ -250,7 +252,9 @@ class BPFFilter:
 
             elif expr_type == "unary_op":
                 operator = filter_expr["operator"]
-                operand_result = self._evaluate_filter(filter_expr["operand"], packet_info)
+                operand_result = self._evaluate_filter(
+                    filter_expr["operand"], packet_info
+                )
 
                 if operator == "not":
                     return not operand_result
@@ -273,9 +277,9 @@ class BPFFilter:
 
             elif expr_type == "net":
                 network = filter_expr["network"]
-                return self._ip_in_network(packet_info.get("src_ip"), network) or self._ip_in_network(
-                    packet_info.get("dst_ip"), network
-                )
+                return self._ip_in_network(
+                    packet_info.get("src_ip"), network
+                ) or self._ip_in_network(packet_info.get("dst_ip"), network)
 
             elif expr_type == "src_net":
                 network = filter_expr["network"]
@@ -306,7 +310,9 @@ class BPFFilter:
                 end_port = filter_expr["end"]
                 src_port = packet_info.get("src_port", 0)
                 dst_port = packet_info.get("dst_port", 0)
-                return (start_port <= src_port <= end_port) or (start_port <= dst_port <= end_port)
+                return (start_port <= src_port <= end_port) or (
+                    start_port <= dst_port <= end_port
+                )
 
             elif expr_type == "protocol":
                 protocol = filter_expr["protocol"]

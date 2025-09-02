@@ -166,7 +166,7 @@ black src/
 isort src/
 
 # Update pytest.ini to lower coverage requirement temporarily
-cat > pytest.ini << 'EOF'
+cat > config/pytest.ini << 'EOF'
 [tool:pytest]
 testpaths = tests
 python_files = test_*.py

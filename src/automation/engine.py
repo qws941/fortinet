@@ -84,7 +84,9 @@ class AutomationEngine:
         logger.info(f"작업 스케줄링: {task_type.value} (ID: {task_id})")
         return task_id
 
-    async def execute_task(self, task_type: AutomationTask, params: Optional[Dict] = None) -> Dict:
+    async def execute_task(
+        self, task_type: AutomationTask, params: Optional[Dict] = None
+    ) -> Dict:
         """작업 실행"""
         task_id = f"task_{datetime.now().timestamp()}"
 
@@ -394,7 +396,9 @@ class AutomationEngine:
                     resolution_results["resolved"].append(issue)
 
                 else:
-                    resolution_results["failed"].append({"issue": issue, "reason": "Unknown issue type"})
+                    resolution_results["failed"].append(
+                        {"issue": issue, "reason": "Unknown issue type"}
+                    )
 
             return resolution_results
 

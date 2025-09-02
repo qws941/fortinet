@@ -74,7 +74,9 @@ class FAZClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestMixin):
         # FortiAnalyzer specific setup
         from config.services import API_VERSIONS
 
-        self.base_url = f"https://{self.host}{API_VERSIONS['fortianalyzer']}" if self.host else ""
+        self.base_url = (
+            f"https://{self.host}{API_VERSIONS['fortianalyzer']}" if self.host else ""
+        )
 
         # Define test endpoint for FortiAnalyzer (not used since it's JSON-RPC)
         self.test_endpoint = "/sys/status"
@@ -149,7 +151,9 @@ class FAZClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestMixin):
         )
 
         # Make login request
-        success, result, status_code = self._make_request("POST", self.base_url, payload, None, self.headers)
+        success, result, status_code = self._make_request(
+            "POST", self.base_url, payload, None, self.headers
+        )
 
         if success:
             # Parse response using common mixin
@@ -163,7 +167,9 @@ class FAZClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestMixin):
                 self.logger.error(f"FortiAnalyzer API login failed: {parsed_data}")
                 return False
         else:
-            self.logger.error(f"FortiAnalyzer API login failed: {status_code} - {result}")
+            self.logger.error(
+                f"FortiAnalyzer API login failed: {status_code} - {result}"
+            )
             return False
 
     def test_token_auth(self):
@@ -179,7 +185,9 @@ class FAZClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestMixin):
         # Simple request to test token
         payload = self._build_json_rpc_request(method="get", url="/sys/status")
 
-        success, result, status_code = self._make_request("POST", self.base_url, payload, None, self.headers)
+        success, result, status_code = self._make_request(
+            "POST", self.base_url, payload, None, self.headers
+        )
 
         if success:
             parsed_success, _ = self.parse_json_rpc_response(result)
@@ -205,9 +213,13 @@ class FAZClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestMixin):
         if self.auth_method == "token" or not self.session_id:
             return True
 
-        payload = self._build_json_rpc_request(method="exec", url="/sys/logout", session=self.session_id)
+        payload = self._build_json_rpc_request(
+            method="exec", url="/sys/logout", session=self.session_id
+        )
 
-        success, result, status_code = self._make_request("POST", self.base_url, payload, None, self.headers)
+        success, result, status_code = self._make_request(
+            "POST", self.base_url, payload, None, self.headers
+        )
 
         if success:
             parsed_success, _ = self.parse_json_rpc_response(result)
@@ -216,7 +228,9 @@ class FAZClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestMixin):
                 self.session_id = None
                 return True
 
-        self.logger.warning("FortiAnalyzer API logout failed, session may remain active")
+        self.logger.warning(
+            "FortiAnalyzer API logout failed, session may remain active"
+        )
         return False
 
     def _make_api_request(self, method, url, data=None, verbose=0, retry=True):
@@ -248,7 +262,9 @@ class FAZClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestMixin):
         )
 
         # Make the request
-        success, result, status_code = self._make_request("POST", self.base_url, payload, None, self.headers)
+        success, result, status_code = self._make_request(
+            "POST", self.base_url, payload, None, self.headers
+        )
 
         if success:
             parsed_success, parsed_data = self.parse_json_rpc_response(result)
@@ -256,18 +272,29 @@ class FAZClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestMixin):
                 return parsed_data
             else:
                 # Check if authentication error
-                if "No permission" in str(parsed_data) or "Invalid session" in str(parsed_data):
+                if "No permission" in str(parsed_data) or "Invalid session" in str(
+                    parsed_data
+                ):
                     self.logger.warning("Authentication error, attempting to re-login")
 
                     # Handle token failures
-                    if self.auth_method == "token" and retry and self.username and self.password:
-                        self.logger.info("Falling back to username/password authentication")
+                    if (
+                        self.auth_method == "token"
+                        and retry
+                        and self.username
+                        and self.password
+                    ):
+                        self.logger.info(
+                            "Falling back to username/password authentication"
+                        )
                         self.api_token = None
                         self.auth_method = "session"
                         self.headers = {"Content-Type": "application/json"}
                         if self.login():
                             # Retry the request with the new session
-                            return self._make_api_request(method, url, data, verbose, False)
+                            return self._make_api_request(
+                                method, url, data, verbose, False
+                            )
                         return None
 
                     # Handle session failures
@@ -275,7 +302,9 @@ class FAZClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestMixin):
                         self.session_id = None
                         if self.login():
                             # Retry the request with the new session
-                            return self._make_api_request(method, url, data, verbose, False)
+                            return self._make_api_request(
+                                method, url, data, verbose, False
+                            )
                         return None
 
                 self.logger.error(f"API request failed: {parsed_data}")
@@ -348,7 +377,9 @@ class FAZClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestMixin):
             list: Logs or None on failure
         """
         data = {"filter": filter if filter else {}, "limit": limit}
-        return self._make_api_request("get", f"/log/fortigate/{log_type}/adom/{adom}", data)
+        return self._make_api_request(
+            "get", f"/log/fortigate/{log_type}/adom/{adom}", data
+        )
 
     def get_reports(self, adom="root"):
         """
@@ -395,7 +426,9 @@ class FAZClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestMixin):
 
             # Try token authentication first if available
             if self.auth_method == "token":
-                self.logger.info(f"Testing {self.__class__.__name__} API connection with token")
+                self.logger.info(
+                    f"Testing {self.__class__.__name__} API connection with token"
+                )
 
                 if self.test_token_auth():
                     return True, "Connected using API token"
@@ -444,7 +477,9 @@ class FAZClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestMixin):
             # Get ADOMs
             adoms = self.get_adoms()
             if adoms:
-                monitoring_data["adoms"] = [adom.get("name", "unknown") for adom in adoms]
+                monitoring_data["adoms"] = [
+                    adom.get("name", "unknown") for adom in adoms
+                ]
                 monitoring_data["adom_count"] = len(adoms)
 
             # Get device count
@@ -481,7 +516,10 @@ class FAZClient(BaseApiClient, RealtimeMonitoringMixin, ConnectionTestMixin):
                 if "result" in response_data:
                     # JSON-RPC success response
                     result_data = response_data["result"]
-                    if isinstance(result_data, dict) and result_data.get("status") == "success":
+                    if (
+                        isinstance(result_data, dict)
+                        and result_data.get("status") == "success"
+                    ):
                         return True, result_data
                     elif isinstance(result_data, list):
                         # Array of results - consider success if we have data

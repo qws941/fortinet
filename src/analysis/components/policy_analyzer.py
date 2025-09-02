@@ -24,7 +24,9 @@ class PolicyAnalyzer:
         self.rule_validator = rule_validator
         self.logger = logger
 
-    def analyze_traffic(self, src_ip, dst_ip, dst_port, protocol="tcp", firewall_id="default"):
+    def analyze_traffic(
+        self, src_ip, dst_ip, dst_port, protocol="tcp", firewall_id="default"
+    ):
         """
         트래픽이 방화벽 정책에 의해 허용되는지 분석
 
@@ -50,7 +52,9 @@ class PolicyAnalyzer:
 
         # 정책을 순서대로 확인 (우선순위 고려)
         for policy in sorted(policies, key=lambda p: p.get("policyid", 0)):
-            if self._policy_matches_traffic(policy, src_ip, dst_ip, dst_port, protocol, firewall_id):
+            if self._policy_matches_traffic(
+                policy, src_ip, dst_ip, dst_port, protocol, firewall_id
+            ):
                 matched_policies.append(policy)
 
                 # 첫 번째 매치되는 정책의 action 확인
@@ -65,7 +69,9 @@ class PolicyAnalyzer:
                     "action": action,
                 }
 
-                self.logger.info(f"트래픽 분석 완료: {src_ip} -> {dst_ip}:{dst_port}/{protocol} = {action}")
+                self.logger.info(
+                    f"트래픽 분석 완료: {src_ip} -> {dst_ip}:{dst_port}/{protocol} = {action}"
+                )
                 return result
 
         # 매치되는 정책이 없으면 기본적으로 거부
@@ -78,7 +84,9 @@ class PolicyAnalyzer:
             "action": "deny",
         }
 
-    def _policy_matches_traffic(self, policy, src_ip, dst_ip, dst_port, protocol, firewall_id):
+    def _policy_matches_traffic(
+        self, policy, src_ip, dst_ip, dst_port, protocol, firewall_id
+    ):
         """
         정책이 트래픽과 매치되는지 확인
 
@@ -128,12 +136,18 @@ class PolicyAnalyzer:
                 return True
 
             # 주소 그룹인지 확인
-            if self.rule_validator.is_ip_in_address_group(src_ip, addr_name, firewall_id):
+            if self.rule_validator.is_ip_in_address_group(
+                src_ip, addr_name, firewall_id
+            ):
                 return True
 
             # 주소 객체인지 확인
-            address_obj = self.rule_validator._find_address_object(addr_name, firewall_id)
-            if address_obj and self.rule_validator.is_ip_in_address_object(src_ip, address_obj, firewall_id):
+            address_obj = self.rule_validator._find_address_object(
+                addr_name, firewall_id
+            )
+            if address_obj and self.rule_validator.is_ip_in_address_object(
+                src_ip, address_obj, firewall_id
+            ):
                 return True
 
         return False
@@ -150,12 +164,18 @@ class PolicyAnalyzer:
                 return True
 
             # 주소 그룹인지 확인
-            if self.rule_validator.is_ip_in_address_group(dst_ip, addr_name, firewall_id):
+            if self.rule_validator.is_ip_in_address_group(
+                dst_ip, addr_name, firewall_id
+            ):
                 return True
 
             # 주소 객체인지 확인
-            address_obj = self.rule_validator._find_address_object(addr_name, firewall_id)
-            if address_obj and self.rule_validator.is_ip_in_address_object(dst_ip, address_obj, firewall_id):
+            address_obj = self.rule_validator._find_address_object(
+                addr_name, firewall_id
+            )
+            if address_obj and self.rule_validator.is_ip_in_address_object(
+                dst_ip, address_obj, firewall_id
+            ):
                 return True
 
         return False
@@ -172,11 +192,15 @@ class PolicyAnalyzer:
                 return True
 
             # 서비스 그룹인지 확인
-            if self.rule_validator.is_port_in_service_group(dst_port, protocol, svc_name, firewall_id):
+            if self.rule_validator.is_port_in_service_group(
+                dst_port, protocol, svc_name, firewall_id
+            ):
                 return True
 
             # 서비스 객체인지 확인
-            service_obj = self.rule_validator._find_service_object(svc_name, firewall_id)
+            service_obj = self.rule_validator._find_service_object(
+                svc_name, firewall_id
+            )
             if service_obj and self.rule_validator.is_port_in_service_object(
                 dst_port, protocol, service_obj, firewall_id
             ):
@@ -184,7 +208,9 @@ class PolicyAnalyzer:
 
         return False
 
-    def get_all_matching_policies(self, src_ip, dst_ip, dst_port, protocol="tcp", firewall_id="default"):
+    def get_all_matching_policies(
+        self, src_ip, dst_ip, dst_port, protocol="tcp", firewall_id="default"
+    ):
         """
         트래픽과 매치되는 모든 정책 반환
 
@@ -205,7 +231,9 @@ class PolicyAnalyzer:
         matched_policies = []
 
         for policy in policies:
-            if self._policy_matches_traffic(policy, src_ip, dst_ip, dst_port, protocol, firewall_id):
+            if self._policy_matches_traffic(
+                policy, src_ip, dst_ip, dst_port, protocol, firewall_id
+            ):
                 matched_policies.append(
                     {
                         "policy_id": policy.get("policyid"),

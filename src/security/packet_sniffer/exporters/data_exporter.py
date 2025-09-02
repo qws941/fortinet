@@ -339,8 +339,12 @@ class DataExporter:
                 deep_inspection = packet["deep_inspection"]
                 simple_packet["security_summary"] = {
                     "threat_level": deep_inspection.get("threat_level", "none"),
-                    "suspicious_patterns": len(deep_inspection.get("suspicious_patterns", [])),
-                    "malware_indicators": len(deep_inspection.get("malware_indicators", [])),
+                    "suspicious_patterns": len(
+                        deep_inspection.get("suspicious_patterns", [])
+                    ),
+                    "malware_indicators": len(
+                        deep_inspection.get("malware_indicators", [])
+                    ),
                 }
 
             # 페이로드 미리보기 (처음 100자만)
@@ -354,13 +358,17 @@ class DataExporter:
                 else:
                     payload_str = str(payload)
 
-                simple_packet["payload_preview"] = payload_str[:100] + ("..." if len(payload_str) > 100 else "")
+                simple_packet["payload_preview"] = payload_str[:100] + (
+                    "..." if len(payload_str) > 100 else ""
+                )
 
             simplified.append(simple_packet)
 
         return simplified
 
-    def _prepare_csv_row(self, packet: Dict[str, Any], fieldnames: List[str]) -> Dict[str, str]:
+    def _prepare_csv_row(
+        self, packet: Dict[str, Any], fieldnames: List[str]
+    ) -> Dict[str, str]:
         """CSV 행 데이터 준비"""
         row = {}
 
@@ -380,7 +388,9 @@ class DataExporter:
                             payload_str = str(payload)
                     else:
                         payload_str = str(payload)
-                    row[field] = payload_str[:50] + ("..." if len(payload_str) > 50 else "")
+                    row[field] = payload_str[:50] + (
+                        "..." if len(payload_str) > 50 else ""
+                    )
                 else:
                     row[field] = ""
             else:
@@ -389,7 +399,9 @@ class DataExporter:
 
         return row
 
-    def _apply_filters(self, packets: List[Dict[str, Any]], filter_criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _apply_filters(
+        self, packets: List[Dict[str, Any]], filter_criteria: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """필터 조건 적용"""
         filtered = []
 
@@ -429,7 +441,11 @@ class DataExporter:
             if "time_range" in filter_criteria:
                 time_range = filter_criteria["time_range"]
                 packet_time = packet.get("timestamp", 0)
-                if not (time_range.get("start", 0) <= packet_time <= time_range.get("end", float("inf"))):
+                if not (
+                    time_range.get("start", 0)
+                    <= packet_time
+                    <= time_range.get("end", float("inf"))
+                ):
                     include_packet = False
                     continue
 
@@ -486,7 +502,9 @@ class DataExporter:
                         deleted_files.append(str(file_path))
                         total_size_freed += file_size
 
-            logger.info(f"오래된 파일 정리 완료: {len(deleted_files)}개 파일, {total_size_freed} bytes")
+            logger.info(
+                f"오래된 파일 정리 완료: {len(deleted_files)}개 파일, {total_size_freed} bytes"
+            )
 
             return {
                 "success": True,

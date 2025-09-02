@@ -7,7 +7,8 @@ Batch Operations Utility
 import asyncio
 import logging
 import time
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from concurrent.futures import (ProcessPoolExecutor, ThreadPoolExecutor,
+                                as_completed)
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -98,7 +99,9 @@ class BatchProcessor:
         start_time = time.time()
         total_items = len(items)
 
-        logger.info(f"Starting batch processing: {total_items} items, type={self.operation_type.value}")
+        logger.info(
+            f"Starting batch processing: {total_items} items, type={self.operation_type.value}"
+        )
 
         # 작업 유형에 따라 처리
         if self.operation_type == BatchOperationType.SEQUENTIAL:
@@ -118,12 +121,15 @@ class BatchProcessor:
         elapsed_time = time.time() - start_time
 
         logger.info(
-            f"Batch processing completed: {successful} successful, {failed} failed, " f"time={elapsed_time:.2f}s"
+            f"Batch processing completed: {successful} successful, {failed} failed, "
+            f"time={elapsed_time:.2f}s"
         )
 
         return results
 
-    def _process_sequential(self, items: List[BatchItem], progress_callback: Optional[Callable]) -> List[BatchResult]:
+    def _process_sequential(
+        self, items: List[BatchItem], progress_callback: Optional[Callable]
+    ) -> List[BatchResult]:
         """순차적 처리"""
         results = []
         total = len(items)
@@ -219,7 +225,9 @@ class BatchProcessor:
 
         return results
 
-    async def _process_async(self, items: List[BatchItem], progress_callback: Optional[Callable]) -> List[BatchResult]:
+    async def _process_async(
+        self, items: List[BatchItem], progress_callback: Optional[Callable]
+    ) -> List[BatchResult]:
         """비동기 처리"""
         results = []
         total = len(items)
@@ -289,7 +297,9 @@ class BatchProcessor:
             # 재시도 로직
             if item.retry_count < item.max_retries:
                 item.retry_count += 1
-                logger.info(f"Retrying item {item.id} (attempt {item.retry_count}/{item.max_retries})")
+                logger.info(
+                    f"Retrying item {item.id} (attempt {item.retry_count}/{item.max_retries})"
+                )
                 time.sleep(2**item.retry_count)  # Exponential backoff
                 return self._execute_item(item)
 
@@ -324,7 +334,9 @@ class BatchProcessor:
             else:
                 # 동기 함수를 비동기로 실행
                 loop = asyncio.get_event_loop()
-                result = await loop.run_in_executor(None, item.operation, item.data, *args)
+                result = await loop.run_in_executor(
+                    None, item.operation, item.data, *args
+                )
 
             execution_time = time.time() - start_time
 
@@ -430,7 +442,9 @@ class APIBatchProcessor:
 
         return device_map
 
-    def batch_update_policies(self, policy_updates: List[Dict[str, Any]]) -> List[BatchResult]:
+    def batch_update_policies(
+        self, policy_updates: List[Dict[str, Any]]
+    ) -> List[BatchResult]:
         """
         여러 정책 일괄 업데이트
 
@@ -454,7 +468,9 @@ class APIBatchProcessor:
         # 처리
         return self.processor.process_batch(items)
 
-    async def batch_monitor_devices(self, device_ids: List[str], metrics: List[str]) -> Dict[str, Dict[str, Any]]:
+    async def batch_monitor_devices(
+        self, device_ids: List[str], metrics: List[str]
+    ) -> Dict[str, Dict[str, Any]]:
         """
         여러 장치 모니터링 데이터 일괄 수집
 

@@ -97,7 +97,11 @@ class AutoRecoveryEngine:
             "total_recoveries": self.stats["total_recoveries"],
             "successful_recoveries": self.stats["successful_recoveries"],
             "failed_recoveries": self.stats["failed_recoveries"],
-            "success_rate": (self.stats["successful_recoveries"] / max(self.stats["total_recoveries"], 1)) * 100,
+            "success_rate": (
+                self.stats["successful_recoveries"]
+                / max(self.stats["total_recoveries"], 1)
+            )
+            * 100,
             "by_type": dict(self.stats["by_type"]),
             "by_severity": dict(self.stats["by_severity"]),
             "recent_recoveries": list(self.recovery_history)[-10:],
@@ -153,7 +157,9 @@ class AutoRecoveryEngine:
                 self.consecutive_failures[issue_type] += 1
 
                 # 심각도 결정
-                severity = self._determine_severity(issue_type, self.consecutive_failures[issue_type])
+                severity = self._determine_severity(
+                    issue_type, self.consecutive_failures[issue_type]
+                )
 
                 logger.warning(f"이상 상태 감지: {issue_type} (심각도: {severity})")
 
@@ -293,7 +299,9 @@ class AutoRecoveryEngine:
             if cache_type == "system":
                 # 시스템 캐시 정리
                 subprocess.run(["sync"], timeout=10)
-                subprocess.run(["echo", "3", ">", "/proc/sys/vm/drop_caches"], timeout=10)
+                subprocess.run(
+                    ["echo", "3", ">", "/proc/sys/vm/drop_caches"], timeout=10
+                )
 
             elif cache_type == "docker":
                 # Docker 캐시 정리
@@ -410,7 +418,9 @@ class AutoRecoveryEngine:
             import shlex
 
             command_args = shlex.split(command)
-            result = subprocess.run(command_args, capture_output=True, text=True, timeout=60)
+            result = subprocess.run(
+                command_args, capture_output=True, text=True, timeout=60
+            )
 
             if result.returncode == 0:
                 logger.info(f"명령 실행 성공: {command}")
@@ -432,7 +442,9 @@ class AutoRecoveryEngine:
             if alert_type == "webhook":
                 webhook_url = params.get("webhook_url")
                 if webhook_url:
-                    response = requests.post(webhook_url, json={"message": message}, timeout=10)
+                    response = requests.post(
+                        webhook_url, json={"message": message}, timeout=10
+                    )
                     return response.status_code == 200
 
             elif alert_type == "log":
@@ -732,7 +744,9 @@ class AutoRecoveryEngine:
 
     def _set_cooldown(self, issue_type: str, cooldown_seconds: int):
         """쿨다운 설정"""
-        self.recovery_cooldown[issue_type] = datetime.now() + timedelta(seconds=cooldown_seconds)
+        self.recovery_cooldown[issue_type] = datetime.now() + timedelta(
+            seconds=cooldown_seconds
+        )
 
     def _manage_cooldowns(self):
         """만료된 쿨다운 정리"""
@@ -742,7 +756,9 @@ class AutoRecoveryEngine:
         for key in expired:
             del self.recovery_cooldown[key]
 
-    def _find_recovery_action(self, issue_type: str, severity: str, details: Dict) -> Optional[Dict]:
+    def _find_recovery_action(
+        self, issue_type: str, severity: str, details: Dict
+    ) -> Optional[Dict]:
         """복구 액션 찾기"""
         for rule in self.recovery_rules:
             if rule["name"] == issue_type:

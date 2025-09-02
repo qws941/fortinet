@@ -274,8 +274,12 @@ def monitoring():
 def text_overflow_test():
     # 텍스트 오버플로우 테스트를 위한 샘플 데이터
     sample_data = {
-        "long_text": "This is a very long text that might overflow in certain UI elements. " * 10,
-        "items": [{"name": "Item " + str(i), "description": "Description " * 5} for i in range(1, 11)],
+        "long_text": "This is a very long text that might overflow in certain UI elements. "
+        * 10,
+        "items": [
+            {"name": "Item " + str(i), "description": "Description " * 5}
+            for i in range(1, 11)
+        ],
     }
     return render_template("text_overflow_test.html", **sample_data)
 

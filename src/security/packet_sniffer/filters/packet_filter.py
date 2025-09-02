@@ -115,7 +115,9 @@ class PacketFilter:
         }
         self.callbacks = []
 
-    def add_rule(self, field: str, operator: str, value: Any, action: str = "allow") -> FilterRule:
+    def add_rule(
+        self, field: str, operator: str, value: Any, action: str = "allow"
+    ) -> FilterRule:
         """
         필터 규칙 추가
 

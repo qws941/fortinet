@@ -80,7 +80,9 @@ def redis_cached(ttl: int = 300, key_prefix: str = ""):
                 return func(*args, **kwargs)
 
             # 캐시 키 생성 - 통합 캐시 매니저 사용
-            cache_key = redis_cache.cache_manager.generate_cache_key(f"{key_prefix}:{func.__name__}", *args, **kwargs)
+            cache_key = redis_cache.cache_manager.generate_cache_key(
+                f"{key_prefix}:{func.__name__}", *args, **kwargs
+            )
 
             # 캐시에서 조회
             cached_value = redis_cache.get(cache_key)
@@ -99,7 +101,9 @@ def redis_cached(ttl: int = 300, key_prefix: str = ""):
 
         # 캐시 무효화 함수 추가
         def invalidate(*args, **kwargs):
-            cache_key = redis_cache.cache_manager.generate_cache_key(f"{key_prefix}:{func.__name__}", *args, **kwargs)
+            cache_key = redis_cache.cache_manager.generate_cache_key(
+                f"{key_prefix}:{func.__name__}", *args, **kwargs
+            )
             redis_cache.delete(cache_key)
 
         wrapper.invalidate = invalidate

@@ -13,7 +13,8 @@ from typing import Any, Dict, List, Optional
 
 from api.clients.fortimanager_api_client import FortiManagerAPIClient
 
-from .compliance_rules import ComplianceRule, ComplianceRuleManager, ComplianceSeverity, ComplianceStatus
+from .compliance_rules import (ComplianceRule, ComplianceRuleManager,
+                               ComplianceSeverity, ComplianceStatus)
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,9 @@ class ComplianceChecker:
         if not rules_to_check:
             return {"error": "No rules match the specified criteria"}
 
-        self.logger.info(f"Running {len(rules_to_check)} compliance checks on {len(devices)} devices")
+        self.logger.info(
+            f"Running {len(rules_to_check)} compliance checks on {len(devices)} devices"
+        )
 
         # Run checks in parallel
         tasks = []
@@ -97,7 +100,9 @@ class ComplianceChecker:
             "timestamp": datetime.now().isoformat(),
         }
 
-    async def _run_single_check(self, device: str, rule: ComplianceRule, adom: str) -> ComplianceCheckResult:
+    async def _run_single_check(
+        self, device: str, rule: ComplianceRule, adom: str
+    ) -> ComplianceCheckResult:
         """Run a single compliance check"""
 
         try:
@@ -152,7 +157,9 @@ class ComplianceChecker:
 
         return rules
 
-    def _generate_check_summary(self, results: List[ComplianceCheckResult]) -> Dict[str, Any]:
+    def _generate_check_summary(
+        self, results: List[ComplianceCheckResult]
+    ) -> Dict[str, Any]:
         """Generate summary of check results"""
 
         total = len(results)
@@ -173,7 +180,9 @@ class ComplianceChecker:
 
             # Severity counts (only for failures)
             if result.status == ComplianceStatus.FAIL:
-                by_severity[result.severity.value] = by_severity.get(result.severity.value, 0) + 1
+                by_severity[result.severity.value] = (
+                    by_severity.get(result.severity.value, 0) + 1
+                )
 
             # Get rule for category
             rule = self.rule_manager.get_rule(result.rule_id)
@@ -196,12 +205,16 @@ class ComplianceChecker:
         }
 
     # Compliance check methods
-    async def check_any_any_policies(self, device: str, rule: ComplianceRule, adom: str) -> ComplianceCheckResult:
+    async def check_any_any_policies(
+        self, device: str, rule: ComplianceRule, adom: str
+    ) -> ComplianceCheckResult:
         """Check for any-any firewall policies"""
 
         try:
             # Get firewall policies
-            policies_response = await self.api_client.get_firewall_policies(device, adom)
+            policies_response = await self.api_client.get_firewall_policies(
+                device, adom
+            )
             if not policies_response.get("success"):
                 return ComplianceCheckResult(
                     rule_id=rule.rule_id,
@@ -251,7 +264,9 @@ class ComplianceChecker:
                 message=f"Check failed: {str(e)}",
             )
 
-    async def check_default_passwords(self, device: str, rule: ComplianceRule, adom: str) -> ComplianceCheckResult:
+    async def check_default_passwords(
+        self, device: str, rule: ComplianceRule, adom: str
+    ) -> ComplianceCheckResult:
         """Check for default passwords"""
 
         try:
@@ -272,7 +287,10 @@ class ComplianceChecker:
             for user in users:
                 username = user.get("name", "")
                 # Check if user has default password patterns
-                if username in ["admin"] and user.get("password-changed", False) is False:
+                if (
+                    username in ["admin"]
+                    and user.get("password-changed", False) is False
+                ):
                     default_password_users.append(user)
 
             if default_password_users:
@@ -282,7 +300,9 @@ class ComplianceChecker:
                     status=ComplianceStatus.FAIL,
                     severity=rule.severity,
                     message=f"Found {len(default_password_users)} users with default passwords",
-                    details={"users_with_default_passwords": len(default_password_users)},
+                    details={
+                        "users_with_default_passwords": len(default_password_users)
+                    },
                     evidence=default_password_users,
                     remediation_available=True,
                 )
@@ -304,12 +324,16 @@ class ComplianceChecker:
                 message=f"Check failed: {str(e)}",
             )
 
-    async def check_audit_logging(self, device: str, rule: ComplianceRule, adom: str) -> ComplianceCheckResult:
+    async def check_audit_logging(
+        self, device: str, rule: ComplianceRule, adom: str
+    ) -> ComplianceCheckResult:
         """Check if audit logging is enabled"""
 
         try:
             # Get logging configuration
-            config_response = await self.api_client.get_system_config(device, "log", adom)
+            config_response = await self.api_client.get_system_config(
+                device, "log", adom
+            )
             if not config_response.get("success"):
                 return ComplianceCheckResult(
                     rule_id=rule.rule_id,

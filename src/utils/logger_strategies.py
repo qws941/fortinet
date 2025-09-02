@@ -28,7 +28,9 @@ class ProductionLoggerStrategy(LoggerStrategy):
         from logging.handlers import RotatingFileHandler
 
         log_file = os.path.join(self.log_dir, f"{self.name}.log")
-        file_handler = RotatingFileHandler(log_file, maxBytes=self.max_bytes, backupCount=self.backup_count)
+        file_handler = RotatingFileHandler(
+            log_file, maxBytes=self.max_bytes, backupCount=self.backup_count
+        )
 
         # JSON 포맷터
         formatter = ProductionFormatter()
@@ -38,7 +40,9 @@ class ProductionLoggerStrategy(LoggerStrategy):
 
         # 에러 전용 핸들러
         error_file = os.path.join(self.log_dir, f"{self.name}_errors.log")
-        error_handler = RotatingFileHandler(error_file, maxBytes=self.max_bytes, backupCount=self.backup_count)
+        error_handler = RotatingFileHandler(
+            error_file, maxBytes=self.max_bytes, backupCount=self.backup_count
+        )
         error_handler.setLevel(logging.ERROR)
         error_handler.setFormatter(formatter)
 
@@ -86,7 +90,9 @@ class SecurityLoggerStrategy(LoggerStrategy):
         from logging.handlers import RotatingFileHandler
 
         security_handler = RotatingFileHandler(
-            security_file, maxBytes=100 * 1024 * 1024, backupCount=20  # 100MB  # 더 많은 백업 유지
+            security_file,
+            maxBytes=100 * 1024 * 1024,
+            backupCount=20,  # 100MB  # 더 많은 백업 유지
         )
 
         # 보안 로그 전용 포맷터
@@ -156,7 +162,10 @@ class DevelopmentFormatter(logging.Formatter):
     """개발 환경용 읽기 쉬운 포맷터"""
 
     def __init__(self):
-        super().__init__(fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        super().__init__(
+            fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
 
     def format(self, record: logging.LogRecord) -> str:
         # 민감 정보는 개발 환경에서만 마스킹 (IP는 제외)
@@ -164,7 +173,9 @@ class DevelopmentFormatter(logging.Formatter):
             # 개발 환경에서는 IP 주소 마스킹하지 않음
             original_message = record.getMessage()
         else:
-            original_message = SensitiveDataMasker.mask_sensitive_data(record.getMessage())
+            original_message = SensitiveDataMasker.mask_sensitive_data(
+                record.getMessage()
+            )
 
         record.msg = original_message
 
@@ -201,8 +212,16 @@ class SecurityFormatter(logging.Formatter):
             "severity": record.levelname,
             "event_type": getattr(record, "event_type", "SECURITY_EVENT"),
             "message": masked_message,
-            "source": {"module": record.module, "function": record.funcName, "line": record.lineno},
-            "metadata": {"process_id": record.process, "thread_id": record.thread, "logger": record.name},
+            "source": {
+                "module": record.module,
+                "function": record.funcName,
+                "line": record.lineno,
+            },
+            "metadata": {
+                "process_id": record.process,
+                "thread_id": record.thread,
+                "logger": record.name,
+            },
         }
 
         # 보안 관련 추가 필드들
@@ -251,7 +270,9 @@ class LoggerStrategyFactory:
     """로거 전략 팩토리"""
 
     @staticmethod
-    def create_strategy(strategy_name: str, logger_name: str, log_dir: str = None) -> LoggerStrategy:
+    def create_strategy(
+        strategy_name: str, logger_name: str, log_dir: str = None
+    ) -> LoggerStrategy:
         """전략 이름으로 로거 전략 생성"""
         strategies = {
             "production": ProductionLoggerStrategy,
@@ -267,7 +288,9 @@ class LoggerStrategyFactory:
         return strategy_class(logger_name, log_dir)
 
     @staticmethod
-    def create_default_strategy(logger_name: str, log_dir: str = None) -> LoggerStrategy:
+    def create_default_strategy(
+        logger_name: str, log_dir: str = None
+    ) -> LoggerStrategy:
         """환경에 따른 기본 전략 생성"""
         app_mode = os.environ.get("APP_MODE", "production").lower()
 

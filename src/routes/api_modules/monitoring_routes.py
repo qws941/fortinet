@@ -98,7 +98,9 @@ def get_monitoring_alerts():
                 "level": random.choice(["info", "warning", "error", "critical"]),
                 "message": f"Alert {i}: System event detected",
                 "timestamp": time.time() - random.randint(0, 3600),
-                "source": random.choice(["system", "network", "security", "application"]),
+                "source": random.choice(
+                    ["system", "network", "security", "application"]
+                ),
             }
             for i in range(1, random.randint(5, 15))
         ]

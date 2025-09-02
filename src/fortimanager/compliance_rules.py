@@ -42,7 +42,9 @@ class ComplianceRule:
     check_function: str  # Name of the check function
     remediation_function: Optional[str] = None
     parameters: Dict[str, Any] = field(default_factory=dict)
-    frameworks: List[str] = field(default_factory=list)  # ['PCI-DSS', 'HIPAA', 'ISO27001', etc.]
+    frameworks: List[str] = field(
+        default_factory=list
+    )  # ['PCI-DSS', 'HIPAA', 'ISO27001', etc.]
     enabled: bool = True
     auto_remediate: bool = False
 
@@ -217,7 +219,9 @@ class ComplianceRuleManager:
             category_counts[rule.category] = category_counts.get(rule.category, 0) + 1
 
             # Severity statistics
-            severity_counts[rule.severity.value] = severity_counts.get(rule.severity.value, 0) + 1
+            severity_counts[rule.severity.value] = (
+                severity_counts.get(rule.severity.value, 0) + 1
+            )
 
             # Framework statistics
             for framework in rule.frameworks:

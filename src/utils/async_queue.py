@@ -176,7 +176,9 @@ class AsyncQueue:
             processing_time = time.time() - start_time
             self._processing_times.append(processing_time)
 
-            logger.debug(f"Worker {worker_name} processed item in {processing_time:.3f}s")
+            logger.debug(
+                f"Worker {worker_name} processed item in {processing_time:.3f}s"
+            )
 
         except Exception as e:
             logger.error(f"Error processing item in {worker_name}: {e}")
@@ -187,7 +189,9 @@ class AsyncQueue:
                 # 지수 백오프로 재시도
                 await asyncio.sleep(2**item.retry_count)
                 await self.put(item)
-                logger.info(f"Retrying item (attempt {item.retry_count}/{item.max_retries})")
+                logger.info(
+                    f"Retrying item (attempt {item.retry_count}/{item.max_retries})"
+                )
             else:
                 self._stats["failed"] += 1
                 logger.error(f"Item failed after {item.max_retries} retries")
@@ -209,7 +213,9 @@ class AsyncQueue:
 
         avg_processing_time = 0
         if self._processing_times:
-            avg_processing_time = sum(self._processing_times) / len(self._processing_times)
+            avg_processing_time = sum(self._processing_times) / len(
+                self._processing_times
+            )
 
         return {
             "current_size": current_size,
@@ -219,7 +225,9 @@ class AsyncQueue:
             "pending": self._stats["pending"],
             "worker_count": self.worker_count,
             "avg_processing_time": avg_processing_time,
-            "queue_by_priority": {priority.name: len(queue) for priority, queue in self.queues.items()},
+            "queue_by_priority": {
+                priority.name: len(queue) for priority, queue in self.queues.items()
+            },
         }
 
     async def drain(self) -> int:
@@ -263,7 +271,10 @@ class BatchQueueProcessor:
             self.batch.append(item)
 
             # 배치 크기에 도달하거나 시간이 경과한 경우 플러시
-            should_flush = len(self.batch) >= self.batch_size or time.time() - self.last_flush >= self.flush_interval
+            should_flush = (
+                len(self.batch) >= self.batch_size
+                or time.time() - self.last_flush >= self.flush_interval
+            )
 
             if should_flush:
                 await self._flush_batch()
@@ -282,7 +293,9 @@ class BatchQueueProcessor:
                 await self._processor_callback(batch_to_process)
             else:
                 loop = asyncio.get_event_loop()
-                await loop.run_in_executor(None, self._processor_callback, batch_to_process)
+                await loop.run_in_executor(
+                    None, self._processor_callback, batch_to_process
+                )
 
             logger.debug(f"Processed batch of {len(batch_to_process)} items")
 
@@ -329,7 +342,9 @@ queue_manager = QueueManager()
 
 
 # 편의 함수들
-async def create_queue(name: str, max_size: int = 10000, worker_count: int = 10) -> AsyncQueue:
+async def create_queue(
+    name: str, max_size: int = 10000, worker_count: int = 10
+) -> AsyncQueue:
     """큐 생성 및 시작"""
     queue = queue_manager.get_queue(name, max_size=max_size, worker_count=worker_count)
     await queue.start()

@@ -10,7 +10,6 @@ import argparse
 # 프로젝트 특정 임포트 (중복 try-except 제거)
 from api.clients.fortigate_api_client import FortiGateAPIClient
 from api.clients.fortimanager_api_client import FortiManagerAPIClient
-
 # 공통 임포트 사용
 from utils.common_imports import json, os, setup_module_logger, sys
 
@@ -32,7 +31,11 @@ def determine_target_environment() -> str:
     app_mode = os.getenv("APP_MODE", "").lower()
 
     # Development environment indicators
-    if node_env == "development" or app_mode == "test" or os.getenv("FLASK_DEBUG", "false").lower() == "true":
+    if (
+        node_env == "development"
+        or app_mode == "test"
+        or os.getenv("FLASK_DEBUG", "false").lower() == "true"
+    ):
         return "dev"
 
     # Production environment (default)
@@ -44,14 +47,21 @@ def get_env_port(environment: str) -> int:
     from config.services import APP_CONFIG
 
     if environment == "dev":
-        return int(os.getenv("DEV_PORT", os.getenv("PORT", str(APP_CONFIG["web_port"]))))
+        return int(
+            os.getenv("DEV_PORT", os.getenv("PORT", str(APP_CONFIG["web_port"])))
+        )
     else:
-        return int(os.getenv("PRD_PORT", os.getenv("PORT", str(APP_CONFIG["web_port"]))))
+        return int(
+            os.getenv("PRD_PORT", os.getenv("PORT", str(APP_CONFIG["web_port"])))
+        )
 
 
 def is_docker_environment() -> bool:
     """Check if running in Docker container"""
-    return os.path.exists("/.dockerenv") or os.getenv("DOCKER_CONTAINER", "false").lower() == "true"
+    return (
+        os.path.exists("/.dockerenv")
+        or os.getenv("DOCKER_CONTAINER", "false").lower() == "true"
+    )
 
 
 def load_environment_config():
@@ -217,7 +227,9 @@ def main():
             debug = True
 
         build_time = os.getenv("BUILD_TIME", "Development")
-        logger.info(f"Starting FortiGate Nextrade in {environment.upper()} environment on port {port}")
+        logger.info(
+            f"Starting FortiGate Nextrade in {environment.upper()} environment on port {port}"
+        )
         logger.info(f"Build: {build_time}, Docker: {is_docker_environment()}")
         logger.info(f"Project: {os.getenv('PROJECT_NAME', 'fortinet')}")
 
@@ -246,7 +258,9 @@ def main():
                     allow_unsafe_werkzeug=True,
                 )
             except ImportError:
-                logger.warning("flask-socketio not available, falling back to standard Flask")
+                logger.warning(
+                    "flask-socketio not available, falling back to standard Flask"
+                )
                 app.run(host=host, port=port, debug=debug)
         else:
             logger.info("Socket.IO disabled - using standard Flask")
@@ -272,7 +286,9 @@ def main():
         api_client = FortiGateAPIClient(host=args.host, api_token=args.token)
 
     # 분석 실행
-    path_data = analyze_packet_path(args.src, args.dst, args.port, args.protocol, api_client, args.manager)
+    path_data = analyze_packet_path(
+        args.src, args.dst, args.port, args.protocol, api_client, args.manager
+    )
 
     if not path_data:
         error_msg = "패킷 경로 분석 실패"
@@ -307,7 +323,9 @@ def main():
     # 차단된 경우 차단 정보 추가
     if not allowed and path_data.get("blocked_by"):
         blocker = path_data["blocked_by"]
-        result_summary["차단 방화벽"] = blocker.get("firewall_name", blocker.get("firewall_id"))
+        result_summary["차단 방화벽"] = blocker.get(
+            "firewall_name", blocker.get("firewall_id")
+        )
         result_summary["차단 정책 ID"] = blocker.get("policy_id", "N/A")
 
     # 분석 완료 로깅

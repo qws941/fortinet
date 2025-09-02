@@ -92,25 +92,33 @@ class HttpAnalyzer(BaseProtocolAnalyzer):
             # HTTP 요청 분석
             request_result = self._analyze_http_request(payload_str)
             if request_result:
-                confidence = self._calculate_http_confidence(packet, payload_str, "request")
+                confidence = self._calculate_http_confidence(
+                    packet, payload_str, "request"
+                )
                 return ProtocolAnalysisResult(
                     protocol="HTTP",
                     confidence=confidence,
                     details=request_result,
                     flags=self._extract_http_flags(request_result),
-                    security_flags=self._analyze_security_aspects(request_result, payload_str),
+                    security_flags=self._analyze_security_aspects(
+                        request_result, payload_str
+                    ),
                 )
 
             # HTTP 응답 분석
             response_result = self._analyze_http_response(payload_str)
             if response_result:
-                confidence = self._calculate_http_confidence(packet, payload_str, "response")
+                confidence = self._calculate_http_confidence(
+                    packet, payload_str, "response"
+                )
                 return ProtocolAnalysisResult(
                     protocol="HTTP",
                     confidence=confidence,
                     details=response_result,
                     flags=self._extract_http_flags(response_result),
-                    security_flags=self._analyze_security_aspects(response_result, payload_str),
+                    security_flags=self._analyze_security_aspects(
+                        response_result, payload_str
+                    ),
                 )
 
         except Exception as e:
@@ -305,7 +313,9 @@ class HttpAnalyzer(BaseProtocolAnalyzer):
             self.logger.error(f"URI 분석 실패: {e}")
             return {}
 
-    def _analyze_request_body(self, body: str, headers: Dict[str, str]) -> Dict[str, Any]:
+    def _analyze_request_body(
+        self, body: str, headers: Dict[str, str]
+    ) -> Dict[str, Any]:
         """요청 바디 분석"""
         analysis = {
             "size": len(body),
@@ -346,7 +356,9 @@ class HttpAnalyzer(BaseProtocolAnalyzer):
 
         return analysis
 
-    def _analyze_response_body(self, body: str, headers: Dict[str, str]) -> Dict[str, Any]:
+    def _analyze_response_body(
+        self, body: str, headers: Dict[str, str]
+    ) -> Dict[str, Any]:
         """응답 바디 분석"""
         analysis = {
             "size": len(body),
@@ -409,10 +421,14 @@ class HttpAnalyzer(BaseProtocolAnalyzer):
             analysis["image_count"] = len(images)
 
         # 링크 탐지
-        links = re.findall(r'<a[^>]*href=["\']([^"\']*)["\'][^>]*>', html, re.IGNORECASE)
+        links = re.findall(
+            r'<a[^>]*href=["\']([^"\']*)["\'][^>]*>', html, re.IGNORECASE
+        )
         if links:
             analysis["link_count"] = len(links)
-            analysis["external_links"] = [link for link in links if link.startswith("http")]
+            analysis["external_links"] = [
+                link for link in links if link.startswith("http")
+            ]
 
         return analysis
 
@@ -535,11 +551,15 @@ class HttpAnalyzer(BaseProtocolAnalyzer):
 
         # 보안 관련
         flags["has_security_headers"] = bool(analysis.get("security_headers"))
-        flags["potential_info_disclosure"] = analysis.get("potential_info_disclosure", False)
+        flags["potential_info_disclosure"] = analysis.get(
+            "potential_info_disclosure", False
+        )
 
         return flags
 
-    def _analyze_security_aspects(self, analysis: Dict[str, Any], payload: str) -> Dict[str, Any]:
+    def _analyze_security_aspects(
+        self, analysis: Dict[str, Any], payload: str
+    ) -> Dict[str, Any]:
         """보안 측면 분석"""
         security_flags = {}
 
@@ -582,7 +602,9 @@ class HttpAnalyzer(BaseProtocolAnalyzer):
 
         return security_flags
 
-    def _calculate_http_confidence(self, packet: PacketInfo, payload: str, message_type: str) -> float:
+    def _calculate_http_confidence(
+        self, packet: PacketInfo, payload: str, message_type: str
+    ) -> float:
         """HTTP 신뢰도 계산"""
         confidence = 0.0
 
@@ -623,7 +645,9 @@ class HttpAnalyzer(BaseProtocolAnalyzer):
             # HTTP 요청 확인
             for method in self.http_methods:
                 if payload_str.startswith(f"{method} "):
-                    return self._calculate_http_confidence(packet, payload_str, "request")
+                    return self._calculate_http_confidence(
+                        packet, payload_str, "request"
+                    )
 
             # HTTP 응답 확인
             if payload_str.startswith("HTTP/"):

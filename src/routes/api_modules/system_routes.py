@@ -9,14 +9,9 @@ from utils.common_imports import Blueprint, jsonify, os, time
 from utils.unified_cache_manager import cached
 from utils.unified_logger import get_logger
 
-from .utils import (
-    format_uptime,
-    get_cpu_usage,
-    get_memory_usage,
-    get_performance_metrics,
-    get_system_uptime,
-    optimized_response,
-)
+from .utils import (format_uptime, get_cpu_usage, get_memory_usage,
+                    get_performance_metrics, get_system_uptime,
+                    optimized_response)
 
 logger = get_logger(__name__)
 
@@ -45,7 +40,9 @@ def health_check():
                 "immutable_tag": os.environ.get("IMMUTABLE_TAG", "unknown"),
                 "git_sha": os.environ.get("GIT_SHA", "unknown"),
                 "git_branch": os.environ.get("GIT_BRANCH", "unknown"),
-                "build_timestamp": os.environ.get("BUILD_TIMESTAMP", os.environ.get("BUILD_DATE", "unknown")),
+                "build_timestamp": os.environ.get(
+                    "BUILD_TIMESTAMP", os.environ.get("BUILD_DATE", "unknown")
+                ),
                 "registry_image": os.environ.get(
                     "REGISTRY_IMAGE",
                     f'{os.environ.get("REGISTRY_URL", "registry.jclee.me")}/fortinet:'
@@ -74,7 +71,9 @@ def health_check():
             if has_valid_env_data:
                 # 환경변수 데이터가 유효하면 우선 사용
                 build_info = env_build_info
-                logger.info("Using GitOps metadata from environment variables (runtime deployment)")
+                logger.info(
+                    "Using GitOps metadata from environment variables (runtime deployment)"
+                )
             else:
                 # 환경변수가 불완전하면 build-info.json 파일 시도
                 build_json_path = "/app/build-info.json"
@@ -84,19 +83,35 @@ def health_check():
                     with open(build_json_path, "r") as f:
                         build_data = json.load(f)
                         build_info = {
-                            "gitops_managed": build_data.get("gitops", {}).get("immutable", False),
-                            "immutable_tag": build_data.get("build", {}).get("immutable_tag", "unknown"),
+                            "gitops_managed": build_data.get("gitops", {}).get(
+                                "immutable", False
+                            ),
+                            "immutable_tag": build_data.get("build", {}).get(
+                                "immutable_tag", "unknown"
+                            ),
                             "git_sha": build_data.get("git", {}).get("sha", "unknown"),
-                            "git_branch": build_data.get("git", {}).get("branch", "unknown"),
-                            "build_timestamp": build_data.get("build", {}).get("timestamp", "unknown"),
-                            "registry_image": build_data.get("registry", {}).get("full_image", "unknown"),
-                            "gitops_principles": build_data.get("gitops", {}).get("principles", []),
+                            "git_branch": build_data.get("git", {}).get(
+                                "branch", "unknown"
+                            ),
+                            "build_timestamp": build_data.get("build", {}).get(
+                                "timestamp", "unknown"
+                            ),
+                            "registry_image": build_data.get("registry", {}).get(
+                                "full_image", "unknown"
+                            ),
+                            "gitops_principles": build_data.get("gitops", {}).get(
+                                "principles", []
+                            ),
                         }
-                        logger.info("Using GitOps metadata from build-info.json (build-time metadata)")
+                        logger.info(
+                            "Using GitOps metadata from build-info.json (build-time metadata)"
+                        )
                 else:
                     # 최후 수단: 환경변수 데이터 사용 (불완전하더라도)
                     build_info = env_build_info
-                    logger.warning("Using incomplete GitOps metadata from environment variables")
+                    logger.warning(
+                        "Using incomplete GitOps metadata from environment variables"
+                    )
         except Exception as e:
             logger.warning(f"Failed to load build info: {e}")
             build_info = {"error": "build info unavailable"}

@@ -114,7 +114,10 @@ class PolicyAnalyzer:
                 "policy_id": policy_data.get("id", "unknown"),
                 "status": "analyzed",
                 "security_score": 85,
-                "recommendations": ["Enable logging for this policy", "Consider tightening source restrictions"],
+                "recommendations": [
+                    "Enable logging for this policy",
+                    "Consider tightening source restrictions",
+                ],
             }
         except Exception as e:
             self.logger.error(f"Policy analysis error: {e}")
@@ -137,7 +140,10 @@ class PolicyAnalyzer:
                 "analyzed_policies": total_policies,
                 "average_security_score": 82,
                 "critical_issues": [],
-                "recommendations": ["Review unused policies", "Update policy documentation"],
+                "recommendations": [
+                    "Review unused policies",
+                    "Update policy documentation",
+                ],
             }
         except Exception as e:
             self.logger.error(f"Policy set analysis error: {e}")
@@ -171,7 +177,10 @@ class TopologyAnalyzer:
                 "total_connections": len(connections),
                 "network_segments": self._identify_segments(devices, connections),
                 "topology_health": "good",
-                "redundancy_analysis": {"single_points_of_failure": [], "redundant_paths": len(connections) // 2},
+                "redundancy_analysis": {
+                    "single_points_of_failure": [],
+                    "redundant_paths": len(connections) // 2,
+                },
             }
         except Exception as e:
             self.logger.error(f"Topology analysis error: {e}")
@@ -201,7 +210,11 @@ class TopologyAnalyzer:
 
             for device_type, device_list in device_types.items():
                 segments.append(
-                    {"type": device_type, "devices": len(device_list), "segment_name": f"{device_type}_segment"}
+                    {
+                        "type": device_type,
+                        "devices": len(device_list),
+                        "segment_name": f"{device_type}_segment",
+                    }
                 )
 
             return segments
