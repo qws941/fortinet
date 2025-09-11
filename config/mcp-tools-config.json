@@ -1,0 +1,124 @@
+{
+  "mcp_tools": {
+    "version": "1.0",
+    "last_updated": "2025-08-17T18:10:00Z",
+    "tools": {
+      "serena": {
+        "enabled": true,
+        "description": "Semantic code analysis and editing",
+        "commands": [
+          "activate_project",
+          "read_file",
+          "create_text_file",
+          "find_symbol",
+          "replace_regex",
+          "execute_shell_command"
+        ]
+      },
+      "shrimp_task_manager": {
+        "enabled": true,
+        "description": "Task planning and management",
+        "commands": [
+          "plan_task",
+          "analyze_task",
+          "split_tasks",
+          "execute_task",
+          "verify_task"
+        ]
+      },
+      "brave_search": {
+        "enabled": true,
+        "description": "Web search for research",
+        "rate_limit": "20_requests_per_minute"
+      },
+      "exa": {
+        "enabled": true,
+        "description": "AI-powered web search and research",
+        "rate_limit": "100_requests_per_day"
+      },
+      "eslint": {
+        "enabled": true,
+        "description": "JavaScript/TypeScript linting",
+        "config_file": "config/eslint.config.js"
+      },
+      "code_runner": {
+        "enabled": true,
+        "description": "Execute code snippets",
+        "supported_languages": [
+          "python",
+          "javascript",
+          "typescript",
+          "bash"
+        ]
+      },
+      "memory": {
+        "enabled": true,
+        "description": "Knowledge graph for project context",
+        "storage": "local_graph"
+      },
+      "sequential_thinking": {
+        "enabled": true,
+        "description": "Step-by-step problem solving",
+        "max_thoughts": 20
+      },
+      "playwright": {
+        "enabled": true,
+        "description": "Browser automation and testing",
+        "headless": true
+      },
+      "puppeteer": {
+        "enabled": true,
+        "description": "Browser automation (alternative)",
+        "headless": true
+      },
+      "magic_ui_components": {
+        "enabled": true,
+        "description": "21st.dev UI component library",
+        "search_endpoint": "https://21st.dev/api/search"
+      },
+      "magic_logo_search": {
+        "enabled": true,
+        "description": "Company logo search and generation",
+        "formats": ["JSX", "TSX", "SVG"]
+      }
+    }
+  },
+  "project_integration": {
+    "fortinet": {
+      "primary_language": "python",
+      "test_framework": "pytest",
+      "linting": "flake8",
+      "formatting": "black",
+      "type_checking": "mypy",
+      "dependency_management": "pip/pyproject.toml"
+    }
+  },
+  "automation_workflows": {
+    "init": {
+      "description": "Project initialization and setup",
+      "steps": [
+        "activate_serena_project",
+        "check_dependencies",
+        "generate_config_files",
+        "validate_setup"
+      ]
+    },
+    "main": {
+      "description": "GitOps orchestration and monitoring",
+      "steps": [
+        "analyze_context",
+        "detect_issues",
+        "resolve_problems",
+        "monitor_health"
+      ]
+    },
+    "auth": {
+      "description": "Authentication system configuration",
+      "steps": [
+        "setup_jwt",
+        "configure_rbac",
+        "test_authentication"
+      ]
+    }
+  }
+}

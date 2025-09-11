@@ -3,16 +3,27 @@ FROM redis:7-alpine
 
 LABEL maintainer="FortiGate Nextrade Team"
 LABEL service="redis"
+LABEL version="2.0.0"
 
-# Redis 설정 파일 복사 (선택적)
-# COPY redis.conf /usr/local/etc/redis/redis.conf
+# Copy Redis configuration (optional)
+COPY redis.conf /usr/local/etc/redis/redis.conf
 
-# 포트 노출
+# Create data directory
+RUN mkdir -p /data && \
+    chown redis:redis /data
+
+# Declare volume for persistent data
+VOLUME ["/data"]
+
+# Expose Redis port
 EXPOSE 6379
 
-# 헬스체크
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD redis-cli ping || exit 1
 
-# Redis 서버 시작 (기본 설정 사용)
-CMD ["redis-server"]
+# Switch to redis user for security
+USER redis
+
+# Start Redis server with custom configuration
+CMD ["redis-server", "/usr/local/etc/redis/redis.conf"]

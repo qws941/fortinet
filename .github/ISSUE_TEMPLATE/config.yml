@@ -1,8 +1,17 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 contact_links:
-  - name: CI/CD Documentation
-    url: https://github.com/JCLEE94/fortinet/blob/master/docs/cicd-validation-report.md
-    about: Check the CI/CD documentation for common issues
-  - name: GitHub Actions Status
+  - name: 📚 Documentation
+    url: https://github.com/JCLEE94/fortinet/wiki
+    about: Check the project documentation for setup guides and troubleshooting
+  - name: 🚀 CI/CD Status
+    url: https://github.com/JCLEE94/fortinet/actions
+    about: View current and recent CI/CD pipeline runs
+  - name: 🔧 GitHub Actions Status
     url: https://www.githubstatus.com/
-    about: Check if GitHub Actions is experiencing issues
+    about: Check if GitHub Actions service is experiencing issues
+  - name: 🐳 Portainer Dashboard
+    url: https://portainer.jclee.me/
+    about: Access the container management dashboard
+  - name: 💬 Discussions
+    url: https://github.com/JCLEE94/fortinet/discussions
+    about: Ask questions, share ideas, or discuss features with the community

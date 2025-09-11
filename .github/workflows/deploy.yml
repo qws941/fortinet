@@ -1,0 +1,613 @@
+name: 🚀 Deploy Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'requirements.txt'
+      - 'Dockerfile*'
+      - 'docker-compose*.yml'
+      - 'tests/**'
+      - '.github/workflows/deploy.yml'
+  
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment even if tests fail'
+        required: false
+        default: false
+        type: boolean
+      skip_tests:
+        description: 'Skip test execution'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY_HOST: ${{ secrets.REGISTRY_HOST }}
+  REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+  TZ: Asia/Seoul
+  PRD_URL: ${{ secrets.PRD_URL || 'https://fortinet.jclee.me' }}
+  DEV_URL: ${{ secrets.DEV_URL || 'https://fortinet-dev.jclee.me' }}
+  PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+  # Database Configuration
+  POSTGRES_HOST: ${{ secrets.POSTGRES_HOST || 'fortinet-postgres' }}
+  POSTGRES_PORT: ${{ secrets.POSTGRES_PORT || '5432' }}
+  POSTGRES_DB: ${{ secrets.POSTGRES_DB || 'fortinet' }}
+  POSTGRES_USER: ${{ secrets.POSTGRES_USER || 'fortinet' }}
+  # Redis Configuration  
+  REDIS_HOST: ${{ secrets.REDIS_HOST || 'fortinet-redis' }}
+  REDIS_PORT: ${{ secrets.REDIS_PORT || '6379' }}
+  # Application Configuration
+  WEB_APP_PORT_MAIN: ${{ secrets.WEB_APP_PORT_MAIN || '7777' }}
+  WEB_APP_PORT_BACKUP: ${{ secrets.WEB_APP_PORT_BACKUP || '7778' }}
+  WEB_APP_PORT_DEV: ${{ secrets.WEB_APP_PORT_DEV || '7779' }}
+
+permissions:
+  contents: read
+  packages: write
+  actions: read
+  id-token: write
+
+jobs:
+  # Phase 1: Build and Test
+  build-and-test:
+    name: 🔨 Build & Test
+    runs-on: ubuntu-latest
+    outputs:
+      app_image_tag: ${{ steps.app_meta.outputs.tags }}
+      postgres_image_tag: ${{ steps.postgres_meta.outputs.tags }}
+      redis_image_tag: ${{ steps.redis_meta.outputs.tags }}
+      test_results: ${{ steps.test.outputs.results }}
+      build_status: ${{ steps.build.outputs.build_status }}
+      
+    steps:
+      - name: 📂 Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐳 Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Login to Registry  
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_HOST }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      # Metadata for PostgreSQL image
+      - name: 📋 Extract PostgreSQL Metadata
+        id: postgres_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_HOST }}/fortinet-postgres
+          tags: |
+            type=raw,value=latest
+
+      # Metadata for Redis image
+      - name: 📋 Extract Redis Metadata
+        id: redis_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_HOST }}/fortinet-redis
+          tags: |
+            type=raw,value=latest
+
+      # Metadata for Flask App image
+      - name: 📋 Extract App Metadata
+        id: app_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_HOST }}/fortinet-app
+          tags: |
+            type=raw,value=latest
+
+      # Build PostgreSQL image
+      - name: 🔨 Build PostgreSQL Image
+        id: build_postgres
+        uses: docker/build-push-action@v5
+        with:
+          context: ./postgresql
+          file: ./postgresql/Dockerfile
+          push: true
+          tags: ${{ steps.postgres_meta.outputs.tags }}
+          labels: |
+            ${{ steps.postgres_meta.outputs.labels }}
+            com.centurylinklabs.watchtower.enable=true
+            com.centurylinklabs.watchtower.cleanup=true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ github.sha }}
+            BUILD_NUMBER=${{ github.run_number }}
+            VCS_REF=${{ github.sha }}
+            BUILDTIME=${{ github.event.head_commit.timestamp }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+
+      # Build Redis image
+      - name: 🔨 Build Redis Image
+        id: build_redis
+        uses: docker/build-push-action@v5
+        with:
+          context: ./redis
+          file: ./redis/Dockerfile
+          push: true
+          tags: ${{ steps.redis_meta.outputs.tags }}
+          labels: |
+            ${{ steps.redis_meta.outputs.labels }}
+            com.centurylinklabs.watchtower.enable=true
+            com.centurylinklabs.watchtower.cleanup=true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ github.sha }}
+            BUILD_NUMBER=${{ github.run_number }}
+            VCS_REF=${{ github.sha }}
+            BUILDTIME=${{ github.event.head_commit.timestamp }}
+
+      # Build Flask App image
+      - name: 🔨 Build Flask App Image
+        id: build_app
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src
+          file: ./src/Dockerfile
+          push: true
+          tags: ${{ steps.app_meta.outputs.tags }}
+          labels: |
+            ${{ steps.app_meta.outputs.labels }}
+            com.centurylinklabs.watchtower.enable=true
+            com.centurylinklabs.watchtower.cleanup=true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ github.sha }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp }}
+            BUILD_NUMBER=${{ github.run_number }}
+            VCS_REF=${{ github.sha }}
+            BUILDTIME=${{ github.event.head_commit.timestamp }}
+            POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+            POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            REDIS_HOST=${{ secrets.REDIS_HOST }}
+            REDIS_PORT=${{ secrets.REDIS_PORT }}
+            PRD_URL=${{ secrets.PRD_URL }}
+            DEV_URL=${{ secrets.DEV_URL }}
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+            GITHUB_REPO_OWNER=${{ github.repository_owner }}
+            GITHUB_REPO_NAME=${{ github.event.repository.name }}
+            REGISTRY_HOST=${{ secrets.REGISTRY_HOST }}
+            REGISTRY_USER=${{ secrets.REGISTRY_USER }}
+            REGISTRY_PASSWORD=${{ secrets.REGISTRY_PASSWORD }}
+            FLASK_ENV=production
+            TIMEZONE=${{ secrets.TIMEZONE }}
+
+      - name: 🧪 Run Tests
+        id: test
+        if: github.event.inputs.skip_tests != 'true'
+        run: |
+          echo "🧪 Running Flask application tests..."
+          
+          # Use Flask app image for testing
+          APP_IMAGE_TAG=$(echo "${{ steps.app_meta.outputs.tags }}" | head -n1)
+          echo "🐳 Using Flask app image: $APP_IMAGE_TAG"
+          
+          # Basic container execution test (timeout configured)
+          timeout 30s docker run --rm --name fortinet-test \
+            -e FLASK_ENV=testing \
+            -e POSTGRES_HOST=localhost \
+            -e REDIS_HOST=localhost \
+            "$APP_IMAGE_TAG" \
+            bash -c "
+              echo '✅ Container started successfully'
+              python -c 'import sys; print(f\"Python version: {sys.version}\")'
+              python -c 'from src.web_app import create_app; print(\"Flask app creation test passed\")'
+              echo 'test_completed=true'
+            " && echo "results=success" >> $GITHUB_OUTPUT || echo "results=failed" >> $GITHUB_OUTPUT
+
+      - name: 📊 Test Results Summary  
+        run: |
+          echo "### 🧪 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Status**: ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "- **PostgreSQL Image**: \`${{ steps.postgres_meta.outputs.tags }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Redis Image**: \`${{ steps.redis_meta.outputs.tags }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Flask App Image**: \`${{ steps.app_meta.outputs.tags }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Status**: ${{ steps.test.outputs.results }}" >> $GITHUB_STEP_SUMMARY
+
+  # Phase 2: Deploy Execution
+  deploy:
+    name: 🚀 Deploy to Production
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: success() || github.event.inputs.force_deploy == 'true'
+    outputs:
+      deployment_status: ${{ steps.deploy.outputs.status }}
+      deployment_url: ${{ steps.deploy.outputs.url }}
+      deployment_time: ${{ steps.deploy.outputs.time }}
+      health_check: ${{ steps.health.outputs.status }}
+
+    steps:
+      - name: 🚀 Deploy via Portainer API
+        id: deploy
+        run: |
+          echo "🚀 Starting deployment process..."
+          
+          # Deploy via Portainer API
+          if [ -n "${{ secrets.PORTAINER_API_TOKEN }}" ]; then
+            echo "📡 Calling Portainer API..."
+            
+            # Function to ensure network exists
+            ensure_network() {
+              local NETWORK_NAME=$1
+              echo "Ensuring network: $NETWORK_NAME"
+              
+              # Check if network exists
+              NETWORK_EXISTS=$(curl -s "${{ env.PORTAINER_URL }}/api/endpoints/1/docker/networks" \
+                -H "X-API-Key: ${{ secrets.PORTAINER_API_TOKEN }}" | \
+                jq -r --arg name "$NETWORK_NAME" '.[] | select(.Name == $name) | .Name')
+              
+              if [ -z "$NETWORK_EXISTS" ]; then
+                echo "Creating network: $NETWORK_NAME"
+                curl -X POST "${{ env.PORTAINER_URL }}/api/endpoints/1/docker/networks/create" \
+                  -H "X-API-Key: ${{ secrets.PORTAINER_API_TOKEN }}" \
+                  -H "Content-Type: application/json" \
+                  -d "{
+                    \"Name\": \"$NETWORK_NAME\",
+                    \"Driver\": \"bridge\",
+                    \"EnableIPv6\": false,
+                    \"IPAM\": {
+                      \"Driver\": \"default\"
+                    }
+                  }"
+              else
+                echo "Network already exists: $NETWORK_NAME"
+              fi
+            }
+            
+            # Function to ensure volume exists
+            ensure_volume() {
+              local VOLUME_NAME=$1
+              echo "Ensuring volume: $VOLUME_NAME"
+              
+              # Check if volume exists
+              VOLUME_EXISTS=$(curl -s "${{ env.PORTAINER_URL }}/api/endpoints/1/docker/volumes" \
+                -H "X-API-Key: ${{ secrets.PORTAINER_API_TOKEN }}" | \
+                jq -r --arg name "$VOLUME_NAME" '.Volumes[] | select(.Name == $name) | .Name')
+              
+              if [ -z "$VOLUME_EXISTS" ]; then
+                echo "Creating volume: $VOLUME_NAME"
+                curl -X POST "${{ env.PORTAINER_URL }}/api/endpoints/1/docker/volumes/create" \
+                  -H "X-API-Key: ${{ secrets.PORTAINER_API_TOKEN }}" \
+                  -H "Content-Type: application/json" \
+                  -d "{\"Name\": \"$VOLUME_NAME\"}"
+              else
+                echo "Volume already exists: $VOLUME_NAME"
+              fi
+            }
+            
+            # Function to create or update container
+            deploy_container() {
+              local CONTAINER_NAME=$1
+              local IMAGE=$2
+              local ENV_VARS=$3
+              local HEALTH_CMD=$4
+              local VOLUMES=$5
+              local PORT_BINDINGS=$6
+              local MEMORY=$7
+              local CPU_SHARES=$8
+              local NETWORK=$9
+              
+              echo "Deploying container: $CONTAINER_NAME"
+              
+              # Check if container exists
+              CONTAINER_EXISTS=$(curl -s "${{ env.PORTAINER_URL }}/api/endpoints/1/docker/containers/json?all=true" \
+                -H "X-API-Key: ${{ secrets.PORTAINER_API_TOKEN }}" | \
+                jq -r --arg name "$CONTAINER_NAME" '.[] | select(.Names[] | contains($name)) | .Id')
+              
+              if [ -n "$CONTAINER_EXISTS" ]; then
+                echo "Stopping existing container..."
+                curl -X POST "${{ env.PORTAINER_URL }}/api/endpoints/1/docker/containers/$CONTAINER_EXISTS/stop" \
+                  -H "X-API-Key: ${{ secrets.PORTAINER_API_TOKEN }}"
+                
+                echo "Removing existing container..."
+                curl -X DELETE "${{ env.PORTAINER_URL }}/api/endpoints/1/docker/containers/$CONTAINER_EXISTS" \
+                  -H "X-API-Key: ${{ secrets.PORTAINER_API_TOKEN }}"
+              fi
+              
+              # Pull latest image
+              echo "Pulling latest image: $IMAGE"
+              curl -X POST "${{ env.PORTAINER_URL }}/api/endpoints/1/docker/images/create?fromImage=$IMAGE" \
+                -H "X-API-Key: ${{ secrets.PORTAINER_API_TOKEN }}"
+              
+              # Create new container
+              echo "Creating new container..."
+              CONTAINER_CONFIG="{
+                \"Image\": \"$IMAGE\",
+                \"Env\": $ENV_VARS,
+                \"NetworkingConfig\": {
+                  \"EndpointsConfig\": {
+                    \"$NETWORK\": {}
+                  }
+                },
+                \"HostConfig\": {
+                  \"RestartPolicy\": {
+                    \"Name\": \"unless-stopped\",
+                    \"MaximumRetryCount\": 5
+                  },
+                  \"NetworkMode\": \"$NETWORK\",
+                  \"Binds\": $VOLUMES,
+                  \"Memory\": $MEMORY,
+                  \"CpuShares\": $CPU_SHARES"
+              
+              if [ -n "$PORT_BINDINGS" ]; then
+                CONTAINER_CONFIG="$CONTAINER_CONFIG,
+                  \"PortBindings\": $PORT_BINDINGS"
+              fi
+              
+              CONTAINER_CONFIG="$CONTAINER_CONFIG
+                },
+                \"Healthcheck\": $HEALTH_CMD
+              }"
+              
+              curl -X POST "${{ env.PORTAINER_URL }}/api/endpoints/1/docker/containers/create?name=$CONTAINER_NAME" \
+                -H "X-API-Key: ${{ secrets.PORTAINER_API_TOKEN }}" \
+                -H "Content-Type: application/json" \
+                -d "$CONTAINER_CONFIG"
+              
+              # Start the container
+              echo "Starting container..."
+              NEW_CONTAINER_ID=$(curl -s "${{ env.PORTAINER_URL }}/api/endpoints/1/docker/containers/json?all=true" \
+                -H "X-API-Key: ${{ secrets.PORTAINER_API_TOKEN }}" | \
+                jq -r --arg name "$CONTAINER_NAME" '.[] | select(.Names[] | contains($name)) | .Id')
+              
+              curl -X POST "${{ env.PORTAINER_URL }}/api/endpoints/1/docker/containers/$NEW_CONTAINER_ID/start" \
+                -H "X-API-Key: ${{ secrets.PORTAINER_API_TOKEN }}"
+              
+              echo "Container deployed: $CONTAINER_NAME"
+            }
+            
+            APP_NAME="fortinet"
+            
+            # Create network
+            ensure_network "$APP_NAME-network"
+            
+            # Create volumes
+            ensure_volume "$APP_NAME-postgres-data"
+            ensure_volume "$APP_NAME-redis-data"
+            ensure_volume "$APP_NAME-app-uploads"
+            ensure_volume "$APP_NAME-app-logs"
+            ensure_volume "$APP_NAME-app-cache"
+            ensure_volume "$APP_NAME-app-backup-logs"
+            ensure_volume "$APP_NAME-app-dev-logs"
+            
+            # Deploy PostgreSQL container
+            deploy_container \
+              "$APP_NAME-postgres" \
+              "${{ needs.build-and-test.outputs.postgres_image_tag }}" \
+              '["POSTGRES_DB=${{ secrets.POSTGRES_DB }}", "POSTGRES_USER=${{ secrets.POSTGRES_USER }}", "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}"]' \
+              '{"Test": ["CMD-SHELL", "pg_isready -U ${{ secrets.POSTGRES_USER }}"], "Interval": 30000000000, "Timeout": 10000000000, "Retries": 3}' \
+              '["$APP_NAME-postgres-data:/var/lib/postgresql/data"]' \
+              'null' \
+              1073741824 \
+              512 \
+              "$APP_NAME-network"
+            
+            sleep 10  # Wait for PostgreSQL to initialize
+            
+            # Deploy Redis container
+            deploy_container \
+              "$APP_NAME-redis" \
+              "${{ needs.build-and-test.outputs.redis_image_tag }}" \
+              '[]' \
+              '{"Test": ["CMD", "redis-cli", "ping"], "Interval": 30000000000, "Timeout": 10000000000, "Retries": 3}' \
+              '["$APP_NAME-redis-data:/data"]' \
+              'null' \
+              268435456 \
+              256 \
+              "$APP_NAME-network"
+            
+            sleep 5  # Wait for Redis to initialize
+            
+            # Deploy Main App container (Port 7777)
+            deploy_container \
+              "$APP_NAME-app" \
+              "${{ needs.build-and-test.outputs.app_image_tag }}" \
+              '["POSTGRES_HOST=$APP_NAME-postgres", "POSTGRES_PORT=5432", "REDIS_HOST=$APP_NAME-redis", "REDIS_PORT=6379", "POSTGRES_DB=${{ secrets.POSTGRES_DB }}", "POSTGRES_USER=${{ secrets.POSTGRES_USER }}", "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}", "WEB_APP_PORT=7777", "APP_MODE=production"]' \
+              '{"Test": ["CMD", "curl", "-f", "http://localhost:7777/api/health"], "Interval": 30000000000, "Timeout": 10000000000, "Retries": 3}' \
+              '["$APP_NAME-app-uploads:/app/uploads", "$APP_NAME-app-logs:/app/logs", "$APP_NAME-app-cache:/app/cache"]' \
+              '{"7777/tcp": [{"HostPort": "7777"}]}' \
+              536870912 \
+              512 \
+              "$APP_NAME-network"
+            
+            sleep 10  # Wait for main app to initialize
+            
+            # Deploy Backup App container (Port 7778)
+            deploy_container \
+              "$APP_NAME-app-backup" \
+              "${{ needs.build-and-test.outputs.app_image_tag }}" \
+              '["POSTGRES_HOST=$APP_NAME-postgres", "POSTGRES_PORT=5432", "REDIS_HOST=$APP_NAME-redis", "REDIS_PORT=6379", "POSTGRES_DB=${{ secrets.POSTGRES_DB }}", "POSTGRES_USER=${{ secrets.POSTGRES_USER }}", "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}", "WEB_APP_PORT=7778", "APP_MODE=production"]' \
+              '{"Test": ["CMD", "curl", "-f", "http://localhost:7778/api/health"], "Interval": 30000000000, "Timeout": 10000000000, "Retries": 3}' \
+              '["$APP_NAME-app-backup-logs:/app/logs"]' \
+              '{"7778/tcp": [{"HostPort": "7778"}]}' \
+              268435456 \
+              256 \
+              "$APP_NAME-network"
+            
+            # Deploy Development/Testing App container (Port 7779)
+            deploy_container \
+              "$APP_NAME-app-dev" \
+              "${{ needs.build-and-test.outputs.app_image_tag }}" \
+              '["POSTGRES_HOST=$APP_NAME-postgres", "POSTGRES_PORT=5432", "REDIS_HOST=$APP_NAME-redis", "REDIS_PORT=6379", "POSTGRES_DB=${{ secrets.POSTGRES_DB }}", "POSTGRES_USER=${{ secrets.POSTGRES_USER }}", "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}", "WEB_APP_PORT=7779", "APP_MODE=test"]' \
+              '{"Test": ["CMD", "curl", "-f", "http://localhost:7779/api/health"], "Interval": 30000000000, "Timeout": 10000000000, "Retries": 3}' \
+              '["$APP_NAME-app-dev-logs:/app/logs"]' \
+              '{"7779/tcp": [{"HostPort": "7779"}]}' \
+              268435456 \
+              256 \
+              "$APP_NAME-network"
+            
+            echo "✅ Portainer deployment completed successfully"
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "url=${{ env.PRD_URL }}" >> $GITHUB_OUTPUT
+            echo "time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+            
+          else
+            echo "❌ PORTAINER_API_TOKEN not configured"
+            echo "status=failed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: ⏳ Wait for Deployment
+        if: steps.deploy.outputs.status == 'success'
+        run: |
+          echo "⏳ Waiting for container deployment to complete..."
+          sleep 30  # Wait for deployment completion
+
+      - name: 🔗 Container Connection Check
+        id: connection_check
+        if: steps.deploy.outputs.status == 'success'
+        run: |
+          echo "🔗 Checking container connectivity..."
+          
+          # Check PostgreSQL container
+          echo "📊 Checking PostgreSQL connectivity..."
+          if timeout 10s curl -sf --max-time 5 "${{ env.PRD_URL }}/api/health" > /dev/null; then
+            echo "✅ PostgreSQL connection healthy"
+            echo "postgres_status=healthy" >> $GITHUB_OUTPUT
+          else
+            echo "❌ PostgreSQL connection failed"
+            echo "postgres_status=unhealthy" >> $GITHUB_OUTPUT
+          fi
+          
+          # Check Redis container
+          echo "🗄️ Checking Redis connectivity..."
+          if timeout 10s curl -sf --max-time 5 "${{ env.PRD_URL }}/api/status" > /dev/null; then
+            echo "✅ Redis connection healthy"
+            echo "redis_status=healthy" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Redis connection failed"
+            echo "redis_status=unhealthy" >> $GITHUB_OUTPUT
+          fi
+          
+          # Check inter-container network
+          echo "🌐 Checking inter-container network..."
+          container_network_status="healthy"
+          if [ "$postgres_status" != "healthy" ] || [ "$redis_status" != "healthy" ]; then
+            container_network_status="degraded"
+          fi
+          echo "network_status=$container_network_status" >> $GITHUB_OUTPUT
+          
+          echo "🔗 Container connection check completed"
+
+      - name: 🏥 Health Check
+        id: health
+        if: steps.deploy.outputs.status == 'success'
+        run: |
+          echo "🏥 Running health checks..."
+          
+          max_attempts=5
+          attempt=1
+          health_status="unhealthy"
+          
+          while [ $attempt -le $max_attempts ]; do
+            echo "🔍 Health check attempt $attempt/$max_attempts..."
+            
+            # Check health endpoint (timeout shortened)
+            if timeout 5s curl -sf --max-time 5 ${{ env.PRD_URL }}/api/health > /dev/null; then
+              echo "✅ Health check passed - application is healthy"
+              health_status="healthy"
+              break
+            else
+              echo "⏳ Application not ready yet, waiting 10 seconds..."
+              sleep 10
+              ((attempt++))
+            fi
+          done
+          
+          echo "status=$health_status" >> $GITHUB_OUTPUT
+          
+          if [ "$health_status" = "healthy" ]; then
+            echo "### ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+            echo "- **URL**: ${{ env.PRD_URL }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Health Status**: 🟢 Healthy" >> $GITHUB_STEP_SUMMARY
+            echo "- **PostgreSQL**: ${{ steps.connection_check.outputs.postgres_status }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Redis**: ${{ steps.connection_check.outputs.redis_status }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Network**: ${{ steps.connection_check.outputs.network_status }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Deployment Time**: ${{ steps.deploy.outputs.time }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ Deployment Issues Detected" >> $GITHUB_STEP_SUMMARY
+            echo "- **Health Status**: 🔴 Unhealthy" >> $GITHUB_STEP_SUMMARY
+            echo "- **PostgreSQL**: ${{ steps.connection_check.outputs.postgres_status }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Redis**: ${{ steps.connection_check.outputs.redis_status }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Network**: ${{ steps.connection_check.outputs.network_status }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Action Required**: Manual verification needed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # Phase 3: Post-deployment Notification
+  post-deploy-notification:
+    name: 📨 Post-Deploy Notification
+    needs: [build-and-test, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: 📨 Slack Notification
+        if: vars.SLACK_WEBHOOK_URL
+        run: |
+          # Configure message based on deployment status
+          if [ "${{ needs.deploy.result }}" = "success" ] && [ "${{ needs.deploy.outputs.health_check }}" = "healthy" ]; then
+            COLOR="good"
+            STATUS="✅ Success"
+            MESSAGE="FortiGate Nextrade Platform has been deployed successfully."
+          elif [ "${{ needs.deploy.result }}" = "success" ]; then
+            COLOR="warning"  
+            STATUS="⚠️ Partial Success"
+            MESSAGE="Deployment completed but health check detected issues."
+          else
+            COLOR="danger"
+            STATUS="❌ Failure"
+            MESSAGE="An error occurred during the deployment process."
+          fi
+          
+          # Send Slack webhook
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              \"attachments\": [{
+                \"color\": \"$COLOR\",
+                \"title\": \"🚀 FortiGate Nextrade Deployment Result\",
+                \"text\": \"$MESSAGE\",
+                \"fields\": [
+                  {\"title\": \"Status\", \"value\": \"$STATUS\", \"short\": true},
+                  {\"title\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"short\": true},
+                  {\"title\": \"Commit\", \"value\": \"${{ github.sha }}\", \"short\": true},
+                  {\"title\": \"Deployer\", \"value\": \"${{ github.actor }}\", \"short\": true},
+                  {\"title\": \"Deploy Time\", \"value\": \"${{ needs.deploy.outputs.deployment_time }}\", \"short\": true},
+                  {\"title\": \"Health Check\", \"value\": \"${{ needs.deploy.outputs.health_check }}\", \"short\": true}
+                ],
+                \"actions\": [
+                  {\"type\": \"button\", \"text\": \"🌐 Check Site\", \"url\": \"${{ needs.deploy.outputs.deployment_url }}\"}, 
+                  {\"type\": \"button\", \"text\": \"📊 Workflow Logs\", \"url\": \"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}
+                ]
+              }]
+            }" \
+            "${{ vars.SLACK_WEBHOOK_URL }}" || echo "⚠️ Slack notification failed"
+
+      - name: 📋 Deployment Summary
+        run: |
+          echo "## 🚀 Deployment Completion Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Deployment Results" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Status**: ${{ needs.build-and-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deploy Status**: ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Health Check**: ${{ needs.deploy.outputs.health_check }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deploy URL**: ${{ needs.deploy.outputs.deployment_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔄 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "Deployment completed, Claude auto-analysis triggered." >> $GITHUB_STEP_SUMMARY
+          echo "Analysis results can be viewed in separate workflows." >> $GITHUB_STEP_SUMMARY

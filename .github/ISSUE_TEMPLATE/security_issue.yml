@@ -1,0 +1,101 @@
+name: Security Issue
+description: Report a security vulnerability or concern (Handle with care)
+title: "[SECURITY] "
+labels: ["security", "vulnerability", "priority-high"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Security Issue Report
+        **⚠️ IMPORTANT**: If this is a critical security vulnerability that could be exploited, 
+        please report it privately via email instead of creating a public issue.
+        
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity Level
+      description: How severe is this security issue?
+      options:
+        - Critical (System compromise possible)
+        - High (Data exposure risk)
+        - Medium (Limited impact)
+        - Low (Security enhancement)
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: category
+    attributes:
+      label: Security Category
+      description: What type of security issue is this?
+      options:
+        - Authentication/Authorization
+        - Data Exposure
+        - Input Validation
+        - Code Injection
+        - Cross-Site Scripting (XSS)
+        - API Security
+        - Container Security
+        - Network Security
+        - Dependency Vulnerability
+        - Configuration Issue
+        - Other
+    validations:
+      required: true
+      
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: Describe the security issue (avoid detailed exploitation steps in public issues)
+      placeholder: Provide a general description of the security concern
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: affected-component
+    attributes:
+      label: Affected Component
+      description: Which component is affected?
+      multiple: true
+      options:
+        - Web Interface
+        - API Endpoints
+        - Authentication System
+        - FortiGate Integration
+        - FortiManager Hub
+        - Database Layer
+        - Container Environment
+        - CI/CD Pipeline
+        - MSA Services
+        - ITSM Integration
+    validations:
+      required: true
+      
+  - type: textarea
+    id: impact
+    attributes:
+      label: Potential Impact
+      description: What could happen if this issue is exploited?
+      placeholder: Describe the potential consequences
+    validations:
+      required: true
+      
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Suggested Mitigation
+      description: If you have suggestions for fixing this issue, please share them
+      
+  - type: checkboxes
+    id: disclosure
+    attributes:
+      label: Responsible Disclosure
+      options:
+        - label: I understand this issue will be handled with appropriate security measures
+          required: true
+        - label: I have not shared exploitation details publicly
+          required: true
+        - label: I am willing to work with the team to resolve this issue
+          required: true

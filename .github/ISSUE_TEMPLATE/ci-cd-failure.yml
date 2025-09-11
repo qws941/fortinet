@@ -1,35 +1,58 @@
-name: CI/CD Pipeline Failure
-description: Report a CI/CD pipeline failure (Usually auto-generated)
-title: "[CI/CD] Pipeline Failed - "
-labels: ["ci-failure", "bug", "automated"]
+name: CI/CD Pipeline Issue
+description: Report a CI/CD pipeline failure or deployment issue
+title: "[CI/CD] "
+labels: ["ci-failure", "devops", "automation"]
 assignees: []
 body:
   - type: markdown
     attributes:
       value: |
-        ## CI/CD Pipeline Failure Report
-        This issue template is for reporting CI/CD pipeline failures. Usually, these issues are automatically created by GitHub Actions.
+        ## CI/CD Pipeline Issue Report
+        This template is for reporting CI/CD pipeline failures, deployment issues, or automation problems.
         
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      description: What type of CI/CD issue is this?
+      options:
+        - Workflow Failure
+        - Build Failure
+        - Test Failure
+        - Deployment Failure
+        - Docker Build Issue
+        - Kubernetes Deployment Issue
+        - Portainer API Issue
+        - Security Scan Failure
+        - Performance Issue
+    validations:
+      required: true
+      
   - type: input
     id: workflow-run
     attributes:
-      label: Workflow Run ID
-      description: The ID of the failed workflow run
-      placeholder: "12345678"
+      label: Workflow Run ID or URL
+      description: Link to the failed workflow run
+      placeholder: "https://github.com/JCLEE94/fortinet/actions/runs/12345678"
     validations:
       required: true
       
   - type: dropdown
-    id: failed-job
+    id: failed-stage
     attributes:
-      label: Failed Job
-      description: Which job failed?
+      label: Failed Stage
+      description: Which stage of the pipeline failed?
       multiple: true
       options:
-        - Test
-        - Build  
-        - Deploy
-        - Offline Package
+        - Code Quality Check
+        - Unit Tests
+        - Integration Tests
+        - Security Scan
+        - Docker Build
+        - Container Deployment
+        - Health Check
+        - Rollback
+        - Cleanup
     validations:
       required: true
       
@@ -38,7 +61,20 @@ body:
     attributes:
       label: Commit SHA
       description: The commit that triggered the failure
-      placeholder: "abc123d"
+      placeholder: "abc123def456"
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: Failure Frequency
+      description: How often does this failure occur?
+      options:
+        - First occurrence
+        - Intermittent (< 50%)
+        - Frequent (> 50%)
+        - Every time
     validations:
       required: true
       
@@ -46,7 +82,7 @@ body:
     id: error-logs
     attributes:
       label: Error Logs
-      description: Please paste the relevant error logs
+      description: Please paste the relevant error logs from the failed job
       placeholder: |
         ```
         Error logs here...
@@ -55,16 +91,34 @@ body:
       required: true
       
   - type: textarea
-    id: additional-context
+    id: environment-info
     attributes:
-      label: Additional Context
-      description: Add any other context about the problem here
+      label: Environment Information
+      description: Provide details about the environment where the failure occurred
+      placeholder: |
+        - Runner: Ubuntu 20.04
+        - Docker Version: 20.10.x
+        - Kubernetes Version: 1.24.x
+        - Branch: main/develop
+        
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to Reproduce
+      description: If reproducible locally, provide steps to reproduce the issue
+      
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Temporary Workaround
+      description: If you found a temporary workaround, please describe it
       
   - type: checkboxes
     id: checks
     attributes:
       label: Checklist
       options:
-        - label: I have checked for existing issues
-        - label: I have reviewed the workflow logs
+        - label: I have checked for existing CI/CD issues
+        - label: I have reviewed the full workflow logs
         - label: This is not a transient network error
+        - label: I have verified the issue is reproducible

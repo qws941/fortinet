@@ -45,6 +45,7 @@ src/logs/*.json
 src/logs/*.log
 !logs/.gitkeep
 !src/logs/.gitkeep
+automation.log
 
 # Temporary files
 *.tmp
@@ -69,6 +70,7 @@ backups/
 # Archives (except releases)
 *.tar.gz
 *.zip
+*.tgz
 !packages/releases/*.tar.gz
 # 폐쇄망 배포 파일은 Git LFS로 관리
 !offline-deployment/*.tar.gz
@@ -118,22 +120,20 @@ k8s/manifests/secrets.yaml
 **/secrets.yaml
 venv_ppt/
 
-# Serena MCP Cache
-.serena/cache/
-.serena/memories/
-
-# Claude Code MCP Tool Configurations
-config/agent-config.json
-config/mcp-tools-config.json
-agent-config.json
-mcp-tools-config.json
+# MCP Tool Cache and Configuration directories (keep config files only)
+.claude/
+.serena/
+.playwright-mcp/
+.puppeteer/
+.exa/
+.memory/
 
 # Test artifacts and temporary files
 *_test_*.json
-*_2024*.json
-*_2025*.json
+*_202*.json
 ui_test_results_*.json
 fortimanager_new_api_test_*.json
+fortimanager_demo_report_*.json
 packet_path_analysis_results.json
 health-check-results.json
 test-results/

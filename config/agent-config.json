@@ -1,0 +1,64 @@
+{
+  "agent": {
+    "name": "FortiGate Nextrade Agent",
+    "version": "1.0.5",
+    "mode": "interactive",
+    "created": "2025-08-17T18:10:00Z"
+  },
+  "mcp_integration": {
+    "serena": {
+      "project_activated": true,
+      "modes": ["editing", "interactive"],
+      "workspace": "/home/jclee/app/fortinet"
+    },
+    "shrimp_task_manager": {
+      "enabled": true,
+      "project_rules_initialized": false
+    },
+    "available_tools": [
+      "brave-search",
+      "exa",
+      "eslint",
+      "code-runner",
+      "memory",
+      "sequential-thinking",
+      "playwright",
+      "puppeteer",
+      "magic-ui-components",
+      "magic-logo-search"
+    ]
+  },
+  "project_config": {
+    "language": "python",
+    "framework": "flask",
+    "architecture": "monolithic-msa-hybrid",
+    "deployment": "kubernetes-gitops",
+    "ci_cd": "github-actions"
+  },
+  "capabilities": {
+    "code_analysis": true,
+    "deployment_automation": true,
+    "monitoring_setup": true,
+    "security_scanning": true,
+    "test_automation": true,
+    "documentation_generation": false
+  },
+  "environment": {
+    "development": {
+      "mock_mode": true,
+      "debug": true,
+      "port": 7777
+    },
+    "production": {
+      "mock_mode": false,
+      "debug": false,
+      "port": 7777
+    }
+  },
+  "gitops": {
+    "argocd_enabled": true,
+    "helm_charts": true,
+    "image_updater": true,
+    "auto_sync": false
+  }
+}

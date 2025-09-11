@@ -3,29 +3,49 @@ FROM python:3.11-slim
 
 LABEL maintainer="FortiGate Nextrade Team"
 LABEL service="app"
+LABEL version="2.0.0"
 
 WORKDIR /app
 
-# 시스템 패키지 설치
+# Create non-root user for security
+RUN groupadd -r fortinet && useradd -r -g fortinet fortinet
+
+# Install system packages
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Python 의존성 설치
+# Python dependencies installation
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 애플리케이션 코드 복사
+# Create directories for volumes
+RUN mkdir -p /app/data /app/logs /app/uploads /app/cache && \
+    chown -R fortinet:fortinet /app
+
+# Copy application code
 COPY . /app/src/
 
-# 포트 노출
+# Set proper permissions
+RUN chown -R fortinet:fortinet /app/src
+
+# Declare volumes for persistent data
+VOLUME ["/app/data"]
+VOLUME ["/app/logs"] 
+VOLUME ["/app/uploads"]
+VOLUME ["/app/cache"]
+
+# Switch to non-root user
+USER fortinet
+
+# Expose port (configurable via environment variable)
 EXPOSE 7777
 
-# 헬스체크
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:7777/api/health || exit 1
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:${WEB_APP_PORT:-7777}/api/health || exit 1
 
-# 실행 명령어
+# Start application
 CMD ["python", "/app/src/main.py", "--web"]

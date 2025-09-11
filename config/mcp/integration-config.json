@@ -1,12 +1,12 @@
 {
   "version": "1.0.0",
-  "description": "FortiGate Nextrade MCP 서버 통합 설정",
+  "description": "FortiGate Nextrade MCP Server Integration Configuration",
   "created": "2025-09-02",
   "servers": {
     "serena": {
       "command": "python",
       "args": ["-m", "mcp_serena", "--project-path", "/home/jclee/app/fortinet"],
-      "description": "프로젝트 파일 관리 및 코드 분석",
+      "description": "Project file management and code analysis",
       "capabilities": ["file_operations", "code_analysis", "project_management"],
       "priority": 1,
       "auto_start": true
@@ -14,7 +14,7 @@
     "filesystem": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/jclee/app/fortinet"],
-      "description": "파일 시스템 접근 및 관리",
+      "description": "File system access and management",
       "capabilities": ["file_read", "file_write", "directory_operations"],
       "priority": 2,
       "auto_start": true
@@ -25,7 +25,7 @@
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
       },
-      "description": "GitHub 저장소 관리 및 액션 실행",
+      "description": "GitHub repository management and actions",
       "capabilities": ["repo_management", "actions", "issues", "pull_requests"],
       "priority": 3,
       "auto_start": true
@@ -36,7 +36,7 @@
       "env": {
         "BRAVE_API_KEY": "${BRAVE_API_KEY}"
       },
-      "description": "웹 검색 및 최신 정보 수집",
+      "description": "Web search and real-time information",
       "capabilities": ["web_search", "real_time_info"],
       "priority": 4,
       "auto_start": false
@@ -47,7 +47,7 @@
       "env": {
         "EXA_API_KEY": "${EXA_API_KEY}"
       },
-      "description": "고급 검색 및 데이터 분석",
+      "description": "Advanced search and data analysis",
       "capabilities": ["advanced_search", "data_analysis"],
       "priority": 5,
       "auto_start": false
@@ -55,7 +55,7 @@
     "puppeteer": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
-      "description": "웹 자동화 및 스크린샷",
+      "description": "Web automation and screenshots",
       "capabilities": ["web_automation", "screenshot", "pdf_generation"],
       "priority": 6,
       "auto_start": false
@@ -63,7 +63,7 @@
     "playwright": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-playwright"],
-      "description": "고급 웹 테스팅 및 자동화",
+      "description": "Advanced web testing and automation",
       "capabilities": ["web_testing", "cross_browser", "automation"],
       "priority": 7,
       "auto_start": false
@@ -71,7 +71,7 @@
     "eslint": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-eslint"],
-      "description": "JavaScript/TypeScript 코드 린팅",
+      "description": "JavaScript/TypeScript code linting",
       "capabilities": ["code_linting", "style_checking"],
       "priority": 8,
       "auto_start": false
@@ -79,7 +79,7 @@
     "code-runner": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-code-runner"],
-      "description": "코드 실행 및 테스트",
+      "description": "Code execution and testing",
       "capabilities": ["code_execution", "testing"],
       "priority": 9,
       "auto_start": false
@@ -87,7 +87,7 @@
     "memory": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-memory"],
-      "description": "지식 그래프 및 메모리 관리",
+      "description": "Knowledge graph and memory management",
       "capabilities": ["knowledge_graph", "memory_storage"],
       "priority": 10,
       "auto_start": false
@@ -95,7 +95,7 @@
   },
   "workflows": {
     "automated_development": {
-      "description": "전체 개발 프로세스 자동화",
+      "description": "Complete development process automation",
       "servers": ["serena", "filesystem", "github"],
       "steps": [
         {
@@ -116,7 +116,7 @@
       ]
     },
     "ci_cd_pipeline": {
-      "description": "CI/CD 파이프라인 자동화",
+      "description": "CI/CD pipeline automation",
       "servers": ["github", "serena"],
       "steps": [
         {
@@ -132,7 +132,7 @@
       ]
     },
     "research_and_optimization": {
-      "description": "연구 및 최적화 작업",
+      "description": "Research and optimization tasks",
       "servers": ["brave-search", "exa", "memory"],
       "steps": [
         {
