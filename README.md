@@ -17,8 +17,11 @@
 
 ## 📖 자세한 문서
 
-- [INSTALL-SUMMARY.md](./INSTALL-SUMMARY.md) - 전체 설치 내역 및 사용법
 - [CLAUDE.md](./CLAUDE.md) - Claude Code를 위한 프로젝트 가이드
+- [docs/](./docs/) - 상세 문서 디렉토리
+  - [INSTALL-SUMMARY.md](./docs/INSTALL-SUMMARY.md) - 전체 설치 내역
+  - [QUICKSTART-AUTO-DISCOVER.md](./docs/QUICKSTART-AUTO-DISCOVER.md) - 빠른 시작 가이드
+  - [TS-QUICK-REFERENCE.md](./docs/TS-QUICK-REFERENCE.md) - TS 명령어 레퍼런스
 
 ## 🚀 빠른 시작
 
@@ -43,24 +46,26 @@ ts
 cc
 ```
 
-## 🔧 파일 구조
+## 🔧 디렉토리 구조
 
 ```
 /home/jclee/app/tmux/
-├── cc                          # Claude Code 실행 스크립트
-├── README.md                   # 이 파일
-├── INSTALL-SUMMARY.md          # 상세 설치 문서
-└── CLAUDE.md                   # 프로젝트 가이드
-
-~/.bashrc → ~/.claude/config/bashrc
-~/.bashrc.d/
-├── tmux-auto-cc.sh
-└── tmux-pwd-restore.sh
-
-/home/jclee/app/tmux/tc         # TC/CC Master 스크립트
-~/.claude/bin/
-├── tc → /home/jclee/app/tmux/tc
-└── cc → tc (symlink)
+├── agents/              # AI 에이전트 (Claude, monitoring)
+├── scripts/             # 유틸리티 및 설치 스크립트
+├── tests/               # 테스트 스크립트
+├── docs/                # 상세 문서
+├── config/              # 설정 파일 (Grafana, Prometheus)
+├── archive/             # 아카이브된 구 버전 스크립트
+├── validate/            # TypeScript 검증 모듈
+├── list/                # TypeScript 세션 목록 모듈
+├── web-interface/       # 웹 인터페이스
+├── slack-tmux-bridge/   # Slack 통합
+├── README.md            # 메인 문서
+├── CLAUDE.md            # Claude Code 가이드
+├── docker-compose.yml   # Docker 서비스 정의
+├── tc                   # TC/CC Master 스크립트
+├── sq                   # SQ 명령어
+└── ts.sh                # TS 명령어 메인 스크립트
 ```
 
 ## 📚 주요 명령어
