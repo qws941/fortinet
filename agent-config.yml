@@ -1,0 +1,316 @@
+---
+# Claude Agent Configuration
+
+orchestrator:
+  host: 0.0.0.0
+  port: 8080
+  task_timeout: 300  # 5 minutes
+  max_retries: 3
+  queue_size: 1000
+
+agents:
+  analyzer:
+    count: 2
+    capabilities:
+      - code_analysis
+      - pattern_detection
+      - metrics_collection
+      - vulnerability_scanning
+    mcp_tools:
+      required:
+        - file_operations  # Read, Write, Edit, Glob, Grep
+        - code_search      # Advanced code search and analysis
+        - git_operations   # Git status, diff, log
+      optional:
+        - github_api       # GitHub repository analysis
+        - web_search       # Research documentation
+    resources:
+      cpu: 0.5
+      memory: 512M
+    scaling:
+      min: 1
+      max: 5
+      cpu_threshold: 80
+      memory_threshold: 85
+
+  executor:
+    count: 3
+    capabilities:
+      - code_execution
+      - testing
+      - deployment
+      - build_automation
+    mcp_tools:
+      required:
+        - bash_commands    # Execute shell commands
+        - file_operations  # Read, Write, Edit files
+        - tmux_control     # Manage tmux sessions
+      optional:
+        - docker_api       # Container management
+        - process_monitor  # System monitoring
+        - ssh_operations   # Remote execution
+    resources:
+      cpu: 1.0
+      memory: 1G
+    scaling:
+      min: 2
+      max: 10
+      cpu_threshold: 75
+      memory_threshold: 80
+
+  monitor:
+    count: 1
+    capabilities:
+      - health_check
+      - performance_monitoring
+      - alerting
+      - log_analysis
+    mcp_tools:
+      required:
+        - system_metrics   # CPU, memory, disk monitoring
+        - log_analysis     # Parse and analyze logs
+        - prometheus_api   # Metrics collection
+      optional:
+        - grafana_api      # Dashboard management
+        - elasticsearch    # Log storage and search
+        - alerting_hooks   # Notification systems
+    resources:
+      cpu: 0.25
+      memory: 256M
+    scaling:
+      min: 1
+      max: 3
+      cpu_threshold: 90
+      memory_threshold: 90
+
+  researcher:
+    count: 2
+    capabilities:
+      - web_search
+      - documentation_analysis
+      - learning
+      - knowledge_extraction
+    mcp_tools:
+      required:
+        - web_search       # Brave search, web fetching
+        - knowledge_graph  # Store and retrieve knowledge
+        - document_parser  # Parse documentation
+      optional:
+        - github_search    # Search repositories and issues
+        - arxiv_search     # Academic paper research
+        - stackoverflow   # Technical Q&A research
+    resources:
+      cpu: 0.5
+      memory: 512M
+    scaling:
+      min: 1
+      max: 5
+      cpu_threshold: 80
+      memory_threshold: 85
+
+redis:
+  host: redis
+  port: 6379
+  db: 0
+  password: ""
+  pool_size: 10
+
+rabbitmq:
+  host: rabbitmq
+  port: 5672
+  username: admin
+  password: admin123
+  vhost: /
+  exchange: agent_tasks
+  queue_prefix: agent_
+
+monitoring:
+  # MANDATORY: External infrastructure only (Constitutional Requirement)
+  prometheus:
+    enabled: true
+    url: https://grafana.jclee.me/prometheus
+    scrape_interval: 30s
+
+  grafana:
+    enabled: true
+    url: https://grafana.jclee.me
+
+  loki:
+    enabled: true
+    url: https://grafana.jclee.me/loki/api/v1/push
+    labels:
+      job: claude-agents
+      environment: production
+
+  # Disabled: Local infrastructure prohibited by CLAUDE.md
+  # elasticsearch:
+  #   enabled: false
+
+logging:
+  level: INFO
+  format: json
+  output:
+    - console
+    - file
+  file:
+    path: /var/log/agent/agent.log
+    max_size: 100M
+    max_files: 10
+    compress: true
+
+task_routing:
+  rules:
+    - pattern: "*.py"
+      agent_type: analyzer
+      priority: high
+
+    - pattern: "test_*"
+      agent_type: executor
+      priority: medium
+
+    - pattern: "deploy_*"
+      agent_type: executor
+      priority: high
+
+    - pattern: "monitor_*"
+      agent_type: monitor
+      priority: low
+
+    - pattern: "research_*"
+      agent_type: researcher
+      priority: medium
+
+health_checks:
+  interval: 30
+  timeout: 10
+  failure_threshold: 3
+  success_threshold: 2
+
+auto_scaling:
+  enabled: true
+  check_interval: 60
+  scale_up_threshold: 0.8
+  scale_down_threshold: 0.3
+  cooldown_period: 300
+
+# MCP Tool Configuration
+mcp_tools:
+  # File and Code Operations
+  file_operations:
+    description: "File reading, writing, editing operations"
+    tools: ["Read", "Write", "Edit", "MultiEdit", "Glob", "Grep"]
+    config:
+      max_file_size: "10MB"
+      timeout: 30
+
+  code_search:
+    description: "Advanced code search and analysis"
+    tools: ["Grep", "Glob", "WebSearch"]
+    config:
+      search_depth: 5
+      case_sensitive: false
+
+  # System Operations
+  bash_commands:
+    description: "Shell command execution"
+    tools: ["Bash", "mcp__commands__run_command"]
+    config:
+      timeout: 120
+      working_directory: "/app/workspace"
+
+  tmux_control:
+    description: "Tmux session management"
+    tools: ["mcp__tmux__run_command", "mcp__tmux__get_output", "mcp__tmux__send_input"]
+    config:
+      default_session: "main"
+      scrollback_lines: 2000
+
+  # Monitoring and Metrics
+  system_metrics:
+    description: "System monitoring and metrics"
+    tools: ["BashOutput", "WebFetch"]
+    config:
+      metric_interval: 10
+      retention_hours: 24
+
+  prometheus_api:
+    description: "Prometheus metrics integration"
+    tools: ["WebFetch"]
+    config:
+      endpoint: "https://grafana.jclee.me/prometheus"
+      query_timeout: 30
+
+  grafana_api:
+    description: "Grafana dashboard management"
+    tools: ["WebFetch"]
+    config:
+      endpoint: "https://grafana.jclee.me"
+      api_key_env: "GRAFANA_API_KEY"
+
+  # Research and Knowledge
+  web_search:
+    description: "Web search and information gathering"
+    tools: ["WebSearch", "WebFetch", "mcp__brave-search__brave_web_search"]
+    config:
+      max_results: 10
+      timeout: 15
+
+  knowledge_graph:
+    description: "Knowledge storage and retrieval"
+    tools: ["mcp__memory__create_entities", "mcp__memory__search_nodes", "mcp__memory__read_graph"]
+    config:
+      graph_size_limit: 10000
+      auto_cleanup: true
+
+  github_api:
+    description: "GitHub repository operations"
+    tools: ["mcp__github__search_repositories", "mcp__github__get_file_contents", "mcp__github__search_code"]
+    config:
+      rate_limit: 5000
+      cache_duration: 300
+
+  # Task Management
+  task_management:
+    description: "Advanced task planning and execution"
+    tools: ["mcp__shrimp-task-manager__plan_task", "mcp__shrimp-task-manager__execute_task", "mcp__sequential-thinking__sequentialthinking"]
+    config:
+      max_concurrent_tasks: 10
+      task_timeout: 600
+
+# Agent-specific MCP configurations
+agent_mcp_config:
+  analyzer:
+    environment:
+      - CLAUDE_ANALYSIS_MODE=deep
+      - MAX_FILE_SIZE=50MB
+    tool_permissions:
+      file_operations: read_write
+      code_search: full_access
+      web_search: limited
+
+  executor:
+    environment:
+      - CLAUDE_EXECUTION_MODE=safe
+      - WORKSPACE_DIR=/app/workspace
+    tool_permissions:
+      bash_commands: supervised
+      tmux_control: full_access
+      file_operations: read_write
+
+  monitor:
+    environment:
+      - CLAUDE_MONITOR_MODE=realtime
+      - METRICS_INTERVAL=5
+    tool_permissions:
+      system_metrics: full_access
+      prometheus_api: read_only
+      grafana_api: read_write
+
+  researcher:
+    environment:
+      - CLAUDE_RESEARCH_MODE=comprehensive
+      - MAX_SEARCH_DEPTH=10
+    tool_permissions:
+      web_search: full_access
+      knowledge_graph: read_write
+      github_api: read_only

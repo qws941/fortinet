@@ -1,0 +1,30 @@
+{
+  "name": "slack-tmux-bridge",
+  "version": "1.0.0",
+  "description": "WebSocket + Slack integration for tmux control",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node test/test-tmux-wrapper.js",
+    "test:ws": "node test/test-websocket.js",
+    "test:all": "npm test && npm run test:ws",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "keywords": ["slack", "tmux", "websocket", "terminal", "automation"],
+  "author": "jclee",
+  "license": "MIT",
+  "dependencies": {
+    "@slack/bolt": "^3.17.1",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
+}

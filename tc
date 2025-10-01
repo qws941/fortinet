@@ -1,0 +1,64 @@
+#!/bin/bash
+# TC/CC - Tmux + Claude Code 통합 명령어
+set -euo pipefail
+
+SESSION_NAME="${1:-}"
+
+if [[ -z "$SESSION_NAME" ]]; then
+    echo "Usage: tc/cc <session-name>"
+    echo "Example: tc blacklist"
+    exit 1
+fi
+
+# 프로젝트 경로 자동 탐지
+PROJECT_PATH=""
+CANDIDATES=(
+    "/home/jclee/app/$SESSION_NAME"
+    "/home/jclee/synology/$SESSION_NAME"
+)
+
+for path in "${CANDIDATES[@]}"; do
+    if [[ -d "$path" ]]; then
+        PROJECT_PATH="$path"
+        break
+    fi
+done
+
+if [[ -z "$PROJECT_PATH" ]]; then
+    echo "❌ Project not found: $SESSION_NAME"
+    echo "Searched in:"
+    printf "  - %s\n" "${CANDIDATES[@]}"
+    exit 1
+fi
+
+echo "🚀 Starting TC for: $SESSION_NAME"
+echo "📁 Path: $PROJECT_PATH"
+
+# Tmux 세션 생성 또는 연결
+SOCKET_PATH="/home/jclee/.tmux/sockets/$SESSION_NAME"
+
+if tmux -S "$SOCKET_PATH" has-session -t "$SESSION_NAME" 2>/dev/null; then
+    echo "✅ Session exists, attaching..."
+    if [[ -n "${TMUX:-}" ]]; then
+        # 이미 tmux 안에 있으면 새 윈도우로
+        tmux new-window -n "$SESSION_NAME" "cd '$PROJECT_PATH' && exec tmux -S '$SOCKET_PATH' attach-session -t '$SESSION_NAME'"
+    else
+        cd "$PROJECT_PATH"
+        exec tmux -S "$SOCKET_PATH" attach-session -t "$SESSION_NAME"
+    fi
+else
+    echo "🆕 Creating new session..."
+    
+    # 세션 생성
+    tmux -S "$SOCKET_PATH" new-session -d -s "$SESSION_NAME" -c "$PROJECT_PATH"
+    
+    # Claude Code 자동 실행
+    tmux -S "$SOCKET_PATH" send-keys -t "$SESSION_NAME" "claude" Enter
+    
+    # 세션 접속
+    if [[ -n "${TMUX:-}" ]]; then
+        tmux new-window -n "$SESSION_NAME" "exec tmux -S '$SOCKET_PATH' attach-session -t '$SESSION_NAME'"
+    else
+        exec tmux -S "$SOCKET_PATH" attach-session -t "$SESSION_NAME"
+    fi
+fi

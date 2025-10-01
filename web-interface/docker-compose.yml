@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  tmux-web-interface:
+    build: .
+    container_name: tmux-web-interface
+    restart: unless-stopped
+    ports:
+      - "3030:3030"
+    volumes:
+      # TS 데이터베이스 접근
+      - ~/.config/ts:/root/.config/ts:ro
+      # Tmux 소켓 접근
+      - ~/.tmux/sockets:/root/.tmux/sockets:ro
+    environment:
+      - NODE_ENV=production
+      - PORT=3030
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    networks:
+      - tmux-network
+
+networks:
+  tmux-network:
+    driver: bridge

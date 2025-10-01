@@ -1,0 +1,19 @@
+[Unit]
+Description=TS Auto-Discover Daemon - Automatic Project Discovery
+After=network.target
+
+[Service]
+Type=simple
+User=jclee
+WorkingDirectory=/home/jclee/app/tmux
+ExecStart=/home/jclee/app/tmux/ts-auto-discover-daemon.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Grafana logging
+Environment="GRAFANA_LOKI_URL=https://grafana.jclee.me/loki/api/v1/push"
+
+[Install]
+WantedBy=multi-user.target

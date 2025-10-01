@@ -1,0 +1,14 @@
+#!/bin/bash
+# SQ (Squad) - Simplified TS Squad Command
+# Short and memorable command for multi-agent management
+
+SQUAD_SCRIPT="/home/jclee/app/tmux/ts-squad-integration.sh"
+
+# Check if squad script exists
+if [[ ! -f "$SQUAD_SCRIPT" ]]; then
+    echo "Error: TS Squad script not found at $SQUAD_SCRIPT"
+    exit 1
+fi
+
+# Execute squad script with all arguments
+exec "$SQUAD_SCRIPT" "$@"

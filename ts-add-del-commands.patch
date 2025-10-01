@@ -1,0 +1,241 @@
+# Patch for adding ts add and ts del commands
+# These functions will be added to the ts script
+
+# Function: Add new project to known projects registry
+add_project() {
+    local project_name="$1"
+    local project_path="$2"
+
+    if [[ -z "$project_name" ]]; then
+        echo -e "${YELLOW}Usage: ts add <project_name> [path]${NC}"
+        echo -e "${BLUE}Examples:${NC}"
+        echo -e "  ts add myproject                    # Add current directory"
+        echo -e "  ts add webapp /home/user/webapp     # Add specific path"
+        echo -e "  ts add api ../api-server             # Add relative path"
+        echo ""
+        echo -e "${CYAN}Current known projects:${NC}"
+        for key in "${!KNOWN_PROJECTS[@]}"; do
+            printf "  %-15s -> %s\n" "$key" "${KNOWN_PROJECTS[$key]}"
+        done | sort
+        return 1
+    fi
+
+    # Use current directory if no path specified
+    if [[ -z "$project_path" ]]; then
+        project_path="$PWD"
+    else
+        # Convert relative path to absolute
+        project_path=$(realpath "$project_path" 2>/dev/null || echo "$project_path")
+    fi
+
+    # Check if project name already exists
+    if [[ -n "${KNOWN_PROJECTS[$project_name]}" ]]; then
+        echo -e "${YELLOW}⚠ Project '$project_name' already exists:${NC}"
+        echo -e "  Current: ${KNOWN_PROJECTS[$project_name]}"
+        echo -e "  New:     $project_path"
+        echo ""
+        echo -e "${CYAN}Options:${NC}"
+        echo -e "  1. ${GREEN}ts del $project_name${NC} - Remove existing first"
+        echo -e "  2. ${BLUE}Choose different name${NC}"
+        echo -e "  3. ${RED}ts add $project_name --force${NC} - Force overwrite"
+
+        if [[ "$3" == "--force" ]]; then
+            echo -e "${YELLOW}Forcing overwrite...${NC}"
+        else
+            return 1
+        fi
+    fi
+
+    # Check if directory exists
+    if [[ ! -d "$project_path" ]]; then
+        echo -e "${YELLOW}⚠ Directory doesn't exist: $project_path${NC}"
+        echo -e "${BLUE}Create it? (y/N):${NC}"
+        read -r create_dir
+        if [[ "$create_dir" =~ ^[Yy]$ ]]; then
+            mkdir -p "$project_path" || {
+                echo -e "${RED}✗ Failed to create directory${NC}"
+                return 1
+            }
+            echo -e "${GREEN}✓ Created directory: $project_path${NC}"
+        else
+            echo -e "${YELLOW}Cancelled${NC}"
+            return 1
+        fi
+    fi
+
+    # Add to persistent configuration
+    local config_file="$HOME/.config/ts/projects.conf"
+    mkdir -p "$(dirname "$config_file")"
+
+    # Backup existing config
+    if [[ -f "$config_file" ]]; then
+        cp "$config_file" "$config_file.bak"
+    fi
+
+    # Add or update project
+    if grep -q "^$project_name=" "$config_file" 2>/dev/null; then
+        # Update existing
+        sed -i "s|^$project_name=.*|$project_name=\"$project_path\"|" "$config_file"
+        echo -e "${GREEN}✓ Updated project: $project_name${NC}"
+    else
+        # Add new
+        echo "$project_name=\"$project_path\"" >> "$config_file"
+        echo -e "${GREEN}✓ Added project: $project_name${NC}"
+    fi
+
+    echo -e "${BLUE}📂 $project_name -> $project_path${NC}"
+    echo -e "${CYAN}Use: ts $project_name${NC}"
+
+    # Optional: Create session immediately
+    echo -e "${YELLOW}Create session now? (y/N):${NC}"
+    read -r create_session
+    if [[ "$create_session" =~ ^[Yy]$ ]]; then
+        echo -e "${GREEN}Creating session...${NC}"
+        smart_attach_session "$project_name"
+    fi
+}
+
+# Function: Remove project from known projects registry
+del_project() {
+    local project_name="$1"
+
+    if [[ -z "$project_name" ]]; then
+        echo -e "${YELLOW}Usage: ts del <project_name>${NC}"
+        echo -e "${BLUE}Available projects to remove:${NC}"
+        local config_file="$HOME/.config/ts/projects.conf"
+        if [[ -f "$config_file" ]]; then
+            while IFS='=' read -r name path; do
+                [[ -n "$name" && "$name" != \#* ]] && printf "  %-15s -> %s\n" "$name" "$path"
+            done < "$config_file" | sort
+        fi
+        echo ""
+        echo -e "${CYAN}Built-in projects (cannot be removed):${NC}"
+        for key in "${!KNOWN_PROJECTS[@]}"; do
+            printf "  %-15s -> %s\n" "$key" "${KNOWN_PROJECTS[$key]}"
+        done | sort
+        return 1
+    fi
+
+    # Check if it's a built-in project
+    if [[ -n "${KNOWN_PROJECTS[$project_name]}" ]]; then
+        echo -e "${RED}✗ Cannot remove built-in project: $project_name${NC}"
+        echo -e "${BLUE}Built-in projects are part of the ts script configuration${NC}"
+        return 1
+    fi
+
+    local config_file="$HOME/.config/ts/projects.conf"
+
+    if [[ ! -f "$config_file" ]]; then
+        echo -e "${YELLOW}⚠ No custom projects configured${NC}"
+        return 1
+    fi
+
+    # Check if project exists in config
+    if ! grep -q "^$project_name=" "$config_file"; then
+        echo -e "${YELLOW}⚠ Project not found: $project_name${NC}"
+        echo -e "${BLUE}Available projects:${NC}"
+        while IFS='=' read -r name path; do
+            [[ -n "$name" && "$name" != \#* ]] && printf "  %-15s -> %s\n" "$name" "$path"
+        done < "$config_file" | sort
+        return 1
+    fi
+
+    # Get project path for confirmation
+    local project_path=$(grep "^$project_name=" "$config_file" | cut -d'=' -f2- | tr -d '"')
+
+    # Check if there's an active session
+    local socket_path="$SOCKET_DIR/$project_name"
+    local has_session=false
+    if [[ -S "$socket_path" ]] && tmux -S "$socket_path" has-session -t "$project_name" 2>/dev/null; then
+        has_session=true
+    fi
+
+    # Confirmation
+    echo -e "${YELLOW}⚠ Remove project '$project_name'?${NC}"
+    echo -e "${BLUE}📂 Path: $project_path${NC}"
+    if [[ "$has_session" == true ]]; then
+        echo -e "${RED}🔴 Active session will remain (use 'ts kill $project_name' to close)${NC}"
+    fi
+    echo -e "${CYAN}This only removes the project shortcut, not the directory${NC}"
+    echo ""
+    echo -e "${YELLOW}Continue? (y/N):${NC}"
+    read -r confirm
+
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        echo -e "${BLUE}Cancelled${NC}"
+        return 0
+    fi
+
+    # Backup and remove
+    cp "$config_file" "$config_file.bak"
+    sed -i "/^$project_name=/d" "$config_file"
+
+    echo -e "${GREEN}✓ Removed project: $project_name${NC}"
+
+    if [[ "$has_session" == true ]]; then
+        echo -e "${YELLOW}💡 Active session still running${NC}"
+        echo -e "${BLUE}To close: ts kill $project_name${NC}"
+    fi
+}
+
+# Function: Load custom projects from config file
+load_custom_projects() {
+    local config_file="$HOME/.config/ts/projects.conf"
+
+    if [[ -f "$config_file" ]]; then
+        while IFS='=' read -r name path; do
+            # Skip comments and empty lines
+            [[ -n "$name" && "$name" != \#* ]] && KNOWN_PROJECTS["$name"]=$(eval echo "$path")
+        done < "$config_file"
+    fi
+}
+
+# Function: List all projects (built-in + custom)
+list_all_projects() {
+    echo -e "${CYAN}════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}    All Known Projects${NC}"
+    echo -e "${CYAN}════════════════════════════════════════════════════${NC}"
+
+    # Load custom projects
+    load_custom_projects
+
+    echo -e "\n${BLUE}Built-in Projects:${NC}"
+    local builtin_projects=("claude" "local" "blacklist" "blacklist-api" "claude-flow" "cloudflare" "data" "docs" "fortinet" "grafana" "hycu" "mcp" "propose" "resume" "safework" "splunk" "tmp" "tmux")
+
+    for project in "${builtin_projects[@]}"; do
+        if [[ -n "${KNOWN_PROJECTS[$project]}" ]]; then
+            local status=""
+            local socket_path="$SOCKET_DIR/$project"
+            if [[ -S "$socket_path" ]] && tmux -S "$socket_path" has-session -t "$project" 2>/dev/null; then
+                status="${GREEN}[ACTIVE]${NC}"
+            else
+                status="${YELLOW}[IDLE]${NC}"
+            fi
+            printf "  %-15s -> %-40s %s\n" "$project" "${KNOWN_PROJECTS[$project]}" "$status"
+        fi
+    done
+
+    # Custom projects
+    local config_file="$HOME/.config/ts/projects.conf"
+    if [[ -f "$config_file" ]]; then
+        echo -e "\n${BLUE}Custom Projects:${NC}"
+        while IFS='=' read -r name path; do
+            if [[ -n "$name" && "$name" != \#* ]]; then
+                local status=""
+                local socket_path="$SOCKET_DIR/$name"
+                if [[ -S "$socket_path" ]] && tmux -S "$socket_path" has-session -t "$name" 2>/dev/null; then
+                    status="${GREEN}[ACTIVE]${NC}"
+                else
+                    status="${YELLOW}[IDLE]${NC}"
+                fi
+                printf "  %-15s -> %-40s %s\n" "$name" "$(eval echo "$path")" "$status"
+            fi
+        done < "$config_file" | sort
+    else
+        echo -e "\n${YELLOW}No custom projects configured${NC}"
+        echo -e "${BLUE}Use 'ts add <name> [path]' to add projects${NC}"
+    fi
+
+    echo -e "\n${CYAN}════════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}Commands: ts add <name> [path] | ts del <name> | ts projects${NC}"
+}

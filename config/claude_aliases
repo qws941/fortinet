@@ -1,0 +1,94 @@
+#!/bin/bash
+# Claude Commands Aliases
+# Essential shortcuts for development workflow
+
+# Git shortcuts
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git log --oneline -10'
+alias gd='git diff'
+alias gco='git checkout'
+alias gb='git branch'
+
+# Navigation shortcuts
+alias ll='ls -la'
+alias la='ls -la'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+# Claude specific
+alias ca='source ~/.claude/scripts/claude_alias.sh'
+alias claude-env='source ~/.claude/mcp-env.sh'
+alias reload='source ~/.bashrc && source ~/.claude/mcp-env.sh'
+
+# Project navigation
+alias app='cd ~/app'
+alias claude='cd ~/.claude'
+alias projects='cd ~/.claude/projects'
+
+# Development shortcuts
+alias nrd='npm run dev'
+alias nrs='npm run start'
+alias nrt='npm run test'
+alias nrl='npm run lint'
+alias nrb='npm run build'
+
+# Docker shortcuts
+alias d='docker'
+alias dc='docker-compose'
+alias dps='docker ps'
+alias dimg='docker images'
+alias dcup='docker-compose up -d'
+alias dcdown='docker-compose down'
+alias dclogs='docker-compose logs -f'
+
+# System shortcuts
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+# Safety aliases
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Enhanced ls
+if command -v exa &> /dev/null; then
+    alias ls='exa'
+    alias ll='exa -la'
+    alias tree='exa --tree'
+fi
+
+# Utility functions
+mkcd() {
+    mkdir -p "$1" && cd "$1"
+}
+
+# Git functions
+gac() {
+    git add . && git commit -m "$1"
+}
+
+gacp() {
+    git add . && git commit -m "$1" && git push
+}
+
+# Environment check
+check_env() {
+    echo "🔍 Environment Check:"
+    echo "Node: $(node --version 2>/dev/null || echo 'Not installed')"
+    echo "NPM: $(npm --version 2>/dev/null || echo 'Not installed')"
+    echo "Git: $(git --version 2>/dev/null || echo 'Not installed')"
+    echo "Docker: $(docker --version 2>/dev/null || echo 'Not installed')"
+    echo "Current Dir: $(pwd)"
+}
+
+# Load environment
+if [ -f ~/.claude/mcp-env.sh ]; then
+    source ~/.claude/mcp-env.sh
+fi
+
+echo "✅ Claude aliases loaded"

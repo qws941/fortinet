@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Analytics Services
+  metric-labeling:
+    image: python:3.9-slim
+    container_name: metric-labeling-engine
+    restart: unless-stopped
+    volumes:
+      - ./metric-labeling-engine.py:/app/metric-labeling-engine.py
+      - ./logs/labeling:/var/log/labeling
+    working_dir: /app
+    command: >
+      sh -c "pip install aiohttp scikit-learn numpy &&
+             python metric-labeling-engine.py"
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+      - elasticsearch
+
+  alert-manager:
+    image: python:3.9-slim
+    container_name: intelligent-alert-manager
+    restart: unless-stopped
+    volumes:
+      - ./intelligent-alert-manager.py:/app/intelligent-alert-manager.py
+      - ./logs/alerts:/var/log/alerts
+    working_dir: /app
+    command: >
+      sh -c "pip install aiohttp scikit-learn numpy &&
+             python intelligent-alert-manager.py"
+    networks:
+      - monitoring
+    depends_on:
+      - alertmanager
+      - elasticsearch
+
+  log-scanner:
+    image: python:3.9-slim
+    container_name: log-scanner-agent
+    restart: unless-stopped
+    volumes:
+      - ./log-scanner-agent.py:/app/log-scanner-agent.py
+      - ./logs:/var/log/containers:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    working_dir: /app
+    command: >
+      sh -c "pip install aiohttp &&
+             python log-scanner-agent.py"
+    networks:
+      - monitoring
+    depends_on:
+      - elasticsearch
+      - influxdb
+
+  predictive-analytics:
+    image: python:3.9-slim
+    container_name: predictive-analytics-engine
+    restart: unless-stopped
+    volumes:
+      - ./predictive-analytics.py:/app/predictive-analytics.py
+      - ./logs/predictions:/var/log/predictions
+    working_dir: /app
+    command: >
+      sh -c "pip install aiohttp scikit-learn numpy &&
+             python predictive-analytics.py"
+    networks:
+      - monitoring
+    depends_on:
+      - influxdb
+      - grafana
+
+networks:
+  monitoring:
+    external: true
+    name: tmux_monitoring

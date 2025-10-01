@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+venv/
+env/
+
+# Build outputs
+dist/
+build/
+*.log
+
+# Data directories
+data/
+logs/
+*.db
+*.sqlite
+
+# Backup files
+*.old
+*.backup
+*.bak
+*~
+*.tmp
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Secrets
+*.key
+*.pem
+*.env
+secrets/
+
+# Docker volumes
+postgres-data/
+
+# Tmux
+.tmux/

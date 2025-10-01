@@ -1,0 +1,34 @@
+# Universal Observability Configuration
+# According to CLAUDE.md Constitutional Principles
+# "If it's not in Grafana, it didn't happen"
+
+monitoring:
+  # MANDATORY: Use external infrastructure only
+  grafana:
+    url: https://grafana.jclee.me
+    api_key: ${GRAFANA_API_KEY}
+
+  loki:
+    url: https://grafana.jclee.me/loki/api/v1/push
+    labels:
+      job: tmux-claude-system
+      environment: production
+
+  prometheus:
+    url: https://grafana.jclee.me/prometheus
+
+  tempo:
+    url: https://grafana.jclee.me/tempo
+
+# PROHIBITED - Constitutional Violations
+prohibited:
+  - localhost:3000     # Local Grafana
+  - 127.0.0.1:9090    # Local Prometheus
+  - localhost:9200    # Local Elasticsearch
+  - 127.0.0.1:3100    # Local Loki
+
+# Enforcement
+enforcement:
+  level: IMMEDIATE_MANDATORY
+  auto_correction: true
+  violation_action: STOP_AND_REDIRECT

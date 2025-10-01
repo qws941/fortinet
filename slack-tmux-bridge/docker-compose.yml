@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  slack-tmux-bridge:
+    build: .
+    container_name: slack-tmux-bridge
+    restart: unless-stopped
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+      - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
+      - PORT=3000
+      - WS_PORT=3001
+      - TMUX_SOCKET_DIR=/tmux-sockets
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    volumes:
+      - /home/jclee/.tmux/sockets:/tmux-sockets
+      - /usr/bin/tmux:/usr/bin/tmux:ro
+    networks:
+      - tmux-bridge-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  tmux-bridge-network:
+    driver: bridge

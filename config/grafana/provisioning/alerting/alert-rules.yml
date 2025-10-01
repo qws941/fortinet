@@ -1,0 +1,282 @@
+apiVersion: 1
+
+groups:
+  - name: container_alerts
+    interval: 1m
+    orgId: 1
+    folder: Container Alerts
+    rules:
+      - uid: high_cpu_usage
+        title: High Container CPU Usage
+        condition: cpu_threshold
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: Prometheus
+            model:
+              expr: 'rate(container_cpu_usage_seconds_total{name=~".+"}[5m]) * 100'
+              refId: A
+          - refId: cpu_threshold
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            conditions:
+              - evaluator:
+                  params: [80]
+                  type: gt
+                reducer:
+                  params: []
+                  type: avg
+                query:
+                  params: [A]
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              refId: cpu_threshold
+              conditions:
+                - evaluator:
+                    params: [80]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: avg
+                  type: query
+        noDataState: NoData
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          description: "Container {{ $labels.name }} CPU usage is above 80%"
+          summary: "High CPU usage detected"
+        labels:
+          severity: warning
+          team: devops
+
+      - uid: high_memory_usage
+        title: High Container Memory Usage
+        condition: memory_threshold
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: Prometheus
+            model:
+              expr: 'container_memory_usage_bytes{name=~".+"}'
+              refId: A
+          - refId: memory_threshold
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            conditions:
+              - evaluator:
+                  params: [2147483648]
+                  type: gt
+                reducer:
+                  params: []
+                  type: avg
+                query:
+                  params: [A]
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              refId: memory_threshold
+              conditions:
+                - evaluator:
+                    params: [2147483648]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: avg
+                  type: query
+        noDataState: NoData
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          description: "Container {{ $labels.name }} memory usage is above 2GB"
+          summary: "High memory usage detected"
+        labels:
+          severity: warning
+          team: devops
+
+  - name: system_alerts
+    interval: 1m
+    orgId: 1
+    folder: System Alerts
+    rules:
+      - uid: node_cpu_high
+        title: Node CPU Usage High
+        condition: node_cpu_threshold
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: Prometheus
+            model:
+              expr: '(1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100'
+              refId: A
+          - refId: node_cpu_threshold
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            conditions:
+              - evaluator:
+                  params: [85]
+                  type: gt
+                reducer:
+                  params: []
+                  type: last
+                query:
+                  params: [A]
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              refId: node_cpu_threshold
+              conditions:
+                - evaluator:
+                    params: [85]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+        noDataState: NoData
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          description: "Node CPU usage is above 85%"
+          summary: "High node CPU usage"
+        labels:
+          severity: critical
+          team: infrastructure
+
+      - uid: node_memory_high
+        title: Node Memory Usage High
+        condition: node_memory_threshold
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: Prometheus
+            model:
+              expr: '(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100'
+              refId: A
+          - refId: node_memory_threshold
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            conditions:
+              - evaluator:
+                  params: [90]
+                  type: gt
+                reducer:
+                  params: []
+                  type: last
+                query:
+                  params: [A]
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              refId: node_memory_threshold
+              conditions:
+                - evaluator:
+                    params: [90]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+        noDataState: NoData
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          description: "Node memory usage is above 90%"
+          summary: "High node memory usage"
+        labels:
+          severity: critical
+          team: infrastructure
+
+      - uid: container_down
+        title: Container Down
+        condition: container_down_check
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: Prometheus
+            model:
+              expr: 'up{job="cadvisor"}'
+              refId: A
+          - refId: container_down_check
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            conditions:
+              - evaluator:
+                  params: [1]
+                  type: lt
+                reducer:
+                  params: []
+                  type: last
+                query:
+                  params: [A]
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              refId: container_down_check
+              conditions:
+                - evaluator:
+                    params: [1]
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params: [A]
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          description: "Container monitoring is down"
+          summary: "Container monitoring unavailable"
+        labels:
+          severity: critical
+          team: devops
