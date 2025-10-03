@@ -1,0 +1,36 @@
+name = "fortinet-nextrade"
+main = "src/worker.js"
+compatibility_date = "2024-10-03"
+
+[env.production]
+name = "fortinet-nextrade-production"
+route = "fortinet.jclee.me/*"
+
+[env.staging]
+name = "fortinet-nextrade-staging"
+route = "fortinet-staging.jclee.me/*"
+
+[[kv_namespaces]]
+binding = "CONFIG"
+id = ""
+preview_id = ""
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fortinet_db"
+database_id = ""
+
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "fortinet-storage"
+
+[vars]
+APP_MODE = "production"
+FLASK_ENV = "production"
+WEB_APP_PORT = "8080"
+
+[build]
+command = "pip install -r requirements.txt"
+
+[build.upload]
+format = "service-worker"
