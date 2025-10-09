@@ -1,0 +1,2 @@
+# Python dependencies for Fortinet Nextrade
+# Currently no Python dependencies required for Cloudflare Workers deployment
